@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+	kmEnFecha,
+	lecturaIncoherente,
+	lecturasSospechosas,
+	metricasKm,
 	estadoMantenimiento,
 	estadoVencimiento,
 	nivelPorDias,
@@ -100,6 +104,32 @@ describe('kilómetros y mantenimiento', () => {
 		{ fecha: '2026-04-01', km: 11_800 },
 		{ fecha: '2026-10-01', km: 15_460 }
 	];
+	it('detecta lecturas que no cuadran', () => {
+		expect(lecturaIncoherente(lecturas, { fecha: '2026-10-09', km: 15_500 })).toBeNull();
+		expect(lecturaIncoherente(lecturas, { fecha: '2026-05-01', km: 12_000 })).toBeNull();
+		// El error real: una fecha antigua con más km que hoy
+		expect(lecturaIncoherente(lecturas, { fecha: '2022-12-01', km: 57_331 })).toMatchObject({ fecha: '2026-01-01', km: 10_000, motivo: 'posterior' });
+		expect(lecturaIncoherente(lecturas, { fecha: '2026-10-09', km: 9_000 })).toMatchObject({ km: 15_460, motivo: 'anterior' });
+	});
+	it('señala la lectura culpable, no las buenas', () => {
+		const conError = [...lecturas, { fecha: '2022-12-01', km: 57_331 }];
+		expect([...lecturasSospechosas(conError)]).toEqual([3]);
+		expect([...lecturasSospechosas([{ fecha: '2026-01-01', km: 500 }, { fecha: '2026-02-01', km: 400 }])].sort()).toEqual([0, 1]);
+		expect(lecturasSospechosas(lecturas).size).toBe(0);
+	});
+	it('interpola km y calcula métricas de uso', () => {
+		expect(kmEnFecha(lecturas, '2025-06-01')).toBeNull();
+		expect(kmEnFecha(lecturas, '2026-02-15')).toBe(10_000 + Math.round((1800 * 45) / 90));
+		expect(kmEnFecha(lecturas, '2026-12-01')).toBe(15_460);
+		const m = metricasKm(lecturas, '2026-10-09');
+		expect(m.actual).toBe(15_460);
+		expect(m.esteAnio).toBe(5_460);
+		expect(m.recorridos).toBe(5_460);
+		expect(m.kmMes).toBeGreaterThan(550);
+		expect(m.previsionFinAnio).toBeGreaterThan(15_460);
+		expect(m.porMes.reduce((t, x) => t + x.km, 0)).toBe(5_460);
+		expect(m.mejorMes?.km).toBe(Math.max(...m.porMes.map((x) => x.km)));
+	});
 	it('ritmo de uso', () => {
 		expect(ritmoKmDia(lecturas, '2026-10-09')).toBeCloseTo(5460 / 273, 5);
 		expect(ritmoKmDia([lecturas[0]], '2026-10-09')).toBeNull();

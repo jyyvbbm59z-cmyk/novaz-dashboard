@@ -5,6 +5,7 @@
 	let {
 		etiqueta,
 		valor,
+		unidad,
 		detalle,
 		tono,
 		icono,
@@ -16,6 +17,7 @@
 	}: {
 		etiqueta: string;
 		valor: string | number;
+		unidad?: string;
 		detalle?: string;
 		tono?: 'vencido' | 'urgente' | 'pronto' | 'ok' | 'acento' | 'apagado';
 		icono?: Component;
@@ -40,7 +42,7 @@
 	<p class="etiqueta flex min-w-0 items-center gap-1.5 whitespace-nowrap"><span class="contents">
 		{#if icono}{@const I = icono}<I size={12} strokeWidth={2} class="shrink-0" />{/if}</span><span class="truncate">{etiqueta}</span>
 	</p>
-	<p class="cifra mt-1.5 leading-none {grande ? 'text-4xl sm:text-5xl' : 'text-3xl'}" style:color>{valor}</p>
+	<p class="cifra mt-1.5 leading-none {grande ? 'text-4xl sm:text-5xl' : 'text-3xl'}" style:color>{valor}{#if unidad}<span class="ml-1 text-base text-texto-3">{unidad}</span>{/if}</p>
 	{#if detalle}<p class="mt-1.5 truncate text-xs text-texto-3">{detalle}</p>{/if}
 	{#if children}{@render children()}{/if}
 </svelte:element>

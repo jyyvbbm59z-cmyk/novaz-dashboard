@@ -39,6 +39,18 @@ export interface Lectura {
 	km: number;
 }
 
+/**
+ * Comprueba que una lectura nueva encaja con las demás: el cuentakilómetros solo sube.
+ * Devuelve la lectura con la que choca, o null si todo cuadra.
+ */
+export function lecturaIncoherente(lecturas: Lectura[], nueva: Lectura): (Lectura & { motivo: 'posterior' | 'anterior' }) | null {
+	const posterior = lecturas.filter((l) => l.fecha > nueva.fecha && l.km < nueva.km).sort((a, b) => a.km - b.km)[0];
+	if (posterior) return { ...posterior, motivo: 'posterior' };
+	const anterior = lecturas.filter((l) => l.fecha < nueva.fecha && l.km > nueva.km).sort((a, b) => b.km - a.km)[0];
+	if (anterior) return { ...anterior, motivo: 'anterior' };
+	return null;
+}
+
 export function kmActual(lecturas: Lectura[]): number | null {
 	return lecturas.length ? Math.max(...lecturas.map((l) => l.km)) : null;
 }
@@ -159,4 +171,98 @@ export function umbralAlcanzado(dias: number, avisosDias: number[]): number | 'v
 	if (dias < 0) return 'vencido';
 	const cruzados = avisosDias.filter((t) => dias <= t);
 	return cruzados.length ? Math.min(...cruzados) : null;
+}
+
+// ─── Uso del vehículo ────────────────────────────────────────────────────────
+
+/**
+ * Lecturas que no encajan (el cuentakilómetros solo sube). Se marca la "culpable": la que choca
+ * con más lecturas. Si dos chocan solo entre sí, se marcan ambas.
+ */
+export function lecturasSospechosas(lecturas: Lectura[]): Set<number> {
+	const choques = lecturas.map((a) =>
+		lecturas.reduce((n, b) => n + ((b.fecha > a.fecha && b.km < a.km) || (b.fecha < a.fecha && b.km > a.km) ? 1 : 0), 0)
+	);
+	const sospechosas = new Set<number>();
+	lecturas.forEach((a, i) => {
+		if (!choques[i]) return;
+		const rivales = lecturas
+			.map((b, j) => ((b.fecha > a.fecha && b.km < a.km) || (b.fecha < a.fecha && b.km > a.km) ? choques[j] : -1))
+			.filter((c) => c >= 0);
+		if (choques[i] >= Math.max(...rivales)) sospechosas.add(i);
+	});
+	return sospechosas;
+}
+
+/** Km estimados en una fecha (interpolación lineal entre lecturas). null antes de la primera. */
+export function kmEnFecha(lecturas: Lectura[], fecha: string): number | null {
+	const orden = [...lecturas].sort((a, b) => a.fecha.localeCompare(b.fecha) || a.km - b.km);
+	if (!orden.length || fecha < orden[0].fecha) return null;
+	for (let i = orden.length - 1; i >= 0; i--) {
+		if (orden[i].fecha <= fecha) {
+			const sig = orden[i + 1];
+			if (!sig) return orden[i].km;
+			const total = diasEntre(orden[i].fecha, sig.fecha);
+			return total ? Math.round(orden[i].km + ((sig.km - orden[i].km) * diasEntre(orden[i].fecha, fecha)) / total) : orden[i].km;
+		}
+	}
+	return null;
+}
+
+export interface MetricasKm {
+	actual: number | null;
+	kmMes: number | null;
+	kmAnio: number | null;
+	esteAnio: number | null;
+	previsionFinAnio: number | null;
+	recorridos: number | null;
+	desde: string | null;
+	porMes: { mes: string; km: number }[];
+	mejorMes: { mes: string; km: number } | null;
+}
+
+/** Métricas de uso a partir de las lecturas válidas. */
+export function metricasKm(lecturas: Lectura[], hoy: string): MetricasKm {
+	const orden = [...lecturas].sort((a, b) => a.fecha.localeCompare(b.fecha) || a.km - b.km);
+	const actual = kmActual(orden);
+	const ritmo = ritmoKmDia(orden, hoy);
+	const primera = orden[0];
+	const inicioAnio = `${hoy.slice(0, 4)}-01-01`;
+	const kmInicioAnio = kmEnFecha(orden, inicioAnio) ?? (primera && primera.fecha.startsWith(hoy.slice(0, 4)) ? primera.km : null);
+	const esteAnio = actual != null && kmInicioAnio != null ? actual - kmInicioAnio : null;
+	const finAnio = `${hoy.slice(0, 4)}-12-31`;
+	const ultima = orden[orden.length - 1];
+	const previsionFinAnio = actual != null && ritmo ? Math.round(actual + ritmo * Math.max(diasEntre(ultima.fecha, finAnio), 0)) : null;
+
+	// Km por mes (últimos 12 meses con datos), interpolando en los límites de mes
+	const porMes: { mes: string; km: number }[] = [];
+	if (primera) {
+		for (let i = 11; i >= 0; i--) {
+			const inicio = sumarMeses(`${hoy.slice(0, 7)}-01`, -i);
+			const fin = sumarMeses(inicio, 1);
+			const a = kmEnFecha(orden, inicio < primera.fecha ? primera.fecha : inicio);
+			const b = kmEnFecha(orden, fin > hoy ? (ultima.fecha < hoy ? ultima.fecha : hoy) : fin);
+			if (a == null || b == null || inicio > ultima.fecha) continue;
+			porMes.push({ mes: inicio.slice(0, 7), km: Math.max(b - a, 0) });
+		}
+	}
+	const mejorMes = porMes.length ? porMes.reduce((m, x) => (x.km > m.km ? x : m)) : null;
+
+	return {
+		actual,
+		kmMes: ritmo ? Math.round(ritmo * 30.44) : null,
+		kmAnio: ritmo ? Math.round(ritmo * 365) : null,
+		esteAnio,
+		previsionFinAnio,
+		recorridos: actual != null && primera ? actual - primera.km : null,
+		desde: primera?.fecha ?? null,
+		porMes,
+		mejorMes: mejorMes && mejorMes.km > 0 ? mejorMes : null
+	};
+}
+
+/** Lecturas sin las sospechosas: lo que usan km actuales, ritmo y avisos. */
+export function lecturasValidas<T extends Lectura>(lecturas: T[]): T[] {
+	const malas = lecturasSospechosas(lecturas);
+	return malas.size ? lecturas.filter((_, i) => !malas.has(i)) : lecturas;
 }

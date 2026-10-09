@@ -1,8 +1,8 @@
-import { kmActual, lecturasPorVehiculo } from '@novaz/core';
+import { kmActual, lecturasPorVehiculo, lecturasValidas } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { and, asc, eq, inArray, max } from 'drizzle-orm';
 import { guardarEntrada, guardarMovimiento, guardarPendiente, marcarTarea } from '$lib/server/acciones';
-import { registrarKm } from '$lib/server/datos';
+import { comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
 export const load = async ({ locals }) => {
@@ -29,7 +29,7 @@ export const load = async ({ locals }) => {
 
 	return {
 		actividad: Object.fromEntries(actividad.map((a) => [a.id, a.ultima ?? ''])),
-		km: Object.fromEntries([...lecturas].map(([id, ls]) => [id, kmActual(ls)])),
+		km: Object.fromEntries([...lecturas].map(([id, ls]) => [id, kmActual(lecturasValidas(ls))])),
 		obras: restas.map((r) => {
 			const fs = fases.filter((f) => f.restauracionId === r.id);
 			return {
@@ -55,7 +55,9 @@ export const actions = {
 		const f = leer(await request.formData());
 		const km = f.entero('km');
 		if (km == null) throw new ErrorFormulario('Indica los km');
-		await registrarKm(locals.db, f.id('vehiculoId'), f.fecha('fecha') ?? locals.hoy, km);
+		const fecha = f.fecha('fecha') ?? locals.hoy;
+		await comprobarLectura(locals.db, f.id('vehiculoId'), fecha, km);
+		await registrarKm(locals.db, f.id('vehiculoId'), fecha, km);
 		return { mensaje: 'Km guardados' };
 	}),
 	pendiente: accion(async ({ request, locals }) => {

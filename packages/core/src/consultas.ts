@@ -8,6 +8,7 @@ import {
 	estadoMantenimiento,
 	estadoVencimiento,
 	kmActual,
+	lecturasValidas,
 	planAplica,
 	ritmoKmDia,
 	type Lectura,
@@ -131,7 +132,7 @@ export async function cargarAlertas(
 		const lecturas = await lecturasPorVehiculo(db, ids);
 		const ultimas = await ultimasPorPlan(db, ids);
 		for (const veh of vehiculos) {
-			const ls = lecturas.get(veh.id) ?? [];
+			const ls = lecturasValidas(lecturas.get(veh.id) ?? []);
 			const km = kmActual(ls);
 			const ritmo = ritmoKmDia(ls, opts.hoy);
 			for (const plan of planes) {

@@ -2,6 +2,8 @@ import {
 	estadoMantenimiento,
 	estadoVencimiento,
 	kmActual,
+	lecturasSospechosas,
+	metricasKm,
 	planAplica,
 	ritmoKmDia,
 	tipoVencimientoAplica
@@ -21,7 +23,7 @@ import {
 	guardarVencimiento
 } from '$lib/server/acciones';
 import { borrarAdjuntos } from '$lib/server/adjuntos';
-import { avanceRestauraciones, registrarKm } from '$lib/server/datos';
+import { avanceRestauraciones, comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
 export const load = async ({ params, locals }) => {
@@ -63,8 +65,10 @@ export const load = async ({ params, locals }) => {
 	const ORDEN_PRIORIDAD = { alta: 0, media: 1, baja: 2 };
 	porReparar.sort((a, b) => ORDEN_PRIORIDAD[a.prioridad] - ORDEN_PRIORIDAD[b.prioridad]);
 
-	const km = kmActual(lecturas);
-	const ritmo = ritmoKmDia(lecturas, hoy);
+	const malas = lecturasSospechosas(lecturas);
+	const validas = lecturas.filter((_, i) => !malas.has(i));
+	const km = kmActual(validas);
+	const ritmo = ritmoKmDia(validas, hoy);
 
 	// Mantenimiento: estado de cada plan aplicable
 	const mantenimiento = planes
@@ -105,7 +109,8 @@ export const load = async ({ params, locals }) => {
 		vehiculo: v,
 		km,
 		ritmo,
-		lecturas: lecturas.slice(0, 20),
+		lecturas: lecturas.map((l, i) => ({ ...l, sospechosa: malas.has(i) })),
+		metricas: metricasKm(validas, hoy),
 		entradas: entradas.map((x) => ({
 			...x.e,
 			fase: x.fase,
@@ -139,8 +144,16 @@ export const actions = {
 		const f = leer(await request.formData());
 		const km = f.entero('km');
 		if (km == null) throw new ErrorFormulario('Indica los km');
-		await registrarKm(locals.db, vid(params), f.fecha('fecha') ?? locals.hoy, km);
+		const fecha = f.fecha('fecha') ?? locals.hoy;
+		await comprobarLectura(locals.db, vid(params), fecha, km);
+		await registrarKm(locals.db, vid(params), fecha, km);
 		return { mensaje: 'Kilómetros actualizados' };
+	}),
+
+	borrarLectura: accion(async ({ request, params, locals }) => {
+		const id = leer(await request.formData()).id('id');
+		await locals.db.delete(s.lecturasKm).where(and(eq(s.lecturasKm.id, id), eq(s.lecturasKm.vehiculoId, vid(params))));
+		return { mensaje: 'Lectura borrada' };
 	}),
 
 	entrada: accion(async ({ request, params, locals }) => {

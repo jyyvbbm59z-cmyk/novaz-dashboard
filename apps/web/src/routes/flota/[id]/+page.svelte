@@ -2,7 +2,9 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import EntradaForm from '$comp/EntradaForm.svelte';
+	import Cifra from '$comp/Cifra.svelte';
 	import Galeria from '$comp/Galeria.svelte';
+	import GraficoKm from '$comp/GraficoKm.svelte';
 	import Hoja from '$comp/Hoja.svelte';
 	import Icono from '$comp/Icono.svelte';
 	import MovimientoForm from '$comp/MovimientoForm.svelte';
@@ -86,6 +88,20 @@
 </script>
 
 <svelte:head><title>{v.alias} · {data.ajustes.nombreTaller}</title></svelte:head>
+
+{#snippet listaLecturas()}
+	<ul class="tarjeta lista-filas text-sm">
+		{#each data.lecturas as l (l.id)}
+			{@const sospechosa = l.sospechosa}
+			<li class="flex items-center gap-3 py-1.5 pr-1.5 pl-4">
+				<span class="flex-1">{fechaLarga(l.fecha)}{#if l.origen === 'entrada'}<span class="ml-1.5 text-xs text-texto-3">· de una entrada</span>{/if}</span>
+				{#if sospechosa}<span class="chip h-5 text-[0.65rem] nivel-urgente" title="No cuadra con las demás lecturas">no cuadra</span>{/if}
+				<span class="cifra {sospechosa ? 'nivel-urgente' : ''}">{l.km.toLocaleString('es-ES')} km</span>
+				<button class="btn btn-fantasma btn-icono btn-peligro h-8 w-8" onclick={() => borrar('?/borrarLectura', l.id, `la lectura de ${l.km.toLocaleString('es-ES')} km del ${fechaLarga(l.fecha)}`)} aria-label="Borrar lectura"><Trash2 size={14} /></button>
+			</li>
+		{/each}
+	</ul>
+{/snippet}
 
 <a href="/flota" class="text-sm text-texto-3 hover:text-texto">← Flota</a>
 
@@ -330,16 +346,58 @@
 				{/each}
 			</div>
 		{/if}
-		{#if data.lecturas.length}
-			<details class="mt-6">
-				<summary class="etiqueta cursor-pointer py-2">Lecturas de km</summary>
-				<ul class="tarjeta lista-filas mt-2 text-sm">
-					{#each data.lecturas as l (l.id)}
-						<li class="flex justify-between px-4 py-2"><span>{fechaLarga(l.fecha)}</span><span class="cifra">{l.km.toLocaleString('es-ES')} km</span></li>
-					{/each}
-				</ul>
-			</details>
-		{/if}
+		<section class="mt-8">
+			<div class="mb-3 flex items-baseline justify-between gap-2">
+				<h2 class="seccion-titulo">Kilometraje</h2>
+				<button class="btn h-8 text-xs" onclick={() => (hKm = true)}><Gauge size={14} /> Actualizar km</button>
+			</div>
+			{#if data.metricas.actual != null}
+				{@const m = data.metricas}
+				<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+					<Cifra etiqueta="Ritmo" valor={m.kmMes != null ? m.kmMes.toLocaleString('es-ES') : '—'} unidad={m.kmMes != null ? 'km/mes' : ''} detalle={m.kmAnio != null ? `≈ ${m.kmAnio.toLocaleString('es-ES')} km al año` : 'Faltan lecturas'} />
+					<Cifra etiqueta="Este año" valor={m.esteAnio != null ? m.esteAnio.toLocaleString('es-ES') : '—'} unidad={m.esteAnio != null ? 'km' : ''} detalle={m.previsionFinAnio != null ? `Fin de año: ~${m.previsionFinAnio.toLocaleString('es-ES')}` : ''} />
+					<Cifra etiqueta="Recorridos" valor={m.recorridos != null ? m.recorridos.toLocaleString('es-ES') : '—'} unidad={m.recorridos != null ? 'km' : ''} detalle={m.desde ? `Desde ${fechaLarga(m.desde)}` : ''} />
+					<Cifra
+						etiqueta="Mes con más uso"
+						valor={m.mejorMes ? m.mejorMes.km.toLocaleString('es-ES') : '—'}
+						unidad={m.mejorMes ? 'km' : ''}
+						detalle={m.mejorMes ? new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(m.mejorMes.mes + '-15T12:00:00Z')) : ''}
+					/>
+				</div>
+				<div class="tarjeta mt-3 p-4 sm:p-5">
+					<p class="etiqueta mb-3">Evolución del cuentakilómetros</p>
+					<GraficoKm lecturas={data.lecturas} hoy={data.hoy} />
+					{#if m.porMes.length >= 2}
+						{@const maxMes = Math.max(1, ...m.porMes.map((x) => x.km))}
+						<p class="etiqueta mt-6 mb-3">Km por mes</p>
+						<div class="flex h-24 items-end gap-1.5 border-b border-borde sm:gap-2.5">
+							{#each m.porMes as x (x.mes)}
+								<div class="group relative flex h-full flex-1 flex-col justify-end">
+									<span class="block w-full rounded-t-[4px] bg-acento transition-opacity group-hover:opacity-100" style="height: {Math.max((x.km / maxMes) * 100, x.km ? 3 : 0)}%; opacity: {x.mes === m.mejorMes?.mes ? 1 : 0.75}"></span>
+									<span class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded border border-borde bg-superficie-3 px-2 py-1 text-[0.7rem] whitespace-nowrap shadow group-hover:block">{x.km.toLocaleString('es-ES')} km</span>
+								</div>
+							{/each}
+						</div>
+						<div class="mt-1 flex gap-1.5 text-center text-[0.6rem] text-texto-3 sm:gap-2.5">
+							{#each m.porMes as x (x.mes)}<span class="flex-1">{['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][Number(x.mes.slice(5, 7)) - 1]}</span>{/each}
+						</div>
+					{/if}
+				</div>
+			{/if}
+			{#if data.lecturas.length}
+				{@const malas = data.lecturas.filter((l) => l.sospechosa).length}
+				{#if malas}
+					<p class="mt-3 flex items-start gap-2 rounded-lg border border-urgente/40 bg-urgente/10 p-3 text-sm">
+						<CircleAlert size={16} class="mt-0.5 shrink-0 nivel-urgente" />
+						<span>{malas === 1 ? 'Hay una lectura que no cuadra' : `Hay ${malas} lecturas que no cuadran`} con las demás (el cuentakilómetros solo sube). No se usa en los cálculos: bórrala si es un error.</span>
+					</p>
+				{/if}
+				<details class="mt-3" open={malas > 0}>
+					<summary class="etiqueta cursor-pointer py-2">Lecturas ({data.lecturas.length})</summary>
+					<div class="mt-2">{@render listaLecturas()}</div>
+				</details>
+			{/if}
+		</section>
 	{:else if pestana === 'gastos'}
 		<div class="mb-4 flex items-center justify-between">
 			<p class="text-sm text-texto-2">Gastado: <strong class="cifra text-lg text-texto">{euros(data.totales.gasto)}</strong>{#if data.totales.ingreso} · Ingresos: <strong class="cifra text-lg nivel-ok">{euros(data.totales.ingreso)}</strong>{/if}</p>
@@ -455,6 +513,12 @@
 		</div>
 		<button class="btn btn-acento h-12">Guardar</button>
 	</form>
+	{#if data.lecturas.length}
+		<div class="mt-6">
+			<p class="etiqueta mb-2">Lecturas anteriores</p>
+			{@render listaLecturas()}
+		</div>
+	{/if}
 </Hoja>
 
 <Hoja bind:abierta={hVenc} titulo={vencRenovar ? 'Renovar' : vencEdit ? 'Editar vencimiento' : 'Nuevo vencimiento'}>

@@ -1,6 +1,9 @@
 import {
 	compararNivel,
+	fechaLarga,
 	kmActual,
+	lecturaIncoherente,
+	lecturasValidas,
 	lecturasPorVehiculo,
 	peorNivel,
 	type Alerta,
@@ -9,6 +12,7 @@ import {
 } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { ErrorFormulario } from './form';
 
 export async function catalogos(db: DB) {
 	const [tipos, estados, categorias, tiposVencimiento, contactos, plantillas] = await db.batch([
@@ -22,6 +26,19 @@ export async function catalogos(db: DB) {
 	return { tipos, estados, categorias, tiposVencimiento, contactos, plantillas };
 }
 export type Catalogos = Awaited<ReturnType<typeof catalogos>>;
+
+/** Rechaza una lectura manual que no encaja con las demás (el cuentakilómetros solo sube). */
+export async function comprobarLectura(db: DB, vehiculoId: number, fecha: string, km: number) {
+	const lecturas = await db.select({ fecha: s.lecturasKm.fecha, km: s.lecturasKm.km }).from(s.lecturasKm).where(eq(s.lecturasKm.vehiculoId, vehiculoId));
+	const choque = lecturaIncoherente(lecturas, { fecha, km });
+	if (!choque) return;
+	const n = (x: number) => x.toLocaleString('es-ES');
+	throw new ErrorFormulario(
+		choque.motivo === 'posterior'
+			? `No cuadra: el ${fechaLarga(choque.fecha)} (después) tenía ${n(choque.km)} km, menos que ${n(km)}. Revisa la fecha o los km.`
+			: `No cuadra: el ${fechaLarga(choque.fecha)} (antes) ya tenía ${n(choque.km)} km, más que ${n(km)}. Revisa la fecha o los km.`
+	);
+}
 
 /** Registra una lectura de km si aporta algo (evita duplicados del mismo día con el mismo km). */
 export async function registrarKm(db: DB, vehiculoId: number, fecha: string, km: number | null, origen: 'manual' | 'entrada' = 'manual') {
@@ -104,7 +121,7 @@ export async function resumenVehiculos(db: DB, alertas: Alerta[]): Promise<Resum
 			estadoId: v.estadoId,
 			contacto,
 			portada,
-			km: kmActual(lecturas.get(v.id) ?? []),
+			km: kmActual(lecturasValidas(lecturas.get(v.id) ?? [])),
 			nivel: peorNivel(...propias.map((a) => a.nivel)),
 			alertas: propias.length,
 			restauracion: r ? { id: r.id, nombre: r.nombre, avance: av && av.total ? av.hechas / av.total : 0 } : null
