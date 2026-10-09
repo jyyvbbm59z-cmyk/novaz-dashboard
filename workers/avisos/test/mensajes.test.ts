@@ -26,6 +26,7 @@ describe('avisos', () => {
 		expect(umbralDe({ ...base, dias: -1, nivel: 'vencido' })).toBe('vencido');
 		expect(umbralDe({ ...base, tipo: 'mantenimiento', dias: null, nivel: 'urgente' })).toBe('urgente');
 		expect(umbralDe({ ...base, tipo: 'mantenimiento', nivel: 'ok' })).toBeNull();
+		expect(umbralDe({ ...base, tipo: 'pendiente', dias: null, nivel: 'urgente' })).toBeNull();
 	});
 	it('mensaje agrupado, escapado y con enlaces', () => {
 		const m = mensajeAvisos([base, { ...base, clave: 'x', titulo: 'Seguro', nivel: 'vencido', dias: -2 }], 'Novaz', 'https://panel.novaz.es');

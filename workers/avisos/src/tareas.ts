@@ -42,6 +42,8 @@ export async function avisosDelDia(env: Env, ahora = new Date()) {
 
 /** Umbral que "toca" avisar para una alerta (o null). */
 export function umbralDe(a: Alerta): string | null {
+	// Lo que tú mismo apuntas como pendiente no se "avisa" cada día: sale en el resumen semanal
+	if (a.tipo === 'pendiente') return null;
 	if (a.tipo === 'vencimiento' && a.dias != null) {
 		const u = umbralAlcanzado(a.dias, a.avisosDias);
 		return u == null ? null : String(u);

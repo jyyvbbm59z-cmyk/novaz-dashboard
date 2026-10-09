@@ -1,7 +1,7 @@
 // Operaciones de escritura compartidas por varias páginas (ficha, captura rápida, restauración…).
 import { desglosarIva, sumarMeses } from '@novaz/core';
 import * as s from '@novaz/core/schema';
-import { CLASES_ENTRADA, FORMAS_PAGO, TIPOS_MOVIMIENTO, type ClaseEntrada, type FormaPago, type TipoMovimiento } from '@novaz/core/schema';
+import { CLASES_ENTRADA, FORMAS_PAGO, PRIORIDADES, TIPOS_MOVIMIENTO, type ClaseEntrada, type FormaPago, type Prioridad, type TipoMovimiento } from '@novaz/core/schema';
 import { and, eq } from 'drizzle-orm';
 import { borrarAdjuntosDe } from './adjuntos';
 import { registrarKm } from './datos';
@@ -205,6 +205,45 @@ export async function borrarVencimiento(locals: Locals, bucket: R2Bucket, id: nu
 	await borrarAdjuntosDe(locals.db, bucket, 'vencimiento', id);
 	await locals.db.update(s.movimientos).set({ vencimientoId: null }).where(eq(s.movimientos.vencimientoId, id));
 	await locals.db.delete(s.vencimientos).where(eq(s.vencimientos.id, id));
+}
+
+// ─── Por reparar ──────────────────────────────────────────────────────────────
+
+export async function guardarPendiente(locals: Locals, vehiculoId: number, fd: FormData) {
+	const f = leer(fd);
+	const id = f.idOpcional('id');
+	const prioridad = f.texto('prioridad');
+	const valores = {
+		vehiculoId,
+		titulo: f.obligatorio('titulo', 'qué hay que reparar'),
+		detalle: f.texto('detalle'),
+		prioridad: (PRIORIDADES.includes(prioridad as Prioridad) ? prioridad : 'media') as Prioridad,
+		fechaDetectado: f.fecha('fechaDetectado') ?? locals.hoy,
+		kmDetectado: f.entero('km')
+	};
+	if (id) {
+		await locals.db.update(s.pendientes).set(valores).where(and(eq(s.pendientes.id, id), eq(s.pendientes.vehiculoId, vehiculoId)));
+		return id;
+	}
+	const [p] = await locals.db.insert(s.pendientes).values(valores).returning({ id: s.pendientes.id });
+	await registrarKm(locals.db, vehiculoId, valores.fechaDetectado, valores.kmDetectado);
+	return p.id;
+}
+
+/** Cierra un pendiente creando la entrada de reparación (con su gasto, si lo hay). */
+export async function resolverPendiente(locals: Locals, vehiculoId: number, fd: FormData) {
+	const pendienteId = leer(fd).id('pendienteId');
+	const p = await locals.db.select().from(s.pendientes).where(and(eq(s.pendientes.id, pendienteId), eq(s.pendientes.vehiculoId, vehiculoId))).get();
+	if (!p) throw new ErrorFormulario('Pendiente no encontrado');
+	if (!fd.get('clase')) fd.set('clase', 'reparacion');
+	if (!fd.get('titulo')) fd.set('titulo', p.titulo);
+	const r = await guardarEntrada(locals, vehiculoId, fd);
+	const entrada = await locals.db.select({ fecha: s.entradas.fecha }).from(s.entradas).where(eq(s.entradas.id, r.entradaId)).get();
+	await locals.db
+		.update(s.pendientes)
+		.set({ estado: 'hecho', fechaCierre: entrada?.fecha ?? locals.hoy, entradaId: r.entradaId })
+		.where(eq(s.pendientes.id, pendienteId));
+	return r;
 }
 
 /** Marca una tarea; si con ello la fase queda completa, devuelve el momento correspondiente. */

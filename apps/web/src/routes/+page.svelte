@@ -38,14 +38,14 @@
 			<ul class="tarjeta lista-filas overflow-hidden">
 				{#each pendientes as a (a.clave)}
 					<li>
-						<a href="/flota/{a.vehiculoId}?pestana={a.tipo === 'vencimiento' ? 'papeles' : 'mantenimiento'}" class="flex items-center gap-3 px-4 py-3 transition hover:bg-superficie-2">
+						<a href="/flota/{a.vehiculoId}?pestana={a.tipo === 'vencimiento' ? 'papeles' : a.tipo === 'pendiente' ? 'historial' : 'mantenimiento'}" class="flex items-center gap-3 px-4 py-3 transition hover:bg-superficie-2">
 							<span class="h-9 w-1 shrink-0 rounded-full" style="background: var(--{a.nivel})"></span>
 							<div class="min-w-0 flex-1">
 								<p class="truncate font-medium">{a.titulo} <span class="font-normal text-texto-3">· {a.vehiculo}</span></p>
 								<p class="truncate text-xs text-texto-3">{a.detalle}</p>
 							</div>
 							<span class="cifra shrink-0 text-right text-base nivel-{a.nivel}">
-								{#if a.tipo === 'vencimiento' && a.dias != null}{textoDias(a.dias)}{:else if a.kmRestantes != null}{a.kmRestantes < 0 ? `+${(-a.kmRestantes).toLocaleString('es-ES')}` : a.kmRestantes.toLocaleString('es-ES')} km{:else if a.dias != null}{textoDias(a.dias)}{/if}
+								{#if a.tipo === 'pendiente'}<span class="font-sans text-xs font-semibold tracking-wide uppercase">{a.nivel === 'urgente' ? 'Urgente' : 'Reparar'}</span>{:else if a.tipo === 'vencimiento' && a.dias != null}{textoDias(a.dias)}{:else if a.kmRestantes != null}{a.kmRestantes < 0 ? `+${(-a.kmRestantes).toLocaleString('es-ES')}` : a.kmRestantes.toLocaleString('es-ES')} km{:else if a.dias != null}{textoDias(a.dias)}{/if}
 							</span>
 						</a>
 					</li>

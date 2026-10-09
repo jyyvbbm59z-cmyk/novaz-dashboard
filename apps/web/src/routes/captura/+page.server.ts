@@ -1,7 +1,7 @@
 import { kmActual, lecturasPorVehiculo } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { and, asc, eq, inArray, max } from 'drizzle-orm';
-import { guardarEntrada, guardarMovimiento, marcarTarea } from '$lib/server/acciones';
+import { guardarEntrada, guardarMovimiento, guardarPendiente, marcarTarea } from '$lib/server/acciones';
 import { registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
@@ -57,6 +57,11 @@ export const actions = {
 		if (km == null) throw new ErrorFormulario('Indica los km');
 		await registrarKm(locals.db, f.id('vehiculoId'), f.fecha('fecha') ?? locals.hoy, km);
 		return { mensaje: 'Km guardados' };
+	}),
+	pendiente: accion(async ({ request, locals }) => {
+		const fd = await request.formData();
+		await guardarPendiente(locals, leer(fd).id('vehiculoId'), fd);
+		return { mensaje: 'Apuntado en «Por reparar»' };
 	}),
 	tarea: accion(async ({ request, locals }) => {
 		const f = leer(await request.formData());

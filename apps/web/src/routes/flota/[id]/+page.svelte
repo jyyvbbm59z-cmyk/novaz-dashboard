@@ -13,8 +13,8 @@
 	import VencimientoForm from '$comp/VencimientoForm.svelte';
 	import { accion, enviar } from '$lib/enviar';
 	import { euros, fechaLarga, mostrarCampo, textoDias } from '@novaz/core';
-	import type { Entrada, Movimiento, Vencimiento } from '@novaz/core/schema';
-	import { Check, Gauge, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench } from '@lucide/svelte';
+	import type { Entrada, Movimiento, Pendiente, Vencimiento } from '@novaz/core/schema';
+	import { Check, CircleAlert, Gauge, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
 
 	let { data } = $props();
 	const v = $derived(data.vehiculo);
@@ -50,6 +50,20 @@
 	let hGasto = $state(false);
 	let gastoEdit = $state<Movimiento | null>(null);
 	let hObra = $state(false);
+	let hPendiente = $state(false);
+	let pendEdit = $state<Pendiente | null>(null);
+	let pendResolver = $state<Pendiente | null>(null);
+	const PRIORIDAD: Record<string, { texto: string; color: string }> = {
+		alta: { texto: 'Urgente', color: 'var(--vencido)' },
+		media: { texto: 'Pronto', color: 'var(--urgente)' },
+		baja: { texto: 'Cuando se pueda', color: 'var(--texto-3)' }
+	};
+	function resolver(p: Pendiente) {
+		entradaEdit = null;
+		planHecho = null;
+		pendResolver = p;
+		hEntrada = true;
+	}
 
 	function nuevaEntrada(plan: number | null = null) {
 		entradaEdit = null;
@@ -150,11 +164,12 @@
 {/if}
 
 <!-- Acciones -->
-<div class="mt-4 grid grid-cols-4 gap-2 sm:flex sm:flex-wrap">
+<div class="mt-4 grid grid-cols-5 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
 	<button class="btn btn-acento flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0 h-auto" onclick={() => nuevaEntrada()}><NotebookPen size={18} /><span class="text-xs sm:text-sm">Entrada</span></button>
 	<SubirArchivos entidad="vehiculo" entidadId={v.id} vehiculoId={v.id} camara clase="btn flex-col gap-1 py-2 h-auto sm:h-10 sm:flex-row sm:py-0 text-xs sm:text-sm" />
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => (hKm = true)}><Gauge size={18} /><span class="text-xs sm:text-sm">Km</span></button>
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((gastoEdit = null), (hGasto = true))}><ReceiptText size={18} /><span class="text-xs sm:text-sm">Gasto</span></button>
+	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((pendEdit = null), (hPendiente = true))}><CircleAlert size={18} /><span class="text-xs sm:text-sm">Avería</span></button>
 	<a href="/flota/{v.id}/editar" class="btn hidden sm:inline-flex sm:ml-auto"><Pencil size={16} /> Editar</a>
 </div>
 
@@ -167,13 +182,36 @@
 			href: `?pestana=${id}`,
 			texto: t,
 			activa: pestana === id,
-			cuenta: id === 'historial' ? data.entradas.length : id === 'fotos' ? data.adjuntos.length : id === 'papeles' ? alertasVeh.filter((a) => a.tipo === 'vencimiento').length || null : null
+			cuenta: id === 'historial' ? data.entradas.length + data.porReparar.length : id === 'fotos' ? data.adjuntos.length : id === 'papeles' ? alertasVeh.filter((a) => a.tipo === 'vencimiento').length || null : null
 		}))}
 	/>
 </div>
 
 <div class="mt-5 min-h-[70dvh]">
 	{#if pestana === 'historial'}
+		{#if data.porReparar.length}
+			<section class="mb-7">
+				<p class="etiqueta mb-2 flex items-center gap-2"><CircleAlert size={13} /> Por reparar · {data.porReparar.length}</p>
+				<div class="flex flex-col gap-2">
+					{#each data.porReparar as p (p.id)}
+						<article class="tarjeta flex items-start gap-3 p-3.5" style="border-left: 3px solid {PRIORIDAD[p.prioridad].color}">
+							<div class="min-w-0 flex-1">
+								<p class="font-semibold">{p.titulo}</p>
+								<p class="text-xs text-texto-3">
+									<span style="color: {PRIORIDAD[p.prioridad].color}">{PRIORIDAD[p.prioridad].texto}</span> · visto el {fechaLarga(p.fechaDetectado)}{p.kmDetectado != null ? ` a ${p.kmDetectado.toLocaleString('es-ES')} km` : ''}
+								</p>
+								{#if p.detalle}<p class="mt-1 text-sm whitespace-pre-line text-texto-2">{p.detalle}</p>{/if}
+							</div>
+							<div class="flex shrink-0 items-center gap-1">
+								<button class="btn btn-acento h-9 px-3" onclick={() => resolver(p)}><Check size={16} /> <span class="hidden sm:inline">Reparado</span></button>
+								<button class="btn btn-fantasma btn-icono h-9 w-9" onclick={() => ((pendEdit = p), (hPendiente = true))} aria-label="Editar"><Pencil size={14} /></button>
+								<button class="btn btn-fantasma btn-icono h-9 w-9" onclick={() => confirm(`¿Descartar «${p.titulo}»? (no se arreglará)`) && accion('?/descartarPendiente', { id: p.id })} aria-label="Descartar"><X size={15} /></button>
+							</div>
+						</article>
+					{/each}
+				</div>
+			</section>
+		{/if}
 		{#if !data.entradas.length}
 			<div class="vacio">Sin entradas todavía. Registra la primera: un mantenimiento, una nota o el diario de obra.</div>
 		{:else}
@@ -367,9 +405,11 @@
 </div>
 
 <!-- Hojas -->
-<Hoja bind:abierta={hEntrada} titulo={entradaEdit ? 'Editar entrada' : planHecho ? 'Mantenimiento hecho' : 'Nueva entrada'}>
+<Hoja bind:abierta={hEntrada} titulo={entradaEdit ? 'Editar entrada' : pendResolver ? 'Reparado' : planHecho ? 'Mantenimiento hecho' : 'Nueva entrada'}>
 	<EntradaForm
-		accion={planHecho && !entradaEdit ? '?/hecho' : '?/entrada'}
+		accion={pendResolver && !entradaEdit ? '?/resolver' : planHecho && !entradaEdit ? '?/hecho' : '?/entrada'}
+		tituloInicial={pendResolver?.titulo ?? ''}
+		ocultos={pendResolver && !entradaEdit ? { pendienteId: pendResolver.id } : {}}
 		vehiculoId={v.id}
 		hoy={data.hoy}
 		km={data.km}
@@ -377,10 +417,34 @@
 		planes={planesVeh}
 		fases={data.fasesAbiertas}
 		entrada={entradaEdit}
-		claseInicial={planHecho ? 'mantenimiento' : activa ? 'diario' : 'nota'}
+		claseInicial={pendResolver ? 'reparacion' : planHecho ? 'mantenimiento' : activa ? 'diario' : 'nota'}
 		planInicial={planHecho}
-		alGuardar={() => (hEntrada = false)}
+		alGuardar={() => ((hEntrada = false), (pendResolver = null))}
 	/>
+</Hoja>
+
+<Hoja bind:abierta={hPendiente} titulo={pendEdit ? 'Editar avería' : 'Apuntar avería o trabajo pendiente'}>
+	<form method="POST" action="?/pendiente" use:enhance={enviar({ alTerminar: () => (hPendiente = false) })} class="flex flex-col gap-4">
+		{#if pendEdit}<input type="hidden" name="id" value={pendEdit.id} />{/if}
+		<label class="campo"><span>¿Qué hay que reparar? *</span><input name="titulo" class="input" required value={pendEdit?.titulo ?? ''} placeholder="Fuga de aceite en el motor de arranque" /></label>
+		<fieldset class="campo">
+			<span>Prioridad</span>
+			<div class="grid grid-cols-3 gap-2">
+				{#each Object.entries(PRIORIDAD) as [v, p] (v)}
+					<label class="cursor-pointer rounded-lg border border-borde bg-superficie-2 p-2.5 text-center text-sm font-semibold has-[:checked]:border-acento has-[:checked]:bg-acento/10">
+						<input type="radio" name="prioridad" value={v} checked={(pendEdit?.prioridad ?? 'media') === v} class="sr-only" />
+						<span class="mr-1 inline-block h-2 w-2 rounded-full" style="background:{p.color}"></span>{p.texto}
+					</label>
+				{/each}
+			</div>
+		</fieldset>
+		<div class="grid grid-cols-2 gap-3">
+			<label class="campo"><span>Visto el</span><input type="date" name="fechaDetectado" class="input" value={pendEdit?.fechaDetectado ?? data.hoy} /></label>
+			<label class="campo"><span>Km</span><input name="km" class="input" inputmode="numeric" value={pendEdit?.kmDetectado ?? data.km ?? ''} /></label>
+		</div>
+		<label class="campo"><span>Detalles</span><textarea name="detalle" class="input" rows="3" placeholder="Dónde está, qué pieza hace falta, referencias…">{pendEdit?.detalle ?? ''}</textarea></label>
+		<button class="btn btn-acento h-12">{pendEdit ? 'Guardar' : 'Apuntar'}</button>
+	</form>
 </Hoja>
 
 <Hoja bind:abierta={hKm} titulo="Actualizar km">

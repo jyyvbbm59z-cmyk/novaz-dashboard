@@ -237,6 +237,33 @@ export const entradas = sqliteTable(
 	(t) => [index('entradas_vehiculo_idx').on(t.vehiculoId, t.fecha), index('entradas_plan_idx').on(t.planId)]
 );
 
+// ─── Por reparar ──────────────────────────────────────────────────────────────
+
+export const PRIORIDADES = ['alta', 'media', 'baja'] as const;
+export type Prioridad = (typeof PRIORIDADES)[number];
+
+/** Averías y trabajos pendientes detectados en un vehículo (p. ej. una fuga en una revisión). */
+export const pendientes = sqliteTable(
+	'pendientes',
+	{
+		id: id(),
+		vehiculoId: integer('vehiculo_id')
+			.notNull()
+			.references(() => vehiculos.id, { onDelete: 'cascade' }),
+		titulo: text('titulo').notNull(),
+		detalle: text('detalle'),
+		prioridad: text('prioridad', { enum: PRIORIDADES }).notNull().default('media'),
+		fechaDetectado: text('fecha_detectado').notNull(),
+		kmDetectado: integer('km_detectado'),
+		estado: text('estado', { enum: ['pendiente', 'hecho', 'descartado'] }).notNull().default('pendiente'),
+		fechaCierre: text('fecha_cierre'),
+		/** Entrada de reparación con la que se resolvió. */
+		entradaId: integer('entrada_id').references(() => entradas.id, { onDelete: 'set null' }),
+		creado: creado()
+	},
+	(t) => [index('pendientes_vehiculo_idx').on(t.vehiculoId, t.estado)]
+);
+
 // ─── Dinero ───────────────────────────────────────────────────────────────────
 
 export const movimientos = sqliteTable(
@@ -392,3 +419,4 @@ export type AsientoManual = typeof asientos.$inferSelect;
 export type ApunteManual = typeof apuntes.$inferSelect;
 export type Inmovilizado = typeof inmovilizado.$inferSelect;
 export type Recurrente = typeof recurrentes.$inferSelect;
+export type Pendiente = typeof pendientes.$inferSelect;

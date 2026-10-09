@@ -8,13 +8,15 @@ import {
 } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { error, redirect } from '@sveltejs/kit';
-import { asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import {
 	borrarEntrada,
 	borrarMovimiento,
 	borrarVencimiento,
 	crearRestauracion,
 	guardarEntrada,
+	guardarPendiente,
+	resolverPendiente,
 	guardarMovimiento,
 	guardarVencimiento
 } from '$lib/server/acciones';
@@ -28,7 +30,7 @@ export const load = async ({ params, locals }) => {
 	const v = await db.select().from(s.vehiculos).where(eq(s.vehiculos.id, id)).get();
 	if (!v) error(404, 'Vehículo no encontrado');
 
-	const [lecturas, entradas, vencs, movs, adjuntos, restas, planes] = await Promise.all([
+	const [lecturas, entradas, vencs, movs, adjuntos, restas, planes, porReparar] = await Promise.all([
 		db.select().from(s.lecturasKm).where(eq(s.lecturasKm.vehiculoId, id)).orderBy(desc(s.lecturasKm.fecha), desc(s.lecturasKm.km)),
 		db
 			.select({ e: s.entradas, fase: s.fases.nombre, plan: s.planesMantenimiento.nombre })
@@ -51,8 +53,15 @@ export const load = async ({ params, locals }) => {
 			.orderBy(desc(s.movimientos.fecha), desc(s.movimientos.id)),
 		db.select().from(s.adjuntos).where(eq(s.adjuntos.vehiculoId, id)).orderBy(desc(s.adjuntos.creado)),
 		db.select().from(s.restauraciones).where(eq(s.restauraciones.vehiculoId, id)).orderBy(desc(s.restauraciones.fechaInicio)),
-		db.select().from(s.planesMantenimiento).where(eq(s.planesMantenimiento.activo, true)).orderBy(asc(s.planesMantenimiento.nombre))
+		db.select().from(s.planesMantenimiento).where(eq(s.planesMantenimiento.activo, true)).orderBy(asc(s.planesMantenimiento.nombre)),
+		db
+			.select()
+			.from(s.pendientes)
+			.where(and(eq(s.pendientes.vehiculoId, id), eq(s.pendientes.estado, 'pendiente')))
+			.orderBy(asc(s.pendientes.fechaDetectado))
 	]);
+	const ORDEN_PRIORIDAD = { alta: 0, media: 1, baja: 2 };
+	porReparar.sort((a, b) => ORDEN_PRIORIDAD[a.prioridad] - ORDEN_PRIORIDAD[b.prioridad]);
 
 	const km = kmActual(lecturas);
 	const ritmo = ritmoKmDia(lecturas, hoy);
@@ -118,7 +127,8 @@ export const load = async ({ params, locals }) => {
 			const a = avances.get(r.id);
 			return { ...r, avance: a && a.total ? a.hechas / a.total : 0, tareas: a?.total ?? 0 };
 		}),
-		fasesAbiertas: fasesAbiertas.filter((f) => abiertas.some((r) => r.id === f.restauracionId))
+		fasesAbiertas: fasesAbiertas.filter((f) => abiertas.some((r) => r.id === f.restauracionId)),
+		porReparar
 	};
 };
 
@@ -136,6 +146,26 @@ export const actions = {
 	entrada: accion(async ({ request, params, locals }) => {
 		const r = await guardarEntrada(locals, vid(params), await request.formData());
 		return { mensaje: r.nueva ? 'Entrada registrada' : 'Entrada actualizada', momento: r.nueva ? 'entradaCreada' : undefined, entradaId: r.entradaId };
+	}),
+
+	pendiente: accion(async ({ request, params, locals }) => {
+		const fd = await request.formData();
+		const nuevo = !leer(fd).idOpcional('id');
+		await guardarPendiente(locals, vid(params), fd);
+		return { mensaje: nuevo ? 'Apuntado en «Por reparar»' : 'Guardado' };
+	}),
+
+	resolver: accion(async ({ request, params, locals }) => {
+		const r = await resolverPendiente(locals, vid(params), await request.formData());
+		return { mensaje: '¡Reparado! Pasa al historial', momento: 'tareaHecha', entradaId: r.entradaId };
+	}),
+
+	descartarPendiente: accion(async ({ request, params, locals }) => {
+		await locals.db
+			.update(s.pendientes)
+			.set({ estado: 'descartado', fechaCierre: locals.hoy })
+			.where(and(eq(s.pendientes.id, leer(await request.formData()).id('id')), eq(s.pendientes.vehiculoId, vid(params))));
+		return { mensaje: 'Descartado' };
 	}),
 
 	borrarEntrada: accion(async ({ request, locals, platform }) => {

@@ -20,6 +20,8 @@
 		claseInicial = 'nota',
 		planInicial = null,
 		faseInicial = null,
+		tituloInicial = '',
+		ocultos = {},
 		alGuardar
 	}: {
 		accion?: string;
@@ -33,6 +35,8 @@
 		claseInicial?: string;
 		planInicial?: number | null;
 		faseInicial?: number | null;
+		tituloInicial?: string;
+		ocultos?: Record<string, string | number>;
 		alGuardar?: () => void;
 	} = $props();
 
@@ -44,7 +48,7 @@
 	] as const;
 
 	// Valores iniciales: el formulario se monta de nuevo cada vez que se abre la hoja.
-	const ini = (() => ({ clase: entrada?.clase ?? claseInicial, titulo: entrada?.titulo ?? '', texto: entrada?.texto ?? '' }))();
+	const ini = (() => ({ clase: entrada?.clase ?? claseInicial, titulo: entrada?.titulo ?? tituloInicial, texto: entrada?.texto ?? '' }))();
 	let clase = $state(ini.clase);
 	let titulo = $state(ini.titulo);
 	let texto = $state(ini.texto);
@@ -53,7 +57,7 @@
 	const claveBorrador = $derived(`borrador:entrada:${vehiculoId}`);
 
 	onMount(() => {
-		if (entrada) return;
+		if (entrada || tituloInicial) return;
 		try {
 			const b = JSON.parse(localStorage.getItem(claveBorrador) ?? 'null');
 			if (b && (b.titulo || b.texto)) {
@@ -104,6 +108,7 @@
 <form method="POST" action={accion} use:enhance={enviar({ alTerminar })} class="flex flex-col gap-4">
 	{#if entrada}<input type="hidden" name="id" value={entrada.id} />{/if}
 	<input type="hidden" name="vehiculoId" value={vehiculoId} />
+	{#each Object.entries(ocultos) as [k, v] (k)}<input type="hidden" name={k} value={v} />{/each}
 
 	<div class="grid grid-cols-4 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
 		{#each CLASES as [v, t] (v)}

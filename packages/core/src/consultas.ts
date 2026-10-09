@@ -27,7 +27,7 @@ export async function leerAjustes(db: DB): Promise<Ajustes> {
 
 export interface Alerta {
 	clave: string;
-	tipo: 'vencimiento' | 'mantenimiento';
+	tipo: 'vencimiento' | 'mantenimiento' | 'pendiente';
 	vehiculoId: number;
 	vehiculo: string;
 	matricula: string | null;
@@ -159,6 +159,30 @@ export async function cargarAlertas(
 				});
 			}
 		}
+	}
+
+	// Averías y trabajos por reparar: la prioridad decide el nivel
+	const pends = await db
+		.select()
+		.from(schema.pendientes)
+		.where(and(eq(schema.pendientes.estado, 'pendiente'), inArray(schema.pendientes.vehiculoId, ids)));
+	const NIVEL_PRIORIDAD: Record<string, Nivel> = { alta: 'urgente', media: 'pronto', baja: 'ok' };
+	for (const p of pends) {
+		const veh = porId.get(p.vehiculoId)!;
+		alertas.push({
+			clave: `pend:${p.id}`,
+			tipo: 'pendiente',
+			vehiculoId: veh.id,
+			vehiculo: veh.alias,
+			matricula: veh.matricula,
+			titulo: p.titulo,
+			detalle: `Por reparar · visto el ${fechaLarga(p.fechaDetectado)}${p.kmDetectado != null ? ` a ${p.kmDetectado.toLocaleString('es-ES')} km` : ''}`,
+			nivel: NIVEL_PRIORIDAD[p.prioridad] ?? 'pronto',
+			dias: null,
+			kmRestantes: null,
+			avisosDias: [],
+			ciclo: String(p.id)
+		});
 	}
 
 	return alertas

@@ -6,14 +6,14 @@
 	import Placa from '$comp/Placa.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { ArrowLeft, Camera, Check, Gauge, ListChecks, NotebookPen, ReceiptText } from '@lucide/svelte';
+	import { ArrowLeft, Check, CircleAlert, Gauge, ListChecks, NotebookPen, ReceiptText } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
 	const cat = $derived(data.catalogo);
 
 	let vehiculoId = $state<number | null>(null);
-	let que = $state<'entrada' | 'foto' | 'gasto' | 'km' | 'tarea' | null>(null);
+	let que = $state<'entrada' | 'foto' | 'gasto' | 'km' | 'tarea' | 'pendiente' | null>(null);
 	let hecho = $state(false);
 
 	onMount(() => {
@@ -83,7 +83,7 @@
 
 		{#if !que}
 			<div class="grid grid-cols-2 gap-2.5">
-				{#each [['entrada', obra ? 'Diario de obra' : 'Entrada', NotebookPen], ['gasto', 'Gasto', ReceiptText], ['km', 'Kilómetros', Gauge], ...(obra?.tareas.length ? [['tarea', 'Tarea hecha', ListChecks]] : [])] as [id, t, I] (id)}
+				{#each [['entrada', obra ? 'Diario de obra' : 'Entrada', NotebookPen], ['pendiente', 'Avería / por reparar', CircleAlert], ['gasto', 'Gasto', ReceiptText], ['km', 'Kilómetros', Gauge], ...(obra?.tareas.length ? [['tarea', 'Tarea hecha', ListChecks]] : [])] as [id, t, I] (id)}
 					{@const C = I as typeof NotebookPen}
 					<button class="tarjeta flex h-28 flex-col items-start justify-between p-4 text-left transition active:scale-[0.98] {id === 'entrada' ? 'border-acento/50' : ''}" onclick={() => (que = id as typeof que)}>
 						<C size={26} class={id === 'entrada' ? 'text-acento' : 'text-texto-2'} />
@@ -114,6 +114,25 @@
 			/>
 		{:else if que === 'gasto'}
 			<MovimientoForm pagoPorDefecto={data.ajustes.pagoPorDefecto} accion="?/gasto" categorias={cat.categorias} hoy={data.hoy} vehiculoFijo={vehiculo.id} alGuardar={listo} />
+		{:else if que === 'pendiente'}
+			<form method="POST" action="?/pendiente" use:enhance={enviar({ alTerminar: listo })} class="flex flex-col gap-4">
+				<input type="hidden" name="vehiculoId" value={vehiculo.id} />
+				<!-- svelte-ignore a11y_autofocus -->
+				<label class="campo"><span>¿Qué hay que reparar?</span><input name="titulo" class="input h-12 text-lg" required autofocus placeholder="Fuga de aceite en el motor de arranque" /></label>
+				<fieldset class="grid grid-cols-3 gap-2">
+					{#each [['alta', 'Urgente', 'var(--vencido)'], ['media', 'Pronto', 'var(--urgente)'], ['baja', 'Sin prisa', 'var(--texto-3)']] as [v, t, c] (v)}
+						<label class="cursor-pointer rounded-lg border border-borde bg-superficie-2 p-3 text-center text-sm font-semibold has-[:checked]:border-acento has-[:checked]:bg-acento/10">
+							<input type="radio" name="prioridad" value={v} checked={v === 'media'} class="sr-only" /><span class="mr-1 inline-block h-2 w-2 rounded-full" style="background:{c}"></span>{t}
+						</label>
+					{/each}
+				</fieldset>
+				<div class="grid grid-cols-2 gap-3">
+					<label class="campo"><span>Km</span><input name="km" class="input" inputmode="numeric" value={data.km[vehiculo.id] ?? ''} /></label>
+					<label class="campo"><span>Fecha</span><input type="date" name="fechaDetectado" class="input" value={data.hoy} /></label>
+				</div>
+				<label class="campo"><span>Detalles</span><textarea name="detalle" class="input" rows="3" placeholder="Pieza, referencia, por dónde gotea…"></textarea></label>
+				<button class="btn btn-acento h-12">Apuntar</button>
+			</form>
 		{:else if que === 'km'}
 			<form method="POST" action="?/km" use:enhance={enviar({ alTerminar: listo })} class="flex flex-col gap-4">
 				<input type="hidden" name="vehiculoId" value={vehiculo.id} />
