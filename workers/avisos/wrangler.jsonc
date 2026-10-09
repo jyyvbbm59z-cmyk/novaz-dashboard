@@ -7,7 +7,7 @@
 	"workers_dev": false,
 	"triggers": {
 		// UTC. Avisos diarios a las 07:00 (08:00/09:00 en Madrid) y copia los domingos a las 03:00
-		"crons": ["0 7 * * *", "0 3 * * 0"]
+		"crons": ["0 7 * * *", "0 3 * * SUN"]
 	},
 	"d1_databases": [
 		{

@@ -53,7 +53,7 @@ Probar el worker de avisos contra la misma BD local:
 cd workers/avisos
 npx wrangler dev --test-scheduled --persist-to ../../apps/web/.wrangler/state
 curl "http://localhost:8787/__scheduled?cron=0+7+*+*+*"   # avisos
-curl "http://localhost:8787/__scheduled?cron=0+3+*+*+0"   # copia de seguridad
+curl "http://localhost:8787/__scheduled?cron=0+3+*+*+SUN" # copia de seguridad
 ```
 
 ### Cambiar la base de datos

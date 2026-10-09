@@ -25,7 +25,7 @@ export interface Env {
 
 const COPIAS_A_CONSERVAR = 12;
 export const CRON_AVISOS = '0 7 * * *';
-export const CRON_COPIA = '0 3 * * 0';
+export const CRON_COPIA = '0 3 * * SUN';
 
 
 export async function avisosDelDia(env: Env, ahora = new Date()) {
