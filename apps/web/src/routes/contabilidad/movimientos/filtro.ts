@@ -2,7 +2,7 @@ import * as s from '@novaz/core/schema';
 import { and, eq, isNull, like, type SQL } from 'drizzle-orm';
 
 export function filtroMovimientos(url: URL, hoy: string) {
-	const anio = url.searchParams.get('anio') ?? hoy.slice(0, 4);
+	const anio = url.searchParams.get('ejercicio') ?? hoy.slice(0, 4);
 	const mes = url.searchParams.get('mes');
 	const categoria = Number(url.searchParams.get('categoria')) || null;
 	const vehiculo = url.searchParams.get('vehiculo');

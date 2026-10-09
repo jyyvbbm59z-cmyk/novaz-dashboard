@@ -7,7 +7,7 @@ export const load = async ({ locals }) => {
 	const mes = hoy.slice(0, 7);
 	const anio = hoy.slice(0, 4);
 
-	const [restas, entradas, gastoMes, gastoAnio, porCategoria] = await db.batch([
+	const [restas, entradas, gastoMes, gastoAnio, porCategoria] = await Promise.all([
 		db
 			.select({ r: s.restauraciones, vehiculo: s.vehiculos.alias, portada: s.adjuntos.clave })
 			.from(s.restauraciones)

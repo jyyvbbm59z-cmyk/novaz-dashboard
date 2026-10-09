@@ -11,6 +11,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { asc, desc, eq } from 'drizzle-orm';
 import {
 	borrarEntrada,
+	borrarMovimiento,
 	borrarVencimiento,
 	crearRestauracion,
 	guardarEntrada,
@@ -27,7 +28,7 @@ export const load = async ({ params, locals }) => {
 	const v = await db.select().from(s.vehiculos).where(eq(s.vehiculos.id, id)).get();
 	if (!v) error(404, 'Vehículo no encontrado');
 
-	const [lecturas, entradas, vencs, movs, adjuntos, restas, planes] = await db.batch([
+	const [lecturas, entradas, vencs, movs, adjuntos, restas, planes] = await Promise.all([
 		db.select().from(s.lecturasKm).where(eq(s.lecturasKm.vehiculoId, id)).orderBy(desc(s.lecturasKm.fecha), desc(s.lecturasKm.km)),
 		db
 			.select({ e: s.entradas, fase: s.fases.nombre, plan: s.planesMantenimiento.nombre })
@@ -170,7 +171,7 @@ export const actions = {
 	}),
 
 	borrarGasto: accion(async ({ request, locals }) => {
-		await locals.db.delete(s.movimientos).where(eq(s.movimientos.id, leer(await request.formData()).id('id')));
+		await borrarMovimiento(locals, leer(await request.formData()).id('id'));
 		return { mensaje: 'Movimiento borrado' };
 	}),
 

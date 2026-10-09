@@ -15,6 +15,27 @@
       "when": 1791548872615,
       "tag": "0001_datos_iniciales",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791553256324,
+      "tag": "0002_contabilidad",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791553256897,
+      "tag": "0003_plan_de_cuentas",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791554309455,
+      "tag": "0004_cuentas_iva",
+      "breakpoints": true
     }
   ]
 }

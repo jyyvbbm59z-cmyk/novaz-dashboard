@@ -72,6 +72,26 @@
 		{#if !data.telegramConfigurado}<p class="text-xs text-texto-3">El bot aún no está configurado en este entorno.</p>{/if}
 	</form>
 
+	<!-- Contabilidad -->
+	<form method="POST" action="?/contabilidad" use:enhance={enviar({ reset: false })} class="tarjeta flex flex-col gap-4 p-5 lg:col-span-2">
+		<div>
+			<h2 class="text-2xl">Contabilidad</h2>
+			<p class="text-sm text-texto-3">Cada gasto o ingreso genera su asiento. El IVA y la cuenta salen de la categoría (editable en Categorías).</p>
+		</div>
+		<div class="grid gap-3 sm:grid-cols-2">
+			<label class="campo">
+				<span>Los gastos se pagan por defecto con</span>
+				<select name="pagoPorDefecto" class="input" value={a.pagoPorDefecto}>
+					<option value="banco">Banco de la empresa (572)</option>
+					<option value="caja">Caja (570)</option>
+					<option value="socio">Mi bolsillo: la empresa me lo debe (551)</option>
+				</select>
+			</label>
+			<label class="campo"><span>Impuesto de sociedades (%)</span><input name="tipoImpuestoSociedades" class="input" inputmode="decimal" value={a.tipoImpuestoSociedades} /></label>
+		</div>
+		<button class="btn btn-acento w-fit">Guardar</button>
+	</form>
+
 	<!-- Momentos -->
 	<form method="POST" action="?/momentos" use:enhance={enviar({ reset: false })} class="tarjeta flex flex-col gap-4 p-5 lg:col-span-2">
 		<div class="flex flex-wrap items-center justify-between gap-3">

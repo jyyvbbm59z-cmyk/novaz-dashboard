@@ -5,3 +5,5 @@ export * from './consultas';
 export * from './dinero';
 export * from './fechas';
 export * from './copia';
+export * from './contabilidad';
+export * from './libros';

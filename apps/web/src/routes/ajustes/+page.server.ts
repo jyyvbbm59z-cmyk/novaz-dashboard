@@ -56,6 +56,16 @@ export const actions = {
 		return { mensaje: 'Mensaje enviado. Mira Telegram' };
 	}),
 
+	contabilidad: accion(async ({ request, locals }) => {
+		const f = leer(await request.formData());
+		const pago = f.texto('pagoPorDefecto');
+		await guardar(locals.db, {
+			pagoPorDefecto: pago === 'caja' || pago === 'socio' ? pago : 'banco',
+			tipoImpuestoSociedades: Math.min(Math.max(f.decimal('tipoImpuestoSociedades') ?? 25, 0), 100)
+		});
+		return { mensaje: 'Guardado' };
+	}),
+
 	momentos: accion(async ({ request, locals }) => {
 		const fd = await request.formData();
 		const f = leer(fd);

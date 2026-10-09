@@ -18,7 +18,7 @@
 <div class="mb-5 flex items-end justify-between gap-4">
 	<div>
 		<p class="etiqueta">{data.catalogo.contactos.length} contactos</p>
-		<h1 class="text-4xl sm:text-5xl">Contactos</h1>
+		<h1 class="titulo-pagina">Contactos</h1>
 	</div>
 	<button class="btn btn-acento" onclick={() => ((edit = null), (hoja = true))}><Plus size={18} /> Nuevo</button>
 </div>

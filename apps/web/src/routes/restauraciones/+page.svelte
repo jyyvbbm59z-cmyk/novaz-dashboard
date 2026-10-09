@@ -20,7 +20,7 @@
 <div class="mb-5 flex items-end justify-between gap-4">
 	<div>
 		<p class="etiqueta">{data.restauraciones.length - terminadas} en marcha · {terminadas} terminadas</p>
-		<h1 class="text-4xl sm:text-5xl">Restauraciones</h1>
+		<h1 class="titulo-pagina">Restauraciones</h1>
 	</div>
 	<button class="btn btn-acento" onclick={() => (hNueva = true)}><Plus size={18} /> Nueva</button>
 </div>

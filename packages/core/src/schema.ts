@@ -8,6 +8,9 @@ const id = () => integer('id').primaryKey({ autoIncrement: true });
 const creado = () => text('creado').notNull().default(sql`(datetime('now'))`);
 const bool = (nombre: string) => integer(nombre, { mode: 'boolean' });
 
+export const FORMAS_PAGO = ['banco', 'caja', 'socio'] as const;
+export type FormaPago = (typeof FORMAS_PAGO)[number];
+
 // ─── Configuración ────────────────────────────────────────────────────────────
 
 export const tiposVehiculo = sqliteTable('tipos_vehiculo', {
@@ -32,8 +35,10 @@ export const categorias = sqliteTable('categorias', {
 	nombre: text('nombre').notNull(),
 	tipo: text('tipo', { enum: ['gasto', 'ingreso'] }).notNull().default('gasto'),
 	color: text('color').notNull().default('#8a8f98'),
-	/** Reservado para el módulo de contabilidad. */
+	/** Cuenta del PGC donde se contabiliza (p. ej. 602, 705). */
 	cuentaContable: text('cuenta_contable'),
+	/** IVA por defecto (%) de los movimientos de esta categoría. */
+	ivaPct: integer('iva_pct').notNull().default(21),
 	orden: integer('orden').notNull().default(0)
 });
 
@@ -241,12 +246,71 @@ export const movimientos = sqliteTable(
 		vencimientoId: integer('vencimiento_id').references(() => vencimientos.id, { onDelete: 'set null' }),
 		restauracionId: integer('restauracion_id').references(() => restauraciones.id, { onDelete: 'set null' }),
 		notas: text('notas'),
+		/** IVA incluido en el importe (%). */
+		ivaPct: integer('iva_pct').notNull().default(21),
+		/** De dónde sale o adónde entra el dinero. */
+		pago: text('pago', { enum: FORMAS_PAGO }).notNull().default('banco'),
+		/** Cuenta contable propia; si es null, la de la categoría. */
+		cuentaContable: text('cuenta_contable'),
 		creado: creado()
 	},
 	(t) => [index('movimientos_fecha_idx').on(t.fecha), index('movimientos_vehiculo_idx').on(t.vehiculoId)]
 );
 
+// ─── Contabilidad ─────────────────────────────────────────────────────────────
+
+/** Plan de cuentas (PGC PYMES simplificado). Admite subcuentas libres: 5720001… */
+export const cuentas = sqliteTable('cuentas', {
+	codigo: text('codigo').primaryKey(),
+	nombre: text('nombre').notNull(),
+	descripcion: text('descripcion')
+});
+
+/** Asientos manuales. Los de movimientos, amortizaciones e IVA se derivan al vuelo. */
+export const asientos = sqliteTable(
+	'asientos',
+	{
+		id: id(),
+		fecha: text('fecha').notNull(),
+		concepto: text('concepto').notNull(),
+		notas: text('notas'),
+		creado: creado()
+	},
+	(t) => [index('asientos_fecha_idx').on(t.fecha)]
+);
+
+export const apuntes = sqliteTable(
+	'apuntes',
+	{
+		id: id(),
+		asientoId: integer('asiento_id')
+			.notNull()
+			.references(() => asientos.id, { onDelete: 'cascade' }),
+		cuenta: text('cuenta').notNull(),
+		debeCent: integer('debe_cent').notNull().default(0),
+		haberCent: integer('haber_cent').notNull().default(0),
+		orden: integer('orden').notNull().default(0)
+	},
+	(t) => [index('apuntes_asiento_idx').on(t.asientoId), index('apuntes_cuenta_idx').on(t.cuenta)]
+);
+
+/** Bienes amortizables del taller (elevador, compresor, furgoneta…). */
+export const inmovilizado = sqliteTable('inmovilizado', {
+	id: id(),
+	nombre: text('nombre').notNull(),
+	cuenta: text('cuenta').notNull().default('213'),
+	fechaAlta: text('fecha_alta').notNull(),
+	valorCent: integer('valor_cent').notNull(),
+	valorResidualCent: integer('valor_residual_cent').notNull().default(0),
+	vidaUtilMeses: integer('vida_util_meses').notNull().default(120),
+	fechaBaja: text('fecha_baja'),
+	movimientoId: integer('movimiento_id').references(() => movimientos.id, { onDelete: 'set null' }),
+	notas: text('notas'),
+	creado: creado()
+});
+
 // ─── Archivos ─────────────────────────────────────────────────────────────────
+
 
 export const ENTIDADES_ADJUNTO = ['vehiculo', 'entrada', 'vencimiento', 'movimiento', 'restauracion', 'ajuste'] as const;
 export type EntidadAdjunto = (typeof ENTIDADES_ADJUNTO)[number];
@@ -292,3 +356,7 @@ export type Tarea = typeof tareas.$inferSelect;
 export type Entrada = typeof entradas.$inferSelect;
 export type Movimiento = typeof movimientos.$inferSelect;
 export type Adjunto = typeof adjuntos.$inferSelect;
+export type Cuenta = typeof cuentas.$inferSelect;
+export type AsientoManual = typeof asientos.$inferSelect;
+export type ApunteManual = typeof apuntes.$inferSelect;
+export type Inmovilizado = typeof inmovilizado.$inferSelect;

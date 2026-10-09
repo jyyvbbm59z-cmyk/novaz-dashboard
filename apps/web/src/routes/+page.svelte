@@ -20,7 +20,7 @@
 
 <header class="mb-6">
 	<p class="etiqueta first-letter:uppercase">{fecha}</p>
-	<h1 class="text-4xl sm:text-5xl">{saludo}</h1>
+	<h1 class="titulo-pagina">{saludo}</h1>
 </header>
 
 <div class="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
@@ -58,7 +58,7 @@
 	<section>
 		<div class="mb-3 flex items-baseline justify-between">
 			<h2 class="text-2xl">Gasto</h2>
-			<a href="/gastos" class="text-xs text-texto-3 hover:text-texto">Ver todo →</a>
+			<a href="/contabilidad/movimientos" class="text-xs text-texto-3 hover:text-texto">Ver todo →</a>
 		</div>
 		<div class="tarjeta p-5">
 			<div class="grid grid-cols-2 gap-4">

@@ -6,6 +6,7 @@
 	import Galeria from '$comp/Galeria.svelte';
 	import Hoja from '$comp/Hoja.svelte';
 	import MovimientoForm from '$comp/MovimientoForm.svelte';
+	import Pestanas from '$comp/Pestanas.svelte';
 	import Placa from '$comp/Placa.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import { accion, enviar } from '$lib/enviar';
@@ -82,7 +83,7 @@
 			<Placa matricula={v.matricula} />
 			<span class="text-sm text-texto-3">{v.alias}</span>
 		</div>
-		<h1 class="text-4xl sm:text-5xl">{r.nombre}</h1>
+		<h1 class="titulo-pagina">{r.nombre}</h1>
 		{#if r.descripcion}<p class="mt-2 max-w-2xl text-sm whitespace-pre-line text-texto-2">{r.descripcion}</p>{/if}
 	</div>
 	<div class="flex gap-2">
@@ -127,15 +128,20 @@
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((gastoEdit = null), (hGasto = true))}><ReceiptText size={18} /><span class="text-xs sm:text-sm">Gasto</span></button>
 </div>
 
-<nav class="pestanas sticky top-[calc(env(safe-area-inset-top)+3.4rem)] z-20 -mx-4 mt-6 bg-fondo/90 px-4 backdrop-blur lg:top-0 sm:mx-0 sm:px-0">
-	{#each PESTANAS as [id, t] (id)}
-		<a href="?pestana={id}" data-sveltekit-replacestate data-sveltekit-noscroll class="pestana" aria-current={pestana === id ? 'page' : undefined}>
-			{t}{#if id === 'diario' && data.entradas.length}<span class="ml-1.5 text-texto-3">{data.entradas.length}</span>{/if}
-		</a>
-	{/each}
-</nav>
+<div class="mt-6">
+	<Pestanas
+		fija
+		consulta
+		pestanas={PESTANAS.map(([id, t]) => ({
+			href: `?pestana=${id}`,
+			texto: t,
+			activa: pestana === id,
+			cuenta: id === 'diario' ? data.entradas.length : id === 'gastos' ? data.movimientos.length : id === 'fotos' ? data.adjuntos.length : null
+		}))}
+	/>
+</div>
 
-<div class="mt-5">
+<div class="mt-5 min-h-[70dvh]">
 	{#if pestana === 'fases'}
 		<div class="flex flex-col gap-3 lg:grid lg:auto-cols-[19rem] lg:grid-flow-col lg:items-start lg:overflow-x-auto lg:pb-4">
 			{#each data.fases as f, i (f.id)}
@@ -295,7 +301,7 @@
 </Hoja>
 
 <Hoja bind:abierta={hGasto} titulo={gastoEdit ? 'Editar gasto' : 'Nuevo gasto'}>
-	<MovimientoForm categorias={data.catalogo.categorias} hoy={data.hoy} movimiento={gastoEdit} alGuardar={() => (hGasto = false)} />
+	<MovimientoForm pagoPorDefecto={data.ajustes.pagoPorDefecto} categorias={data.catalogo.categorias} hoy={data.hoy} movimiento={gastoEdit} alGuardar={() => (hGasto = false)} />
 </Hoja>
 
 <Hoja bind:abierta={hDatos} titulo="Restauración">

@@ -106,7 +106,7 @@
 				alGuardar={listo}
 			/>
 		{:else if que === 'gasto'}
-			<MovimientoForm accion="?/gasto" categorias={cat.categorias} hoy={data.hoy} vehiculoFijo={vehiculo.id} alGuardar={listo} />
+			<MovimientoForm pagoPorDefecto={data.ajustes.pagoPorDefecto} accion="?/gasto" categorias={cat.categorias} hoy={data.hoy} vehiculoFijo={vehiculo.id} alGuardar={listo} />
 		{:else if que === 'km'}
 			<form method="POST" action="?/km" use:enhance={enviar({ alTerminar: listo })} class="flex flex-col gap-4">
 				<input type="hidden" name="vehiculoId" value={vehiculo.id} />

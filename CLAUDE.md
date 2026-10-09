@@ -13,3 +13,5 @@
 - Lógica compartida de escritura en `apps/web/src/lib/server/acciones.ts`.
 - Antes de dar algo por terminado: `npm test`, `npm run check`, `npm run build`.
 - Cambios de esquema: editar `schema.ts` → `npm run db:generate` → `npm run db:migrate:local`.
+- ⚠️ **No uses joins dentro de `db.batch()`**: el driver D1 devuelve objetos por nombre de columna y las columnas
+  repetidas (`id`, `nombre`…) se pisan entre tablas. Para consultas con join usa `Promise.all` (modo raw, correcto).

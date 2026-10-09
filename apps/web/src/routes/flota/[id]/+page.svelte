@@ -7,6 +7,7 @@
 	import Icono from '$comp/Icono.svelte';
 	import MovimientoForm from '$comp/MovimientoForm.svelte';
 	import Nivel from '$comp/Nivel.svelte';
+	import Pestanas from '$comp/Pestanas.svelte';
 	import Placa from '$comp/Placa.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import VencimientoForm from '$comp/VencimientoForm.svelte';
@@ -158,13 +159,20 @@
 </div>
 
 <!-- Pestañas -->
-<nav class="pestanas sticky top-[calc(env(safe-area-inset-top)+3.4rem)] z-20 -mx-4 mt-6 bg-fondo/90 px-4 backdrop-blur lg:top-0 sm:mx-0 sm:px-0">
-	{#each PESTANAS as [id, t] (id)}
-		<a href="?pestana={id}" data-sveltekit-replacestate data-sveltekit-noscroll class="pestana" aria-current={pestana === id ? 'page' : undefined}>{t}</a>
-	{/each}
-</nav>
+<div class="mt-6">
+	<Pestanas
+		fija
+		consulta
+		pestanas={PESTANAS.map(([id, t]) => ({
+			href: `?pestana=${id}`,
+			texto: t,
+			activa: pestana === id,
+			cuenta: id === 'historial' ? data.entradas.length : id === 'fotos' ? data.adjuntos.length : id === 'papeles' ? alertasVeh.filter((a) => a.tipo === 'vencimiento').length || null : null
+		}))}
+	/>
+</div>
 
-<div class="mt-5">
+<div class="mt-5 min-h-[70dvh]">
 	{#if pestana === 'historial'}
 		{#if !data.entradas.length}
 			<div class="vacio">Sin entradas todavía. Registra la primera: un mantenimiento, una nota o el diario de obra.</div>
@@ -390,7 +398,7 @@
 </Hoja>
 
 <Hoja bind:abierta={hGasto} titulo={gastoEdit ? 'Editar movimiento' : 'Nuevo movimiento'}>
-	<MovimientoForm categorias={cat.categorias} hoy={data.hoy} movimiento={gastoEdit} alGuardar={() => (hGasto = false)} />
+	<MovimientoForm pagoPorDefecto={data.ajustes.pagoPorDefecto} categorias={cat.categorias} hoy={data.hoy} movimiento={gastoEdit} alGuardar={() => (hGasto = false)} />
 </Hoja>
 
 <Hoja bind:abierta={hObra} titulo="Nueva restauración">

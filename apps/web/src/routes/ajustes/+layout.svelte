@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import Pestanas from '$comp/Pestanas.svelte';
 	let { children } = $props();
 	const SECCIONES = [
 		['/ajustes', 'General'],
@@ -13,10 +14,8 @@
 </script>
 
 <p class="etiqueta">Configuración</p>
-<h1 class="mb-5 text-4xl sm:text-5xl">Ajustes</h1>
-<nav class="pestanas -mx-4 mb-6 px-4 sm:mx-0 sm:px-0">
-	{#each SECCIONES as [href, t] (href)}
-		<a {href} class="pestana" aria-current={page.url.pathname === href ? 'page' : undefined}>{t}</a>
-	{/each}
-</nav>
-{@render children()}
+<h1 class="titulo-pagina mb-5">Ajustes</h1>
+<Pestanas fija pestanas={SECCIONES.map(([href, texto]) => ({ href, texto, activa: page.url.pathname === href }))} />
+<div class="mt-6 min-h-[60dvh]">
+	{@render children()}
+</div>

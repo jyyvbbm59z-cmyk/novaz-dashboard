@@ -31,7 +31,7 @@
 <div class="mb-5 flex items-end justify-between gap-4">
 	<div>
 		<p class="etiqueta">{lista.length} vehículos</p>
-		<h1 class="text-4xl sm:text-5xl">Flota</h1>
+		<h1 class="titulo-pagina">Flota</h1>
 	</div>
 	<a href="/flota/nuevo" class="btn btn-acento"><Plus size={18} /> <span class="hidden sm:inline">Nuevo vehículo</span><span class="sm:hidden">Nuevo</span></a>
 </div>

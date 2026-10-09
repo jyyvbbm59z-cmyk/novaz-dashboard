@@ -1,13 +1,27 @@
 // Operaciones de escritura compartidas por varias páginas (ficha, captura rápida, restauración…).
-import { sumarMeses } from '@novaz/core';
+import { desglosarIva, sumarMeses } from '@novaz/core';
 import * as s from '@novaz/core/schema';
-import { CLASES_ENTRADA, type ClaseEntrada } from '@novaz/core/schema';
+import { CLASES_ENTRADA, FORMAS_PAGO, type ClaseEntrada, type FormaPago } from '@novaz/core/schema';
 import { and, eq } from 'drizzle-orm';
 import { borrarAdjuntosDe } from './adjuntos';
 import { registrarKm } from './datos';
 import { ErrorFormulario, leer } from './form';
 
 type Locals = App.Locals;
+
+/** IVA y forma de pago: lo indicado en el formulario o, si no, los defectos (categoría / ajustes). */
+async function datosContables(locals: Locals, categoriaId: number | null, f: ReturnType<typeof leer>) {
+	let ivaPct = f.entero('ivaPct');
+	if (ivaPct == null) {
+		const cat = categoriaId ? await locals.db.select({ iva: s.categorias.ivaPct }).from(s.categorias).where(eq(s.categorias.id, categoriaId)).get() : null;
+		ivaPct = cat?.iva ?? 21;
+	}
+	const pago = f.texto('pago');
+	return {
+		ivaPct: Math.min(Math.max(ivaPct, 0), 100),
+		pago: (FORMAS_PAGO.includes(pago as FormaPago) ? pago : locals.ajustes.pagoPorDefecto) as FormaPago
+	};
+}
 
 export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: FormData) {
 	const { db, hoy } = locals;
@@ -47,11 +61,13 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 
 	const importe = f.euros('importe');
 	if (importe && !id) {
+		const categoriaId = f.idOpcional('categoriaId');
 		await db.insert(s.movimientos).values({
+			...(await datosContables(locals, categoriaId, f)),
 			fecha,
 			tipo: 'gasto',
 			importeCent: importe,
-			categoriaId: f.idOpcional('categoriaId'),
+			categoriaId,
 			concepto: titulo,
 			proveedor: f.texto('proveedor'),
 			vehiculoId,
@@ -64,33 +80,71 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 
 export async function borrarEntrada(locals: Locals, bucket: R2Bucket, id: number) {
 	await borrarAdjuntosDe(locals.db, bucket, 'entrada', id);
-	await locals.db.delete(s.movimientos).where(eq(s.movimientos.entradaId, id));
+	const movs = await locals.db.select({ id: s.movimientos.id }).from(s.movimientos).where(eq(s.movimientos.entradaId, id));
+	for (const m of movs) await borrarMovimiento(locals, m.id);
 	await locals.db.delete(s.entradas).where(eq(s.entradas.id, id));
 }
 
 export async function guardarMovimiento(locals: Locals, fd: FormData, fijo: { vehiculoId?: number | null; restauracionId?: number | null } = {}) {
 	const f = leer(fd);
+	const { db } = locals;
 	const id = f.idOpcional('id');
 	const importe = f.euros('importe');
 	if (importe == null || importe === 0) throw new ErrorFormulario('Indica un importe');
 	const tipo = f.texto('tipo') === 'ingreso' ? 'ingreso' : 'gasto';
+	const categoriaId = f.idOpcional('categoriaId');
+	const esInmovilizado = tipo === 'gasto' && f.bool('inmovilizado');
+	const cuentaInmov = f.texto('cuentaInmovilizado') ?? '213';
+	const cuentaPropia = f.texto('cuentaContable');
+	if (cuentaPropia && !/^\d{3,10}$/.test(cuentaPropia)) throw new ErrorFormulario('La cuenta contable debe ser un número (p. ej. 602)');
+
 	const valores = {
+		...(await datosContables(locals, categoriaId, f)),
 		fecha: f.fecha('fecha') ?? locals.hoy,
 		tipo: tipo as 'gasto' | 'ingreso',
 		importeCent: Math.abs(importe),
-		categoriaId: f.idOpcional('categoriaId'),
+		categoriaId,
 		concepto: f.obligatorio('concepto', 'concepto'),
 		proveedor: f.texto('proveedor'),
 		notas: f.texto('notas'),
+		cuentaContable: esInmovilizado ? cuentaInmov : cuentaPropia,
 		vehiculoId: fijo.vehiculoId !== undefined ? fijo.vehiculoId : f.idOpcional('vehiculoId'),
 		restauracionId: fijo.restauracionId !== undefined ? fijo.restauracionId : f.idOpcional('restauracionId')
 	};
+
+	let movimientoId: number;
 	if (id) {
-		await locals.db.update(s.movimientos).set(valores).where(eq(s.movimientos.id, id));
-		return id;
+		await db.update(s.movimientos).set(valores).where(eq(s.movimientos.id, id));
+		movimientoId = id;
+	} else {
+		const [m] = await db.insert(s.movimientos).values(valores).returning({ id: s.movimientos.id });
+		movimientoId = m.id;
 	}
-	const [m] = await locals.db.insert(s.movimientos).values(valores).returning({ id: s.movimientos.id });
-	return m.id;
+
+	// Inmovilizado ligado al movimiento: se da de alta por su base (sin IVA)
+	const bien = await db.select().from(s.inmovilizado).where(eq(s.inmovilizado.movimientoId, movimientoId)).get();
+	if (esInmovilizado) {
+		const { base } = desglosarIva(valores.importeCent, valores.ivaPct);
+		const datos = {
+			nombre: valores.concepto,
+			cuenta: cuentaInmov,
+			fechaAlta: valores.fecha,
+			valorCent: base,
+			vidaUtilMeses: Math.max(1, Math.round((f.decimal('vidaUtilAnios') ?? 10) * 12)),
+			movimientoId
+		};
+		if (bien) await db.update(s.inmovilizado).set(datos).where(eq(s.inmovilizado.id, bien.id));
+		else await db.insert(s.inmovilizado).values(datos);
+	} else if (bien) {
+		await db.delete(s.inmovilizado).where(eq(s.inmovilizado.id, bien.id));
+	}
+	return movimientoId;
+}
+
+/** Borra un movimiento y, si lo había, el inmovilizado que generó. */
+export async function borrarMovimiento(locals: Locals, id: number) {
+	await locals.db.delete(s.inmovilizado).where(eq(s.inmovilizado.movimientoId, id));
+	await locals.db.delete(s.movimientos).where(eq(s.movimientos.id, id));
 }
 
 export async function guardarVencimiento(locals: Locals, vehiculoId: number, fd: FormData) {
@@ -126,6 +180,7 @@ export async function guardarVencimiento(locals: Locals, vehiculoId: number, fd:
 	const [v] = await locals.db.insert(s.vencimientos).values(valores).returning({ id: s.vencimientos.id });
 	if (valores.importeCent && f.bool('registrarGasto')) {
 		await locals.db.insert(s.movimientos).values({
+			...(await datosContables(locals, tipo.categoriaId, f)),
 			fecha: fechaInicio ?? locals.hoy,
 			tipo: 'gasto',
 			importeCent: valores.importeCent,

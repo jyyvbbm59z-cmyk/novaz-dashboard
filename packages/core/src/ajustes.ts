@@ -35,6 +35,10 @@ export interface Ajustes {
 	resumenSemanal: boolean;
 	momentosActivos: boolean;
 	momentos: Record<EventoMomento, Momento>;
+	/** De dónde sale el dinero por defecto al registrar un gasto. */
+	pagoPorDefecto: 'banco' | 'caja' | 'socio';
+	/** Tipo del impuesto de sociedades para la estimación (%). */
+	tipoImpuestoSociedades: number;
 }
 
 export const AJUSTES_POR_DEFECTO: Ajustes = {
@@ -47,6 +51,8 @@ export const AJUSTES_POR_DEFECTO: Ajustes = {
 	telegramChatId: null,
 	resumenSemanal: true,
 	momentosActivos: true,
+	pagoPorDefecto: 'banco',
+	tipoImpuestoSociedades: 25,
 	momentos: {
 		tareaHecha: { efecto: 'pulso', sonido: 'clic' },
 		faseCompletada: { efecto: 'confeti', sonido: 'campana' },

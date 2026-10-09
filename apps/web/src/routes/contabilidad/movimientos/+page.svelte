@@ -4,7 +4,7 @@
 	import Hoja from '$comp/Hoja.svelte';
 	import MovimientoForm from '$comp/MovimientoForm.svelte';
 	import { accion } from '$lib/enviar';
-	import { euros, fechaLarga } from '@novaz/core';
+	import { ETIQUETA_PAGO, euros, fechaLarga } from '@novaz/core';
 	import type { Movimiento } from '@novaz/core/schema';
 	import { Download, Pencil, Plus, Trash2 } from '@lucide/svelte';
 
@@ -26,28 +26,14 @@
 	async function borrar(id: number) {
 		if (confirm('¿Borrar este movimiento?')) await accion('?/borrar', { id });
 	}
-	const csv = $derived(`/gastos/csv${page.url.search}`);
+	const csv = $derived(`/contabilidad/movimientos/csv${page.url.search}`);
 	const balance = $derived(data.totales.ingreso - data.totales.gasto);
 </script>
 
-<svelte:head><title>Gastos · {data.ajustes.nombreTaller}</title></svelte:head>
-
-<div class="mb-5 flex items-end justify-between gap-4">
-	<div>
-		<p class="etiqueta">{f.mes ? `${MESES[Number(f.mes) - 1]} ${f.anio}` : f.anio}</p>
-		<h1 class="text-4xl sm:text-5xl">Gastos</h1>
-	</div>
-	<div class="flex gap-2">
-		<a href={csv} class="btn btn-icono sm:w-auto sm:px-4" aria-label="Exportar CSV" download><Download size={18} /><span class="hidden sm:inline">CSV</span></a>
-		<button class="btn btn-acento" onclick={() => ((edit = null), (hMov = true))}><Plus size={18} /> Nuevo</button>
-	</div>
-</div>
+<svelte:head><title>Movimientos · {data.ajustes.nombreTaller}</title></svelte:head>
 
 <!-- Filtros -->
 <div class="mb-5 flex flex-wrap gap-2">
-	<select class="input h-9 w-auto text-sm" value={f.anio} onchange={(e) => filtrar('anio', e.currentTarget.value)}>
-		{#each data.anios as a (a)}<option>{a}</option>{/each}
-	</select>
 	<select class="input h-9 w-auto text-sm" value={f.tipo ?? ''} onchange={(e) => filtrar('tipo', e.currentTarget.value)}>
 		<option value="">Gastos e ingresos</option><option value="gasto">Solo gastos</option><option value="ingreso">Solo ingresos</option>
 	</select>
@@ -61,6 +47,10 @@
 		{#each data.vehiculosMenu as v (v.id)}<option value={String(v.id)}>{v.alias}</option>{/each}
 	</select>
 	{#if f.mes}<button class="chip h-9 border-acento px-3" onclick={() => filtrar('mes', null)}>{MESES[Number(f.mes) - 1]} ✕</button>{/if}
+	<span class="ml-auto flex gap-2">
+		<a href={csv} class="btn btn-icono h-9 sm:w-auto sm:px-3" aria-label="Exportar CSV" download><Download size={16} /><span class="hidden sm:inline">CSV</span></a>
+		<button class="btn btn-acento h-9" onclick={() => ((edit = null), (hMov = true))}><Plus size={16} /> Nuevo</button>
+	</span>
 </div>
 
 <!-- Resumen -->
@@ -72,7 +62,7 @@
 
 <!-- Gasto por mes: una serie, barras finas; clic = filtrar el mes -->
 <section class="tarjeta mt-3 p-4 sm:p-5">
-	<p class="etiqueta mb-4">Gasto por mes · {f.anio}</p>
+	<p class="etiqueta mb-4">Gasto por mes · {f.anio}{f.mes ? '' : ' · toca un mes para filtrar'}</p>
 	<div class="relative">
 		<div class="grid h-36 grid-cols-12 items-end gap-1.5 border-b border-borde sm:gap-3">
 			{#each data.meses as m, i (m.mes)}
@@ -121,7 +111,7 @@
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-sm font-medium">{m.concepto}</p>
 						<p class="truncate text-xs text-texto-3">
-							{fechaLarga(m.fecha)} · {m.categoria?.nombre ?? 'Sin categoría'}{m.vehiculo ? ` · ` : ''}{#if m.vehiculo}<a href="/flota/{m.vehiculoId}?pestana=gastos" class="hover:text-texto">{m.vehiculo}</a>{/if}{m.proveedor ? ` · ${m.proveedor}` : ''}
+							{fechaLarga(m.fecha)} · {m.categoria?.nombre ?? 'Sin categoría'} · {ETIQUETA_PAGO[m.pago]}{m.ivaPct ? ` · IVA ${m.ivaPct}%` : ''}{m.vehiculo ? ` · ` : ''}{#if m.vehiculo}<a href="/flota/{m.vehiculoId}?pestana=gastos" class="hover:text-texto">{m.vehiculo}</a>{/if}{m.proveedor ? ` · ${m.proveedor}` : ''}
 						</p>
 					</div>
 					<span class="cifra text-lg {m.tipo === 'ingreso' ? 'nivel-ok' : ''}">{m.tipo === 'ingreso' ? '+' : '−'}{euros(m.importeCent)}</span>
@@ -136,5 +126,5 @@
 </section>
 
 <Hoja bind:abierta={hMov} titulo={edit ? 'Editar movimiento' : 'Nuevo movimiento'}>
-	<MovimientoForm accion="?/guardar" categorias={data.catalogo.categorias} hoy={data.hoy} movimiento={edit} vehiculos={data.vehiculosMenu} alGuardar={() => (hMov = false)} />
+	<MovimientoForm accion="?/guardar" categorias={data.catalogo.categorias} hoy={data.hoy} movimiento={edit} vehiculos={data.vehiculosMenu} cuentas={data.cuentas} inmovilizado={edit ? data.bienes.find((b) => b.movimientoId === edit!.id) : null} pagoPorDefecto={data.ajustes.pagoPorDefecto} alGuardar={() => (hMov = false)} />
 </Hoja>

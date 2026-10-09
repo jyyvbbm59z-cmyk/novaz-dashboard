@@ -6,7 +6,7 @@
 	const iconos = { ok: CircleCheck, error: CircleAlert, info: Info };
 </script>
 
-<div class="pointer-events-none fixed inset-x-0 top-3 z-[100] flex flex-col items-center gap-2 px-4" aria-live="polite">
+<div class="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[100] flex flex-col items-center gap-2 px-4" aria-live="polite">
 	{#each avisos as a (a.id)}
 		{@const I = iconos[a.tipo]}
 		<div

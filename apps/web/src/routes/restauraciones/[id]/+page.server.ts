@@ -2,7 +2,7 @@ import { diasEntre } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { error, redirect } from '@sveltejs/kit';
 import { and, asc, desc, eq, inArray, max, or } from 'drizzle-orm';
-import { borrarEntrada, guardarEntrada, guardarMovimiento, marcarTarea } from '$lib/server/acciones';
+import { borrarEntrada, borrarMovimiento, guardarEntrada, guardarMovimiento, marcarTarea } from '$lib/server/acciones';
 import { borrarAdjuntos, borrarAdjuntosDe } from '$lib/server/adjuntos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
@@ -12,7 +12,7 @@ export const load = async ({ params, locals }) => {
 	const r = await db.select().from(s.restauraciones).where(eq(s.restauraciones.id, id)).get();
 	if (!r) error(404, 'Restauración no encontrada');
 
-	const [vehiculo, fases, entradas, movs] = await db.batch([
+	const [vehiculo, fases, entradas, movs] = await Promise.all([
 		db.select().from(s.vehiculos).where(eq(s.vehiculos.id, r.vehiculoId)),
 		db.select().from(s.fases).where(eq(s.fases.restauracionId, id)).orderBy(asc(s.fases.orden), asc(s.fases.id)),
 		db
@@ -31,7 +31,7 @@ export const load = async ({ params, locals }) => {
 
 	const faseIds = fases.map((f) => f.id);
 	const entradaIds = entradas.map((x) => x.e.id);
-	const [tareas, adjuntos] = await db.batch([
+	const [tareas, adjuntos] = await Promise.all([
 		db
 			.select()
 			.from(s.tareas)
@@ -167,7 +167,7 @@ export const actions = {
 	}),
 
 	borrarGasto: accion(async ({ request, locals }) => {
-		await locals.db.delete(s.movimientos).where(eq(s.movimientos.id, leer(await request.formData()).id('id')));
+		await borrarMovimiento(locals, leer(await request.formData()).id('id'));
 		return { mensaje: 'Gasto borrado' };
 	}),
 

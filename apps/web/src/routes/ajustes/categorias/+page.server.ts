@@ -1,6 +1,8 @@
 import * as s from '@novaz/core/schema';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
+
+export const load = async ({ locals }) => ({ cuentas: await locals.db.select().from(s.cuentas).orderBy(asc(s.cuentas.codigo)) });
 
 export const actions = {
 	guardar: accion(async ({ request, locals }) => {
@@ -8,11 +10,14 @@ export const actions = {
 		const id = f.idOpcional('id');
 		const color = f.texto('color') ?? '#8a8f98';
 		if (!/^#[0-9a-f]{6}$/i.test(color)) throw new ErrorFormulario('Color no válido');
+		const cuenta = f.texto('cuentaContable');
+		if (cuenta && !/^\d{3,10}$/.test(cuenta)) throw new ErrorFormulario('La cuenta contable es numérica (602, 705…)');
 		const v = {
 			nombre: f.obligatorio('nombre', 'nombre'),
 			tipo: (f.texto('tipo') === 'ingreso' ? 'ingreso' : 'gasto') as 'gasto' | 'ingreso',
 			color,
 			cuentaContable: f.texto('cuentaContable'),
+			ivaPct: Math.min(Math.max(f.entero('ivaPct') ?? 21, 0), 100),
 			orden: f.entero('orden') ?? 0
 		};
 		if (id) await locals.db.update(s.categorias).set(v).where(eq(s.categorias.id, id));

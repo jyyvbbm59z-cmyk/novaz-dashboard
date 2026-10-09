@@ -4,11 +4,15 @@ Gestor de flota y restauraciones del taller Novaz. Ligero, rápido, instalable e
 personalizable a fondo. Corre entero en Cloudflare (Workers + D1 + R2), sin servidores que
 mantener.
 
-**Módulo 1 (este):** vehículos propios y de terceros, papeles con vencimiento (ITV, seguro,
-impuestos…), mantenimientos por km/tiempo, historial, restauraciones (fases, tareas y diario de
-obra), gastos, fotos y avisos por Telegram.
+**Taller:** vehículos propios y de terceros, papeles con vencimiento (ITV, seguro, impuestos…),
+mantenimientos por km/tiempo, historial, restauraciones (fases, tareas y diario de obra), fotos y
+avisos por Telegram.
 
-**Siguientes:** 2 · Clientes y facturas → 3 · Inventario → 4 · Contabilidad.
+**Dinero:** contabilidad de partida doble (PGC PYMES simulado). Cada gasto o ingreso genera su
+asiento con IVA y forma de pago. Incluye libro diario, mayor, pérdidas y ganancias, balance,
+IVA trimestral (303 simulado), inmovilizado con amortización y plan de cuentas.
+
+**Siguientes:** Clientes y facturas → Inventario.
 Diseño: [`docs/specs/`](docs/specs/).
 
 ---
@@ -139,7 +143,9 @@ Desde **Ajustes**, sin tocar código:
 | Qué papeles vencen, cada cuánto y cuándo avisar | Ajustes → Vencimientos |
 | Planes de mantenimiento (cada X km y/o Y meses) por tipo o por vehículo | Ajustes → Mantenimiento |
 | Fases y tareas de partida de las restauraciones | Ajustes → Plantillas de obra |
-| Categorías de gasto/ingreso (con cuenta contable para el futuro) | Ajustes → Categorías |
+| Categorías de gasto/ingreso con su cuenta contable e IVA por defecto | Ajustes → Categorías |
+| Forma de pago por defecto, tipo del impuesto de sociedades | Ajustes → General → Contabilidad |
+| Plan de cuentas y subcuentas | Dinero → Plan de cuentas |
 | Estados del vehículo | Ajustes → Estados |
 | Efectos y sonidos al completar cosas (confeti, aplausos, tu propio audio) | Ajustes → Momentos |
 
