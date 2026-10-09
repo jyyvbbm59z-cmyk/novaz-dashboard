@@ -90,7 +90,7 @@
 <div class="lg:grid lg:min-h-dvh lg:grid-cols-[15.5rem_1fr]" style="--alto-cabecera: {altoCabecera}px">
 	<!-- Barra lateral (escritorio) -->
 	<aside class="sticky top-0 hidden h-dvh flex-col border-r border-borde bg-superficie/50 px-3 py-5 backdrop-blur-xl lg:flex" style="view-transition-name: lateral">
-		<a href="/" class="mb-6 px-2.5"><Logo nombre={data.ajustes.nombreTaller} lema={data.ajustes.lema} /></a>
+		<a href="/" class="mb-6 px-2.5"><Logo nombre={data.ajustes.nombreTaller} lema={data.ajustes.lema} marca={data.ajustes.logoApp} /></a>
 
 		<button class="btn mb-5 justify-start bg-superficie-2/60 text-texto-3" onclick={() => (buscando = true)}>
 			<Search size={16} /> Buscar <kbd class="ml-auto rounded border border-borde px-1.5 font-mono text-[0.62rem]">Ctrl K</kbd>
@@ -128,7 +128,7 @@
 		class="sticky top-0 z-30 flex items-center justify-between border-b border-borde bg-fondo/80 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:hidden"
 		style="view-transition-name: cabecera"
 	>
-		<a href="/" class="py-2.5"><Logo nombre={data.ajustes.nombreTaller} compacto /></a>
+		<a href="/" class="py-2.5"><Logo nombre={data.ajustes.nombreTaller} compacto marca={data.ajustes.logoApp} /></a>
 		<div class="-mr-2 flex items-center">
 			<button class="btn btn-fantasma btn-icono" onclick={() => (buscando = true)} aria-label="Buscar"><Search size={20} /></button>
 			<a href="/contactos" class="btn btn-fantasma btn-icono" aria-label="Contactos"><Users size={20} /></a>

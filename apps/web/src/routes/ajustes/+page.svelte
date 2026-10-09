@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Logo from '$comp/Logo.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
-	import { enviar } from '$lib/enviar';
+	import { accion, enviar } from '$lib/enviar';
 	import { probarMomento } from '$lib/momentos';
 	import { EFECTOS, ETIQUETAS_EVENTO, EVENTOS_MOMENTO, eurosInput, SONIDOS, type Efecto, type Sonido } from '@novaz/core';
 	import { Download, Play, Send } from '@lucide/svelte';
@@ -18,6 +19,7 @@
 	const ETQ_EFECTO: Record<Efecto, string> = { ninguno: 'Ninguno', pulso: 'Pulso', confeti: 'Confeti', fuegos: 'Fuegos artificiales' };
 	const ETQ_SONIDO: Record<Sonido, string> = { ninguno: 'Silencio', clic: 'Clic', campana: 'Campana', llave: 'Carraca', aplausos: 'Aplausos', personalizado: 'Mi sonido…' };
 
+	let logoVersion = $state(0);
 	let momentos = $state(structuredClone((() => $state.snapshot(data.ajustes.momentos))()));
 </script>
 
@@ -43,6 +45,18 @@
 				<input name="acento" bind:value={acento} class="input h-9 w-28 font-mono text-sm" />
 			</div>
 		</div>
+		<fieldset class="campo">
+			<span>Logo de la app</span>
+			<div class="grid grid-cols-2 gap-2">
+				{#each [['novaz', 'Logo de Novaz'], ['texto', 'Tuerca y nombre']] as [v, t] (v)}
+					<label class="flex h-20 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-borde bg-superficie-2 p-2 text-xs text-texto-2 has-[:checked]:border-acento has-[:checked]:bg-acento/10">
+						<input type="radio" name="logoApp" value={v} checked={a.logoApp === v} class="sr-only" />
+						<Logo nombre={a.nombreTaller} compacto marca={v as 'novaz' | 'texto'} />
+						{t}
+					</label>
+				{/each}
+			</div>
+		</fieldset>
 		<label class="campo">
 			<span>Tema</span>
 			<select name="tema" class="input" value={a.tema}>
@@ -97,6 +111,22 @@
 		<div>
 			<h2 class="text-2xl">Facturación</h2>
 			<p class="text-sm text-texto-3">Aparece en tus facturas e informes de trabajos.</p>
+		</div>
+		<div class="flex flex-wrap items-center gap-4 rounded-lg border border-borde bg-superficie-2 p-3">
+			<div class="flex h-16 w-40 items-center justify-center rounded-md bg-white p-2">
+				{#if a.logoFactura !== 'ninguno'}
+					{#key logoVersion}<img src="/ajustes/logo-factura?v={logoVersion}" alt="Logo de las facturas" class="max-h-full max-w-full object-contain" />{/key}
+				{:else}<span class="text-xs text-neutral-500">Sin logo</span>{/if}
+			</div>
+			<div class="flex flex-1 flex-col gap-2">
+				<p class="text-sm font-medium">Logo de las facturas</p>
+				<div class="flex flex-wrap gap-2">
+					<SubirArchivos entidad="ajuste" entidadId={0} acepta="image/png,image/jpeg" comprimir={false} texto="Subir otro" clase="btn h-8 text-xs" alSubir={async (r) => { await accion('?/logo', { valor: r.url.replace('/archivos/', '') }); logoVersion++; }} />
+					{#if a.logoFactura !== 'novaz'}<button type="button" class="btn h-8 text-xs" onclick={async () => { await accion('?/logo', { valor: 'novaz' }); logoVersion++; }}>Usar el de Novaz</button>{/if}
+					{#if a.logoFactura !== 'ninguno'}<button type="button" class="btn btn-fantasma h-8 text-xs" onclick={async () => { await accion('?/logo', { valor: 'ninguno' }); logoVersion++; }}>Sin logo</button>{/if}
+				</div>
+				<p class="text-xs text-texto-3">PNG con fondo transparente o JPG. Se ajusta solo al tamaño.</p>
+			</div>
 		</div>
 		<div class="grid gap-3 sm:grid-cols-3">
 			<label class="campo sm:col-span-2"><span>Nombre o razón social</span><input name="razonSocial" class="input" value={a.fiscal.razonSocial} /></label>

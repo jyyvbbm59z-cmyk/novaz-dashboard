@@ -21,7 +21,8 @@ export const actions = {
 			nombreTaller: f.obligatorio('nombreTaller', 'nombre'),
 			lema: f.texto('lema') ?? '',
 			acento,
-			tema: tema === 'claro' || tema === 'sistema' ? tema : 'oscuro'
+			tema: tema === 'claro' || tema === 'sistema' ? tema : 'oscuro',
+			logoApp: f.texto('logoApp') === 'texto' ? 'texto' : 'novaz'
 		});
 		return { mensaje: 'Guardado' };
 	}),
@@ -83,6 +84,13 @@ export const actions = {
 			pieFactura: f.texto('pie') ?? ''
 		});
 		return { mensaje: 'Datos de facturación guardados' };
+	}),
+
+	logo: accion(async ({ request, locals }) => {
+		const valor = leer(await request.formData()).obligatorio('valor');
+		if (valor !== 'novaz' && valor !== 'ninguno' && !/^ajuste\/0\/[\w-]+\.(png|jpe?g)$/i.test(valor)) throw new ErrorFormulario('Usa una imagen PNG o JPG');
+		await guardar(locals.db, { logoFactura: valor });
+		return { mensaje: valor === 'ninguno' ? 'Facturas sin logo' : 'Logo actualizado' };
 	}),
 
 	momentos: accion(async ({ request, locals }) => {

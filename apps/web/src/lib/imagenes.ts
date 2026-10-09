@@ -29,9 +29,10 @@ export async function prepararArchivo(f: File): Promise<{ archivo: File; mini: F
 
 export async function subirArchivo(
 	f: File,
-	destino: { entidad: string; entidadId: number; vehiculoId?: number | null; pie?: string }
+	destino: { entidad: string; entidadId: number; vehiculoId?: number | null; pie?: string },
+	comprimir = true
 ): Promise<{ id: number; clave: string; url: string }> {
-	const { archivo, mini } = await prepararArchivo(f);
+	const { archivo, mini } = comprimir ? await prepararArchivo(f) : { archivo: f, mini: null };
 	const fd = new FormData();
 	fd.set('archivo', archivo);
 	if (mini) fd.set('mini', mini);

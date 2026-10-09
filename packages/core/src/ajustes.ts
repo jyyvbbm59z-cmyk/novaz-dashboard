@@ -47,6 +47,10 @@ export interface Ajustes {
 	serieFactura: string;
 	tarifaHoraCent: number;
 	pieFactura: string;
+	/** 'novaz' = logo incluido; clave de R2 = logo subido; 'ninguno' = sin logo. */
+	logoFactura: string;
+	/** Logo de la app: el de Novaz (moto) o la tuerca con el nombre del taller. */
+	logoApp: 'novaz' | 'texto';
 }
 
 export const AJUSTES_POR_DEFECTO: Ajustes = {
@@ -66,6 +70,8 @@ export const AJUSTES_POR_DEFECTO: Ajustes = {
 	serieFactura: 'NVZ',
 	tarifaHoraCent: 3500,
 	pieFactura: 'Gracias por confiar en Novaz.',
+	logoFactura: 'novaz',
+	logoApp: 'novaz',
 	momentos: {
 		tareaHecha: { efecto: 'pulso', sonido: 'clic' },
 		faseCompletada: { efecto: 'confeti', sonido: 'campana' },

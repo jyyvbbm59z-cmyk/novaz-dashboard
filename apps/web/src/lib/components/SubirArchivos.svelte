@@ -12,6 +12,7 @@
 		texto = camara ? 'Foto' : 'Adjuntar',
 		acepta = 'image/*,application/pdf',
 		clase = 'btn',
+		comprimir = true,
 		alSubir
 	}: {
 		entidad: string;
@@ -21,6 +22,7 @@
 		texto?: string;
 		acepta?: string;
 		clase?: string;
+		comprimir?: boolean;
 		alSubir?: (r: { id: number; url: string }) => void;
 	} = $props();
 
@@ -34,7 +36,7 @@
 		let ok = 0;
 		for (const f of archivos) {
 			try {
-				const r = await subirArchivo(f, { entidad, entidadId, vehiculoId });
+				const r = await subirArchivo(f, { entidad, entidadId, vehiculoId }, comprimir);
 				alSubir?.(r);
 				ok++;
 			} catch (err) {

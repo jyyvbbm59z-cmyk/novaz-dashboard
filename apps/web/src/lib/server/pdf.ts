@@ -48,7 +48,7 @@ function partir(texto: string, fuente: PDFFont, tam: number, ancho: number): str
 	return salida;
 }
 
-export async function pdfFactura(f: Factura, a: Ajustes): Promise<Uint8Array> {
+export async function pdfFactura(f: Factura, a: Ajustes, logo: { bytes: Uint8Array; tipo: string } | null = null): Promise<Uint8Array> {
 	const doc = await PDFDocument.create();
 	const normal = await doc.embedFont(StandardFonts.Helvetica);
 	const negrita = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -99,9 +99,23 @@ export async function pdfFactura(f: Factura, a: Ajustes): Promise<Uint8Array> {
 
 	nuevaPagina(true);
 
-	// ─── Cabecera: taller y documento
-	texto((a.fiscal.razonSocial || a.nombreTaller).toUpperCase(), M, y - 6, { f: negrita, t: 20 });
-	let yEmisor = y - 24;
+	// ─── Cabecera: logo (o nombre) y documento
+	let yEmisor: number;
+	const imagen = logo
+		? await (logo.tipo.includes('jp') || (logo.bytes[0] === 0xff && logo.bytes[1] === 0xd8) ? doc.embedJpg(logo.bytes) : doc.embedPng(logo.bytes)).catch(() => null)
+		: null;
+	if (imagen) {
+		// Cabe en 170×52 pt manteniendo la proporción
+		const escala = Math.min(170 / imagen.width, 52 / imagen.height);
+		const w = imagen.width * escala;
+		const h = imagen.height * escala;
+		p.drawImage(imagen, { x: M, y: y - h + 4, width: w, height: h });
+		texto(a.fiscal.razonSocial || a.nombreTaller, M, y - h - 10, { f: negrita, t: 10 });
+		yEmisor = y - h - 23;
+	} else {
+		texto((a.fiscal.razonSocial || a.nombreTaller).toUpperCase(), M, y - 6, { f: negrita, t: 20 });
+		yEmisor = y - 24;
+	}
 	for (const l of [a.fiscal.nif && `NIF ${a.fiscal.nif}`, a.fiscal.direccion, [a.fiscal.email, a.fiscal.telefono].filter(Boolean).join(' · ')].filter(Boolean) as string[]) {
 		for (const t of partir(l, normal, 8.5, 260)) {
 			texto(t, M, yEmisor, { t: 8.5, c: GRIS });
