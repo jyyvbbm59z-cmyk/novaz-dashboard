@@ -2,7 +2,7 @@
 import { desglosarIva, sumarMeses } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { CLASES_ENTRADA, FORMAS_PAGO, PRIORIDADES, TIPOS_MOVIMIENTO, type ClaseEntrada, type FormaPago, type Prioridad, type TipoMovimiento } from '@novaz/core/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { borrarAdjuntosDe } from './adjuntos';
 import { registrarKm } from './datos';
 import { ErrorFormulario, leer } from './form';
@@ -29,25 +29,29 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 	const id = f.idOpcional('id');
 	const fecha = f.fecha('fecha') ?? hoy;
 	const km = f.entero('km');
-	const planId = f.idOpcional('planId');
+	// Planes que renueva (casillas); se acepta también el antiguo `planId`
+	const planIds = [...new Set([...f.lista('planIds'), ...(f.texto('planId') ? [f.texto('planId')!] : [])].map(Number).filter(Number.isInteger))];
 	const faseId = f.idOpcional('faseId');
 	let restauracionId = f.idOpcional('restauracionId');
 	if (faseId && !restauracionId) {
 		const fase = await db.select().from(s.fases).where(eq(s.fases.id, faseId)).get();
 		restauracionId = fase?.restauracionId ?? null;
 	}
-	const claseCruda = f.texto('clase') ?? (planId ? 'mantenimiento' : restauracionId ? 'diario' : 'nota');
+	const claseCruda = f.texto('clase') ?? (planIds.length ? 'mantenimiento' : restauracionId ? 'diario' : 'nota');
 	const clase = (CLASES_ENTRADA.includes(claseCruda as ClaseEntrada) ? claseCruda : 'nota') as ClaseEntrada;
 
 	let titulo = f.texto('titulo');
-	if (!titulo && planId) titulo = (await db.select().from(s.planesMantenimiento).where(eq(s.planesMantenimiento.id, planId)).get())?.nombre ?? null;
+	if (!titulo && planIds.length) {
+		const planes = await db.select({ nombre: s.planesMantenimiento.nombre }).from(s.planesMantenimiento).where(inArray(s.planesMantenimiento.id, planIds));
+		titulo = planes.map((p) => p.nombre).join(' + ') || null;
+	}
 	if (!titulo) {
 		const texto = f.texto('texto');
 		titulo = texto ? texto.split('\n')[0].slice(0, 80) : null;
 	}
 	if (!titulo) throw new ErrorFormulario('Escribe un título o una descripción');
 
-	const valores = { vehiculoId, clase, fecha, km, titulo, texto: f.texto('texto'), horas: f.decimal('horas'), planId, restauracionId, faseId };
+	const valores = { vehiculoId, clase, fecha, km, titulo, texto: f.texto('texto'), horas: f.decimal('horas'), restauracionId, faseId };
 
 	let entradaId: number;
 	if (id) {
@@ -59,21 +63,47 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 	}
 	await registrarKm(db, vehiculoId, fecha, km, 'entrada');
 
-	const importe = f.euros('importe');
-	if (importe && !id) {
-		const categoriaId = f.idOpcional('categoriaId');
-		await db.insert(s.movimientos).values({
-			...(await datosContables(locals, categoriaId, f)),
-			fecha,
-			tipo: 'gasto',
-			importeCent: importe,
-			categoriaId,
-			concepto: titulo,
-			proveedor: f.texto('proveedor'),
-			vehiculoId,
-			entradaId,
-			restauracionId
-		});
+	// Planes renovados: solo los de mantenimiento; al editar se sustituyen
+	if (clase === 'mantenimiento' || id) {
+		await db.delete(s.entradasPlanes).where(eq(s.entradasPlanes.entradaId, entradaId));
+		if (clase === 'mantenimiento' && planIds.length) await db.insert(s.entradasPlanes).values(planIds.map((planId) => ({ entradaId, planId })));
+	}
+
+	// Gastos: varias líneas (filtro, aceite…) con proveedor y forma de pago comunes.
+	// Compatibilidad: un único `importe` + `categoriaId` se trata como una línea.
+	let lineas: { concepto: string; importeCent: number; categoriaId: number | null }[] = [];
+	const json = f.texto('gastos');
+	if (json) {
+		try {
+			const crudo = JSON.parse(json);
+			if (Array.isArray(crudo))
+				lineas = crudo
+					.map((l) => ({
+						concepto: String(l?.concepto ?? '').trim(),
+						importeCent: Math.round(Number(l?.importeCent) || 0),
+						categoriaId: Number.isInteger(Number(l?.categoriaId)) && Number(l?.categoriaId) > 0 ? Number(l.categoriaId) : null
+					}))
+					.filter((l) => l.importeCent > 0);
+		} catch {
+			throw new ErrorFormulario('Gastos mal formados');
+		}
+	} else {
+		const importe = f.euros('importe');
+		if (importe && !id) lineas = [{ concepto: titulo, importeCent: importe, categoriaId: f.idOpcional('categoriaId') }];
+	}
+	for (const l of lineas) {
+		const datos = new FormData();
+		datos.set('tipo', 'gasto');
+		datos.set('importe', (l.importeCent / 100).toFixed(2).replace('.', ','));
+		datos.set('fecha', fecha);
+		datos.set('concepto', l.concepto || titulo);
+		if (l.categoriaId) datos.set('categoriaId', String(l.categoriaId));
+		for (const k of ['proveedor', 'pago']) {
+			const v = f.texto(k);
+			if (v) datos.set(k, v);
+		}
+		const movId = await guardarMovimiento(locals, datos, { vehiculoId, restauracionId });
+		await db.update(s.movimientos).set({ entradaId }).where(eq(s.movimientos.id, movId));
 	}
 	return { entradaId, nueva: !id };
 }

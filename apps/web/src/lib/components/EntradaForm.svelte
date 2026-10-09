@@ -5,7 +5,8 @@
 	import { enviar } from '$lib/enviar';
 	import { subirArchivo } from '$lib/imagenes';
 	import type { Categoria, Entrada } from '@novaz/core/schema';
-	import { Camera, ImagePlus, X } from '@lucide/svelte';
+	import { euros, parsearEuros } from '@novaz/core';
+	import { Camera, ImagePlus, Plus, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let {
@@ -19,6 +20,7 @@
 		entrada = null,
 		claseInicial = 'nota',
 		planInicial = null,
+		planesIniciales = [],
 		faseInicial = null,
 		tituloInicial = '',
 		ocultos = {},
@@ -34,6 +36,7 @@
 		entrada?: Entrada | null;
 		claseInicial?: string;
 		planInicial?: number | null;
+		planesIniciales?: number[];
 		faseInicial?: number | null;
 		tituloInicial?: string;
 		ocultos?: Record<string, string | number>;
@@ -53,6 +56,35 @@
 	let titulo = $state(ini.titulo);
 	let texto = $state(ini.texto);
 	let fotos = $state<File[]>([]);
+
+	// ─── Mantenimientos que renueva: casillas que se marcan solas según el título
+	let planesSel = $state<number[]>((() => [...new Set([...planesIniciales, ...(planInicial ? [planInicial] : [])])])());
+	let planesTocados = $state((() => planesIniciales.length > 0 || planInicial != null)());
+	const normalizar = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+	$effect(() => {
+		if (planesTocados || clase !== 'mantenimiento') return;
+		const t = normalizar(titulo);
+		planesSel = planes.filter((p) => normalizar(p.nombre).split(/\W+/).some((w) => w.length >= 4 && t.includes(w))).map((p) => p.id);
+	});
+	function alternarPlan(id: number) {
+		planesTocados = true;
+		planesSel = planesSel.includes(id) ? planesSel.filter((x) => x !== id) : [...planesSel, id];
+	}
+
+	// ─── Gastos y materiales desglosados
+	const categoriasGasto = $derived(categorias.filter((c) => c.tipo === 'gasto'));
+	const catDefecto = $derived((categoriasGasto.find((c) => /recambio/i.test(c.nombre)) ?? categoriasGasto[0])?.id ?? '');
+	let gastos = $state<{ concepto: string; importe: string; categoriaId: string }[]>([]);
+	const gastosJson = $derived(
+		JSON.stringify(
+			gastos
+				.map((g) => ({ concepto: g.concepto.trim(), importeCent: parsearEuros(g.importe) ?? 0, categoriaId: Number(g.categoriaId) || null }))
+				.filter((g) => g.importeCent > 0)
+		)
+	);
+	const totalGastos = $derived(gastos.reduce((t, g) => t + (parsearEuros(g.importe) ?? 0), 0));
+	const nuevoGasto = () => gastos.push({ concepto: '', importe: '', categoriaId: String(catDefecto) });
+	let gastosAbierto = $state(false);
 	let previas = $derived(fotos.map((f) => URL.createObjectURL(f)));
 	const claveBorrador = $derived(`borrador:entrada:${vehiculoId}`);
 
@@ -101,6 +133,10 @@
 		titulo = '';
 		texto = '';
 		fotos = [];
+		gastos = [];
+		gastosAbierto = false;
+		planesSel = [];
+		planesTocados = false;
 		alGuardar?.();
 	};
 </script>
@@ -118,15 +154,6 @@
 		{/each}
 	</div>
 
-	{#if clase === 'mantenimiento' && planes.length}
-		<label class="campo">
-			<span>Plan de mantenimiento</span>
-			<select name="planId" class="input">
-				<option value="">— Ninguno —</option>
-				{#each planes as p (p.id)}<option value={p.id} selected={(entrada?.planId ?? planInicial) === p.id}>{p.nombre}</option>{/each}
-			</select>
-		</label>
-	{/if}
 	{#if fases.length}
 		<label class="campo">
 			<span>Fase de restauración</span>
@@ -138,6 +165,25 @@
 	{/if}
 
 	<label class="campo"><span>Título</span><input name="titulo" class="input" bind:value={titulo} placeholder={clase === 'diario' ? 'Hoy: desmontaje del basculante' : 'Cambio de aceite'} /></label>
+	{#if clase === 'mantenimiento' && planes.length}
+		<fieldset class="campo">
+			<span>¿Renueva algún mantenimiento programado? <span class="text-texto-3">(opcional)</span></span>
+			<div class="flex flex-wrap gap-2">
+				{#each planes as p (p.id)}
+					<button
+						type="button"
+						class="chip h-8 px-3 transition {planesSel.includes(p.id) ? 'border-acento bg-acento/15 text-texto' : 'text-texto-3'}"
+						onclick={() => alternarPlan(p.id)}
+						aria-pressed={planesSel.includes(p.id)}
+					>
+						{planesSel.includes(p.id) ? '✓ ' : ''}{p.nombre}
+					</button>
+				{/each}
+			</div>
+			{#each planesSel as id (id)}<input type="hidden" name="planIds" value={id} />{/each}
+			<span class="text-xs text-texto-3">Así su aviso vuelve a contar desde esta fecha y estos km.</span>
+		</fieldset>
+	{/if}
 	<label class="campo"><span>Detalle</span><textarea name="texto" class="input" rows="4" bind:value={texto} placeholder="Qué se hizo, piezas, referencias, sensaciones…"></textarea></label>
 
 	<div class="grid grid-cols-3 gap-3">
@@ -146,21 +192,48 @@
 		<label class="campo"><span>Horas</span><input name="horas" class="input" inputmode="decimal" value={entrada?.horas ?? ''} placeholder="0" /></label>
 	</div>
 
-	{#if !entrada}
-		<details class="group rounded-lg border border-borde">
-			<summary class="cursor-pointer px-3 py-2.5 text-sm font-medium text-texto-2 select-none">＋ Gasto asociado</summary>
-			<div class="grid grid-cols-2 gap-3 px-3 pb-3">
-				<label class="campo"><span>Importe (€)</span><input name="importe" class="input" inputmode="decimal" placeholder="0,00" /></label>
-				<label class="campo">
-					<span>Categoría</span>
-					<select name="categoriaId" class="input">
-						{#each categorias.filter((c) => c.tipo === 'gasto') as c (c.id)}<option value={c.id}>{c.nombre}</option>{/each}
+	<details class="rounded-lg border border-borde" open={gastosAbierto}>
+		<summary
+			class="cursor-pointer px-3 py-2.5 text-sm font-medium text-texto-2 select-none"
+			onclick={(e) => {
+				// Abrir/cerrar lo controla la app (si no, el navegador y Svelte lo alternan dos veces)
+				e.preventDefault();
+				gastosAbierto = !gastosAbierto;
+				if (gastosAbierto && !gastos.length) nuevoGasto();
+			}}
+		>
+			＋ Gastos y materiales{#if totalGastos} · <span class="font-mono">{euros(totalGastos)}</span>{/if}
+		</summary>
+		<div class="flex flex-col gap-2 px-3 pb-3">
+			<input type="hidden" name="gastos" value={gastosJson} />
+			{#each gastos as g, i (i)}
+				<div class="grid grid-cols-[1fr_5.5rem_auto] gap-2">
+					<input bind:value={g.concepto} class="input h-10 text-sm" placeholder={i === 0 ? 'Filtro de aceite' : 'Aceite 10W40 4 L'} aria-label="Concepto" />
+					<input bind:value={g.importe} class="input h-10 text-right text-sm" inputmode="decimal" placeholder="0,00" aria-label="Importe" />
+					<button type="button" class="btn btn-fantasma btn-icono h-10 w-9" onclick={() => gastos.splice(i, 1)} aria-label="Quitar"><X size={15} /></button>
+					<select bind:value={g.categoriaId} class="input col-span-3 -mt-1 h-8 py-0 text-xs" aria-label="Categoría">
+						{#each categoriasGasto as c (c.id)}<option value={String(c.id)}>{c.nombre}</option>{/each}
 					</select>
-				</label>
-				<label class="campo col-span-2"><span>Proveedor</span><input name="proveedor" class="input" /></label>
-			</div>
-		</details>
+				</div>
+			{/each}
+			<button type="button" class="btn h-9 w-fit text-xs" onclick={nuevoGasto}><Plus size={14} /> Añadir línea</button>
+			{#if gastos.length}
+				<div class="grid grid-cols-2 gap-2">
+					<label class="campo"><span>Proveedor</span><input name="proveedor" class="input h-10" placeholder="Tienda o taller" /></label>
+					<label class="campo">
+						<span>Pagado con</span>
+						<select name="pago" class="input h-10">
+							<option value="">Lo habitual</option><option value="banco">Banco</option><option value="caja">Efectivo</option><option value="socio">Mi bolsillo</option>
+						</select>
+					</label>
+				</div>
+				<p class="text-xs text-texto-3">Cada línea es un gasto con su IVA. En la factura saldrá como «Material: …» bajo esta operación.</p>
+			{/if}
+			{#if entrada}<p class="text-xs text-texto-3">Los gastos ya apuntados de esta entrada se editan en la pestaña Gastos.</p>{/if}
+		</div>
+	</details>
 
+	{#if !entrada}
 		<div class="flex flex-wrap items-center gap-2">
 			<label class="btn cursor-pointer"><Camera size={18} /> Cámara<input type="file" accept="image/*" capture="environment" class="sr-only" onchange={anadirFotos} /></label>
 			<label class="btn cursor-pointer"><ImagePlus size={18} /> Galería<input type="file" accept="image/*,application/pdf" multiple class="sr-only" onchange={anadirFotos} /></label>

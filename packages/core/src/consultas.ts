@@ -1,5 +1,5 @@
 // Consultas compartidas entre la app web y el worker de avisos.
-import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { drizzle, type DrizzleD1Database } from 'drizzle-orm/d1';
 import * as schema from './schema';
 import { fusionarAjustes, type Ajustes } from './ajustes';
@@ -75,12 +75,13 @@ export async function ultimasPorPlan(db: DB, ids: number[]) {
 		.select({
 			id: schema.entradas.id,
 			vehiculoId: schema.entradas.vehiculoId,
-			planId: schema.entradas.planId,
+			planId: schema.entradasPlanes.planId,
 			fecha: schema.entradas.fecha,
 			km: schema.entradas.km
 		})
-		.from(schema.entradas)
-		.where(and(inArray(schema.entradas.vehiculoId, ids), isNotNull(schema.entradas.planId)))
+		.from(schema.entradasPlanes)
+		.innerJoin(schema.entradas, eq(schema.entradasPlanes.entradaId, schema.entradas.id))
+		.where(inArray(schema.entradas.vehiculoId, ids))
 		.orderBy(desc(schema.entradas.fecha), desc(schema.entradas.id));
 	for (const f of filas) {
 		const k = `${f.vehiculoId}:${f.planId}`;

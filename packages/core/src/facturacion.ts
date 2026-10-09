@@ -35,9 +35,9 @@ export function lineasDesdeEntradas(
 	tarifaHoraCent: number
 ): LineaFactura[] {
 	const material = (g: (typeof gastos)[number]): LineaFactura => ({
-		concepto: `Material${g.proveedor ? ` (${g.proveedor})` : ''}`,
-		detalle: g.concepto,
+		concepto: `Material: ${g.concepto}`,
 		cantidad: 1,
+		unidad: 'ud',
 		precioCent: desglosarIva(g.importeCent, g.ivaPct).base
 	});
 	const lineas: LineaFactura[] = [];

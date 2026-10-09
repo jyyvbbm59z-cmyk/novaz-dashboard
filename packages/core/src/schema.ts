@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import type { CampoDef, FasePlantilla } from './campos';
 import type { LineaFactura } from './facturacion';
 
@@ -232,12 +232,27 @@ export const entradas = sqliteTable(
 		titulo: text('titulo').notNull(),
 		texto: text('texto'),
 		horas: real('horas'),
+		/** Obsoleto: sustituido por `entradasPlanes` (una entrada puede renovar varios planes). */
 		planId: integer('plan_id').references(() => planesMantenimiento.id, { onDelete: 'set null' }),
 		restauracionId: integer('restauracion_id').references(() => restauraciones.id, { onDelete: 'set null' }),
 		faseId: integer('fase_id').references(() => fases.id, { onDelete: 'set null' }),
 		creado: creado()
 	},
 	(t) => [index('entradas_vehiculo_idx').on(t.vehiculoId, t.fecha), index('entradas_plan_idx').on(t.planId)]
+);
+
+/** Planes de mantenimiento que renueva cada entrada (aceite + filtro + frenos en una revisión). */
+export const entradasPlanes = sqliteTable(
+	'entradas_planes',
+	{
+		entradaId: integer('entrada_id')
+			.notNull()
+			.references(() => entradas.id, { onDelete: 'cascade' }),
+		planId: integer('plan_id')
+			.notNull()
+			.references(() => planesMantenimiento.id, { onDelete: 'cascade' })
+	},
+	(t) => [primaryKey({ columns: [t.entradaId, t.planId] }), index('entradas_planes_plan_idx').on(t.planId)]
 );
 
 // ─── Por reparar ──────────────────────────────────────────────────────────────

@@ -24,9 +24,9 @@ describe('facturas', () => {
 		);
 		expect(l).toEqual([
 			{ concepto: 'Cambio de embrague', detalle: 'Kit Luk', cantidad: 3, unidad: 'h', precioCent: 3500 },
-			{ concepto: 'Material (Recambios Paterna)', detalle: 'Kit embrague', cantidad: 1, precioCent: 10000 },
+			{ concepto: 'Material: Kit embrague', cantidad: 1, unidad: 'ud', precioCent: 10000 },
 			{ concepto: 'Diagnosis', detalle: null, cantidad: 1, unidad: null, precioCent: 0 },
-			{ concepto: 'Material', detalle: 'Lector OBD', cantidad: 1, precioCent: 1000 }
+			{ concepto: 'Material: Lector OBD', cantidad: 1, unidad: 'ud', precioCent: 1000 }
 		]);
 	});
 });

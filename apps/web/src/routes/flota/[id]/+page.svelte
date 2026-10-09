@@ -44,7 +44,7 @@
 
 	// Hojas
 	let hEntrada = $state(false);
-	let entradaEdit = $state<Entrada | null>(null);
+	let entradaEdit = $state<(typeof data.entradas)[number] | null>(null);
 	let planHecho = $state<number | null>(null);
 	let hKm = $state(false);
 	let hVenc = $state(false);
@@ -277,6 +277,7 @@
 							{#if e.horas}<span>· {e.horas.toLocaleString('es-ES')} h</span>{/if}
 							{#if e.importe}<span>· {euros(e.importe)}</span>{/if}
 							{#if e.fase}<span class="chip h-5 text-[0.65rem]">{e.fase}</span>{/if}
+							{#each e.planes as pl (pl.id)}<span class="chip h-5 border-ok/40 text-[0.65rem] nivel-ok">↻ {pl.nombre}</span>{/each}
 						</div>
 						<div class="group mt-1 flex items-start gap-2">
 							<h3 class="flex-1 font-sans text-base font-semibold tracking-normal normal-case">{e.titulo}</h3>
@@ -528,7 +529,7 @@
 	<FacturaForm
 		lineasIniciales={lineasDesdeEntradas(
 			elegidas,
-			data.movimientos.filter((m) => m.tipo === 'gasto' && m.entradaId != null && seleccion.includes(m.entradaId)),
+			data.movimientos.filter((m) => m.tipo === 'gasto' && m.entradaId != null && seleccion.includes(m.entradaId)).sort((a, b) => a.id - b.id),
 			data.ajustes.tarifaHoraCent
 		)}
 		entradas={elegidas.map((e) => e.id)}
@@ -555,6 +556,7 @@
 		entrada={entradaEdit}
 		claseInicial={pendResolver ? 'reparacion' : planHecho ? 'mantenimiento' : activa ? 'diario' : 'nota'}
 		planInicial={planHecho}
+		planesIniciales={entradaEdit?.planes.map((p) => p.id) ?? []}
 		alGuardar={() => ((hEntrada = false), (pendResolver = null))}
 	/>
 </Hoja>

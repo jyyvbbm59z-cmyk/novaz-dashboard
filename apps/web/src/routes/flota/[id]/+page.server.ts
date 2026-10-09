@@ -10,7 +10,7 @@ import {
 } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { error, redirect } from '@sveltejs/kit';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import {
 	borrarEntrada,
 	borrarMovimiento,
@@ -36,10 +36,9 @@ export const load = async ({ params, locals }) => {
 	const [lecturas, entradas, vencs, movs, adjuntos, restas, planes, porReparar] = await Promise.all([
 		db.select().from(s.lecturasKm).where(eq(s.lecturasKm.vehiculoId, id)).orderBy(desc(s.lecturasKm.fecha), desc(s.lecturasKm.km)),
 		db
-			.select({ e: s.entradas, fase: s.fases.nombre, plan: s.planesMantenimiento.nombre })
+			.select({ e: s.entradas, fase: s.fases.nombre })
 			.from(s.entradas)
 			.leftJoin(s.fases, eq(s.entradas.faseId, s.fases.id))
-			.leftJoin(s.planesMantenimiento, eq(s.entradas.planId, s.planesMantenimiento.id))
 			.where(eq(s.entradas.vehiculoId, id))
 			.orderBy(desc(s.entradas.fecha), desc(s.entradas.id)),
 		db
@@ -66,6 +65,16 @@ export const load = async ({ params, locals }) => {
 	const ORDEN_PRIORIDAD = { alta: 0, media: 1, baja: 2 };
 	porReparar.sort((a, b) => ORDEN_PRIORIDAD[a.prioridad] - ORDEN_PRIORIDAD[b.prioridad]);
 
+	// Planes renovados por cada entrada
+	const enlaces = entradas.length
+		? await db
+				.select({ entradaId: s.entradasPlanes.entradaId, planId: s.entradasPlanes.planId, nombre: s.planesMantenimiento.nombre })
+				.from(s.entradasPlanes)
+				.innerJoin(s.planesMantenimiento, eq(s.entradasPlanes.planId, s.planesMantenimiento.id))
+				.where(inArray(s.entradasPlanes.entradaId, entradas.map((x) => x.e.id)))
+		: [];
+	const planesDe = (entradaId: number) => enlaces.filter((l) => l.entradaId === entradaId);
+
 	const malas = lecturasSospechosas(lecturas);
 	const validas = lecturas.filter((_, i) => !malas.has(i));
 	const km = kmActual(validas);
@@ -75,7 +84,7 @@ export const load = async ({ params, locals }) => {
 	const mantenimiento = planes
 		.filter((p) => planAplica(p, v))
 		.map((p) => {
-			const ultima = entradas.find((x) => x.e.planId === p.id)?.e ?? null;
+			const ultima = entradas.find((x) => planesDe(x.e.id).some((l) => l.planId === p.id))?.e ?? null;
 			return {
 				plan: p,
 				ultima: ultima ? { fecha: ultima.fecha, km: ultima.km } : null,
@@ -115,7 +124,7 @@ export const load = async ({ params, locals }) => {
 		entradas: entradas.map((x) => ({
 			...x.e,
 			fase: x.fase,
-			plan: x.plan,
+			planes: planesDe(x.e.id).map((l) => ({ id: l.planId, nombre: l.nombre })),
 			importe: movs.filter((m) => m.m.entradaId === x.e.id).reduce((a, m) => a + m.m.importeCent, 0),
 			adjuntos: adjuntos.filter((a) => a.entidad === 'entrada' && a.entidadId === x.e.id)
 		})),
