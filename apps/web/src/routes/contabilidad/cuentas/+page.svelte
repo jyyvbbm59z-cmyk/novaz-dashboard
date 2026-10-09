@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Ayuda from '$comp/Ayuda.svelte';
 	import { enhance } from '$app/forms';
 	import Hoja from '$comp/Hoja.svelte';
 	import { accion, enviar } from '$lib/enviar';
@@ -29,6 +30,8 @@
 </script>
 
 <svelte:head><title>Plan de cuentas · {data.ajustes.nombreTaller}</title></svelte:head>
+
+<Ayuda titulo="¿Qué es el plan de cuentas?">{@html `La lista de «cajones» donde se clasifica todo, según el Plan General Contable: el 6 son gastos, el 7 ingresos, el 57 el dinero… No hace falta tocarlo: el asistente ya elige la cuenta correcta.`}</Ayuda>
 
 <div class="mb-4 flex flex-wrap items-center gap-2">
 	<label class="relative min-w-48 flex-1">

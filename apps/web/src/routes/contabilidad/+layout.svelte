@@ -2,12 +2,13 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Pestanas from '$comp/Pestanas.svelte';
-	import { CalendarRange } from '@lucide/svelte';
+	import { CalendarRange, Plus } from '@lucide/svelte';
 
 	let { data, children } = $props();
 
 	const SECCIONES = [
 		['/contabilidad', 'Resumen'],
+		['/contabilidad/tesoreria', 'Tesorería'],
 		['/contabilidad/movimientos', 'Movimientos'],
 		['/contabilidad/diario', 'Libro diario'],
 		['/contabilidad/mayor', 'Mayor'],
@@ -34,6 +35,8 @@
 		<p class="etiqueta mb-1">Contabilidad · Plan General Contable</p>
 		<h1 class="titulo-pagina">Dinero</h1>
 	</div>
+	<div class="flex items-center gap-2">
+	<a href="/contabilidad/nuevo" class="btn btn-acento h-10"><Plus size={18} strokeWidth={2.4} /> Apuntar</a>
 	<label class="chip h-10 cursor-pointer gap-2 px-3 text-sm">
 		<CalendarRange size={16} class="text-texto-3" />
 		<span class="text-texto-3">Ejercicio</span>
@@ -41,6 +44,7 @@
 			{#each data.ejercicios as e (e)}<option value={e}>{e}</option>{/each}
 		</select>
 	</label>
+	</div>
 </div>
 
 <Pestanas {pestanas} fija />

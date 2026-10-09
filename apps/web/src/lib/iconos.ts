@@ -1,5 +1,7 @@
 // Catálogo de iconos elegibles desde Ajustes (tipos de vehículo, vencimientos…).
 import {
+	ArrowLeftRight, Banknote, Briefcase, CalendarSync, Droplets, HandCoins, Handshake, House, Megaphone, Package, PiggyBank, Play,
+	SprayCan, Trash, TriangleAlert, UserCheck, Wallet, Wifi,
 	Anchor, Bike, Bus, CalendarClock, Car, CarFront, Caravan, ClipboardCheck, Cog, Drill, FileText, Flame,
 	Forklift, Fuel, Gauge, Hammer, KeyRound, Landmark, Motorbike, Plane, Receipt, Rocket, Sailboat, Scooter,
 	ShieldCheck, Ship, Sparkles, Tractor, TramFront, Truck, Wrench, Zap
@@ -38,7 +40,25 @@ export const ICONOS: Record<string, Component> = {
 	'calendar-clock': CalendarClock,
 	'key-round': KeyRound,
 	'file-text': FileText,
-	receipt: Receipt
+	receipt: Receipt,
+	droplets: Droplets,
+	wifi: Wifi,
+	house: House,
+	briefcase: Briefcase,
+	megaphone: Megaphone,
+	trash: Trash,
+	'triangle-alert': TriangleAlert,
+	'spray-can': SprayCan,
+	'user-check': UserCheck,
+	play: Play,
+	handshake: Handshake,
+	package: Package,
+	'piggy-bank': PiggyBank,
+	'calendar-sync': CalendarSync,
+	'hand-coins': HandCoins,
+	wallet: Wallet,
+	banknote: Banknote,
+	'arrow-left-right': ArrowLeftRight
 };
 
 export function icono(nombre: string | null | undefined): Component {

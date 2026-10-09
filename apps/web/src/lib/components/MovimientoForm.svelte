@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { enviar } from '$lib/enviar';
 	import { CUENTAS_INMOVILIZADO, desglosarIva, ETIQUETA_PAGO, euros, eurosInput, parsearEuros, TIPOS_IVA } from '@novaz/core';
-	import type { Categoria, Cuenta, FormaPago, Inmovilizado, Movimiento } from '@novaz/core/schema';
+	import type { Categoria, Cuenta, FormaPago, Inmovilizado, Movimiento, TipoMovimiento } from '@novaz/core/schema';
 
 	let {
 		accion = '?/gasto',
@@ -30,7 +30,7 @@
 
 	// Valores iniciales (el formulario se monta de nuevo cada vez que se abre la hoja)
 	const ini = (() => {
-		const tipo = movimiento?.tipo ?? 'gasto';
+		const tipo: TipoMovimiento = movimiento?.tipo ?? 'gasto';
 		const cat = movimiento?.categoriaId ?? categorias.find((c) => c.tipo === tipo)?.id ?? null;
 		return {
 			tipo,
@@ -41,7 +41,7 @@
 			inmov: Boolean(inmovilizado)
 		};
 	})();
-	let tipo = $state<'gasto' | 'ingreso'>(ini.tipo);
+	let tipo = $state<TipoMovimiento>(ini.tipo);
 	let categoriaId = $state(ini.cat);
 	let ivaPct = $state(ini.iva);
 	let pago = $state<FormaPago>(ini.pago);
@@ -54,8 +54,21 @@
 		return c ? desglosarIva(Math.abs(c), ivaPct) : null;
 	});
 
-	function cambiarTipo(t: 'gasto' | 'ingreso') {
+	const financiero = $derived(tipo === 'aportacion' || tipo === 'retirada');
+	let cuentaFin = $state((() => movimiento?.cuentaContable ?? '118')());
+	const CUENTAS_FIN = [
+		['118', 'Aportación de socio (118)'],
+		['551', 'Cuenta con el socio (551)'],
+		['170', 'Préstamo a largo plazo (170)'],
+		['570', 'Caja (570): traspaso banco ↔ caja'],
+		['100', 'Capital social (100)']
+	];
+	function cambiarTipo(t: TipoMovimiento) {
 		tipo = t;
+		if (t === 'aportacion' || t === 'retirada') {
+			if (pago === 'socio') pago = 'banco';
+			return;
+		}
 		const primera = categorias.find((c) => c.tipo === t);
 		categoriaId = primera ? String(primera.id) : '';
 		ivaPct = primera?.ivaPct ?? 21;
@@ -70,11 +83,14 @@
 	{#if vehiculoFijo}<input type="hidden" name="vehiculoId" value={vehiculoFijo} />{/if}
 	<input type="hidden" name="tipo" value={tipo} />
 
-	<div class="grid grid-cols-2 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
-		{#each [['gasto', 'Gasto'], ['ingreso', 'Ingreso']] as [v, t] (v)}
-			<button type="button" class="rounded-md py-1.5 text-sm font-semibold transition {tipo === v ? 'bg-superficie-3 text-texto shadow-sm' : 'text-texto-3'}" onclick={() => cambiarTipo(v as 'gasto' | 'ingreso')}>{t}</button>
+	<div class="grid grid-cols-4 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
+		{#each [['gasto', 'Gasto'], ['ingreso', 'Ingreso'], ['aportacion', 'Entrada'], ['retirada', 'Salida']] as [v, t] (v)}
+			<button type="button" class="rounded-md py-1.5 text-xs font-semibold transition sm:text-sm {tipo === v ? 'bg-superficie-3 text-texto shadow-sm' : 'text-texto-3'}" onclick={() => cambiarTipo(v as TipoMovimiento)}>{t}</button>
 		{/each}
 	</div>
+	{#if financiero}
+		<p class="-mt-2 text-xs text-texto-3">{tipo === 'aportacion' ? 'Entra dinero sin ser ingreso: aportaciones, préstamos…' : 'Sale dinero sin ser gasto: reembolsos al socio, devolver préstamos, traspasos…'}</p>
+	{/if}
 
 	<div class="grid grid-cols-[1.3fr_1fr] gap-3">
 		<label class="campo">
@@ -86,6 +102,13 @@
 
 	<label class="campo"><span>Concepto *</span><input name="concepto" class="input" required value={movimiento?.concepto ?? ''} placeholder={tipo === 'gasto' ? 'Pastillas de freno delanteras' : 'Reparación embrague Golf'} /></label>
 
+	{#if financiero}
+		<input type="hidden" name="cuentaContable" value={cuentaFin} />
+		<label class="campo">
+			<span>{tipo === 'aportacion' ? '¿De dónde viene?' : '¿A dónde va?'}</span>
+			<select class="input" bind:value={cuentaFin}>{#each CUENTAS_FIN as [c, n] (c)}<option value={c}>{n}</option>{/each}</select>
+		</label>
+	{:else}
 	<div class="grid grid-cols-2 gap-3">
 		<label class="campo">
 			<span>Categoría</span>
@@ -104,11 +127,12 @@
 	{#if desglose && ivaPct}
 		<p class="-mt-2 text-xs text-texto-3">Base {euros(desglose.base)} + IVA {euros(desglose.cuota)}</p>
 	{/if}
+	{/if}
 
 	<fieldset class="campo">
-		<span>{tipo === 'gasto' ? 'Pagado con' : 'Cobrado en'}</span>
-		<div class="grid grid-cols-3 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
-			{#each Object.entries(ETIQUETA_PAGO) as [v, t] (v)}
+		<span>{tipo === 'gasto' || tipo === 'retirada' ? 'Sale de' : 'Entra en'}</span>
+		<div class="grid {financiero ? 'grid-cols-2' : 'grid-cols-3'} gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
+			{#each Object.entries(ETIQUETA_PAGO).filter(([v]) => !(financiero && v === 'socio')) as [v, t] (v)}
 				<label class="cursor-pointer rounded-md py-1.5 text-center text-xs font-semibold transition {pago === v ? 'bg-superficie-3 text-texto shadow-sm' : 'text-texto-3'}">
 					<input type="radio" name="pago" value={v} bind:group={pago} class="sr-only" />{tipo === 'ingreso' && v === 'socio' ? 'Al socio' : t}
 				</label>
@@ -129,6 +153,7 @@
 		{/if}
 	</div>
 
+	{#if !financiero}
 	<details class="rounded-lg border border-borde" open={esInmov || Boolean(movimiento?.cuentaContable)}>
 		<summary class="cursor-pointer px-3 py-2.5 text-sm font-medium text-texto-2 select-none">Contabilidad avanzada</summary>
 		<div class="flex flex-col gap-3 px-3 pb-3">
@@ -158,6 +183,7 @@
 			{/if}
 		</div>
 	</details>
+	{/if}
 
 	<label class="campo"><span>Notas</span><textarea name="notas" class="input" rows="2">{movimiento?.notas ?? ''}</textarea></label>
 	<button class="btn btn-acento h-12">{movimiento ? 'Guardar cambios' : 'Registrar'}</button>

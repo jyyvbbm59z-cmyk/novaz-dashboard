@@ -46,7 +46,14 @@
 
 <div class="mx-auto max-w-xl">
 	{#if !vehiculo}
-		<h1 class="mb-5 text-4xl">¿Qué vehículo?</h1>
+		<a href="/contabilidad/nuevo" class="tarjeta mb-6 flex items-center gap-4 p-4 transition hover:border-acento/50 active:scale-[0.99]">
+			<span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-acento/15 text-acento"><ReceiptText size={24} /></span>
+			<span class="flex-1">
+				<span class="block font-semibold">Una factura o dinero</span>
+				<span class="block text-xs text-texto-3">Luz, agua, IBI, un cobro, tu aportación… te guío paso a paso</span>
+			</span>
+		</a>
+		<h1 class="mb-5 text-4xl">¿O de un vehículo?</h1>
 		{#if !vehiculos.length}
 			<div class="vacio">No hay vehículos. <a href="/flota/nuevo" class="text-acento">Da de alta el primero</a>.</div>
 		{/if}

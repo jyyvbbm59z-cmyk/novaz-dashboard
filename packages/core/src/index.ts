@@ -7,3 +7,6 @@ export * from './fechas';
 export * from './copia';
 export * from './contabilidad';
 export * from './libros';
+export * from './tesoreria';
+export * from './operaciones';
+export * from './revision';

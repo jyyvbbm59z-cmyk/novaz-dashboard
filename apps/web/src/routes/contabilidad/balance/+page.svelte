@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Ayuda from '$comp/Ayuda.svelte';
 	import { euros, fechaLarga, type LineaInforme } from '@novaz/core';
 	import { ChevronRight, CircleAlert, CircleCheck } from '@lucide/svelte';
 
@@ -27,6 +28,8 @@
 {/snippet}
 
 <svelte:head><title>Balance · {data.ajustes.nombreTaller}</title></svelte:head>
+
+<Ayuda titulo="¿Qué es el balance?">{@html `Una foto de la empresa en una fecha. A la izquierda, lo que <strong>tiene</strong> (activo: dinero, máquinas, lo que le deben). A la derecha, de dónde ha salido (lo que has aportado tú, los beneficios acumulados y lo que debe a otros). Los dos lados siempre suman lo mismo.`}</Ayuda>
 
 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
 	<div class="inline-flex rounded-lg border border-borde bg-superficie-2 p-1">

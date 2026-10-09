@@ -58,7 +58,7 @@
 	<section>
 		<div class="mb-3 flex items-baseline justify-between">
 			<h2 class="text-2xl">Gasto</h2>
-			<a href="/contabilidad/movimientos" class="text-xs text-texto-3 hover:text-texto">Ver todo →</a>
+			<span class="flex gap-3"><a href="/contabilidad/nuevo" class="text-xs font-semibold text-acento">＋ Apuntar factura</a><a href="/contabilidad" class="text-xs text-texto-3 hover:text-texto">Ver todo →</a></span>
 		</div>
 		<div class="tarjeta p-5">
 			<div class="grid grid-cols-2 gap-4">

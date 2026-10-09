@@ -11,6 +11,14 @@ const bool = (nombre: string) => integer(nombre, { mode: 'boolean' });
 export const FORMAS_PAGO = ['banco', 'caja', 'socio'] as const;
 export type FormaPago = (typeof FORMAS_PAGO)[number];
 
+/**
+ * gasto / ingreso: afectan al resultado.
+ * aportacion: entra dinero sin ser ingreso (socio, préstamo…): Debe tesorería / Haber cuenta.
+ * retirada: sale dinero sin ser gasto (devolver al socio, sacar a caja…): Debe cuenta / Haber tesorería.
+ */
+export const TIPOS_MOVIMIENTO = ['gasto', 'ingreso', 'aportacion', 'retirada'] as const;
+export type TipoMovimiento = (typeof TIPOS_MOVIMIENTO)[number];
+
 // ─── Configuración ────────────────────────────────────────────────────────────
 
 export const tiposVehiculo = sqliteTable('tipos_vehiculo', {
@@ -236,7 +244,7 @@ export const movimientos = sqliteTable(
 	{
 		id: id(),
 		fecha: text('fecha').notNull(),
-		tipo: text('tipo', { enum: ['gasto', 'ingreso'] }).notNull().default('gasto'),
+		tipo: text('tipo', { enum: TIPOS_MOVIMIENTO }).notNull().default('gasto'),
 		importeCent: integer('importe_cent').notNull(),
 		categoriaId: integer('categoria_id').references(() => categorias.id, { onDelete: 'set null' }),
 		concepto: text('concepto').notNull(),
@@ -252,12 +260,35 @@ export const movimientos = sqliteTable(
 		pago: text('pago', { enum: FORMAS_PAGO }).notNull().default('banco'),
 		/** Cuenta contable propia; si es null, la de la categoría. */
 		cuentaContable: text('cuenta_contable'),
+		/** Generado por una operación recurrente (p. ej. la aportación mensual). */
+		recurrenteId: integer('recurrente_id'),
 		creado: creado()
 	},
 	(t) => [index('movimientos_fecha_idx').on(t.fecha), index('movimientos_vehiculo_idx').on(t.vehiculoId)]
 );
 
 // ─── Contabilidad ─────────────────────────────────────────────────────────────
+
+/** Operaciones que se repiten cada mes: se convierten en movimientos reales al llegar su fecha. */
+export const recurrentes = sqliteTable('recurrentes', {
+	id: id(),
+	concepto: text('concepto').notNull(),
+	tipo: text('tipo', { enum: TIPOS_MOVIMIENTO }).notNull().default('gasto'),
+	importeCent: integer('importe_cent').notNull(),
+	ivaPct: integer('iva_pct').notNull().default(0),
+	pago: text('pago', { enum: FORMAS_PAGO }).notNull().default('banco'),
+	cuentaContable: text('cuenta_contable'),
+	categoriaId: integer('categoria_id').references(() => categorias.id, { onDelete: 'set null' }),
+	proveedor: text('proveedor'),
+	/** Día del mes (si el mes es más corto, el último día). */
+	dia: integer('dia').notNull().default(1),
+	desde: text('desde').notNull(),
+	hasta: text('hasta'),
+	/** Última fecha ya convertida en movimiento: lo borrado a mano no se vuelve a crear. */
+	ultimaGenerada: text('ultima_generada'),
+	activo: bool('activo').notNull().default(true),
+	creado: creado()
+});
 
 /** Plan de cuentas (PGC PYMES simplificado). Admite subcuentas libres: 5720001… */
 export const cuentas = sqliteTable('cuentas', {
@@ -360,3 +391,4 @@ export type Cuenta = typeof cuentas.$inferSelect;
 export type AsientoManual = typeof asientos.$inferSelect;
 export type ApunteManual = typeof apuntes.$inferSelect;
 export type Inmovilizado = typeof inmovilizado.$inferSelect;
+export type Recurrente = typeof recurrentes.$inferSelect;

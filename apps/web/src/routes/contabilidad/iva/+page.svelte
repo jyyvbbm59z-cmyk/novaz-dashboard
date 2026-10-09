@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Ayuda from '$comp/Ayuda.svelte';
 	import { euros, fechaLarga } from '@novaz/core';
 
 	let { data } = $props();
@@ -16,6 +17,8 @@
 </script>
 
 <svelte:head><title>IVA · {data.ajustes.nombreTaller}</title></svelte:head>
+
+<Ayuda titulo="¿Cómo funciona el IVA?">{@html `El IVA que cobras a tus clientes no es tuyo: es de Hacienda. El IVA que pagas en tus facturas te lo descuentas. Cada trimestre se resta uno del otro: si sale positivo, pagas la diferencia; si sale negativo, te lo guardas para compensar en los siguientes trimestres.`}</Ayuda>
 
 <p class="mb-4 max-w-3xl text-sm text-texto-3">
 	Modelo 303 simulado. Cada trimestre cerrado se liquida solo: el IVA repercutido menos el soportado va a Hacienda (cuenta 4750) o queda a compensar (4700)

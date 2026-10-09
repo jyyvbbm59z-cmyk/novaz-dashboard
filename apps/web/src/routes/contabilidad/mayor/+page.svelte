@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Ayuda from '$comp/Ayuda.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { euros, fechaLarga } from '@novaz/core';
@@ -21,6 +22,8 @@
 </script>
 
 <svelte:head><title>Mayor · {data.ajustes.nombreTaller}</title></svelte:head>
+
+<Ayuda titulo="¿Qué es el mayor?">{@html `El extracto de una cuenta concreta, como el de tu banco: cada movimiento y el saldo acumulado. La 572 es el banco, la 551 lo que la empresa te debe, la 472/477 el IVA…`}</Ayuda>
 
 <div class="grid gap-5 lg:grid-cols-[18rem_1fr]">
 	<aside class="lg:sticky lg:top-24 lg:self-start">

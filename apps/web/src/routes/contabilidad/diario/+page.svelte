@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Ayuda from '$comp/Ayuda.svelte';
 	import { page } from '$app/state';
 	import AsientoForm from '$comp/AsientoForm.svelte';
 	import Hoja from '$comp/Hoja.svelte';
@@ -52,6 +53,8 @@
 </script>
 
 <svelte:head><title>Libro diario · {data.ajustes.nombreTaller}</title></svelte:head>
+
+<Ayuda titulo="¿Qué es el libro diario?">{@html `Todas las operaciones en orden de fecha, en formato contable (partida doble): cada asiento dice de qué cuenta sale el valor (<strong>haber</strong>) y a cuál va (<strong>debe</strong>), y ambos lados suman siempre lo mismo. Casi todos se crean solos; aquí solo harías a mano operaciones raras.`}</Ayuda>
 
 <div class="mb-4 flex flex-wrap items-center gap-2">
 	<label class="relative min-w-48 flex-1">

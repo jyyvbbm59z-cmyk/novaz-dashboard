@@ -8,9 +8,17 @@ mantener.
 mantenimientos por km/tiempo, historial, restauraciones (fases, tareas y diario de obra), fotos y
 avisos por Telegram.
 
-**Dinero:** contabilidad de partida doble (PGC PYMES simulado). Cada gasto o ingreso genera su
-asiento con IVA y forma de pago. Incluye libro diario, mayor, pérdidas y ganancias, balance,
-IVA trimestral (303 simulado), inmovilizado con amortización y plan de cuentas.
+**Dinero:** contabilidad de partida doble (PGC PYMES simulado) pensada para quien no sabe
+contabilidad:
+- **Asistente «¿Qué ha llegado?»**: luz, agua, IBI, tasas, recambios, un cobro, tu aportación… y la
+  app elige cuenta, IVA y asiento, y te explica en llano qué significa.
+- **Aportaciones del socio** (puntuales o mensuales automáticas) y operaciones recurrentes.
+- **Tesorería**: flujo de caja mensual, previsión a 6 meses con aviso si te vas a quedar sin
+  dinero (y cuánto aportar), y cuadre con el saldo real del banco.
+- **Qué hacer ahora**: revisión que te dice qué tienes pendiente (pagar IVA, devolverte lo
+  adelantado, cuadrar el banco…).
+- Libros: diario, mayor, pérdidas y ganancias, balance, IVA trimestral (303 simulado),
+  inmovilizado con amortización y plan de cuentas editable.
 
 **Siguientes:** Clientes y facturas → Inventario.
 Diseño: [`docs/specs/`](docs/specs/).

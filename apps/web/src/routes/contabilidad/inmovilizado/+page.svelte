@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Ayuda from '$comp/Ayuda.svelte';
 	import { enhance } from '$app/forms';
 	import Hoja from '$comp/Hoja.svelte';
 	import { accion, enviar } from '$lib/enviar';
@@ -14,6 +15,8 @@
 </script>
 
 <svelte:head><title>Inmovilizado · {data.ajustes.nombreTaller}</title></svelte:head>
+
+<Ayuda titulo="¿Qué es el inmovilizado?">{@html `Las cosas caras que duran años (elevador, compresor, soldadora). No se cuentan como gasto de golpe: cada año se gasta solo una parte (la <strong>amortización</strong>). Así el resultado de cada año es más justo.`}</Ayuda>
 
 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
 	<p class="max-w-2xl text-sm text-texto-3">Herramientas y equipos que duran años: se amortizan de forma lineal y el gasto se reparte en su vida útil (cuentas 681/281). Al registrar un gasto puedes marcarlo como inmovilizado.</p>

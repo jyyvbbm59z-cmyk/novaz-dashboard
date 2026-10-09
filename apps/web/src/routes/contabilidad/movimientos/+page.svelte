@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Ayuda from '$comp/Ayuda.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Hoja from '$comp/Hoja.svelte';
@@ -13,7 +14,7 @@
 	const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 	const maxMes = $derived(Math.max(1, ...data.meses.map((m) => m.gasto)));
 
-	let hMov = $state(false);
+	let hMov = $state(page.url.searchParams.has('nuevo'));
 	let edit = $state<Movimiento | null>(null);
 	let sobre = $state<number | null>(null);
 
@@ -32,10 +33,12 @@
 
 <svelte:head><title>Movimientos · {data.ajustes.nombreTaller}</title></svelte:head>
 
+<Ayuda titulo="¿Qué son los movimientos?">{@html `Cada factura, cobro o aportación que apuntas. Es lo único que tienes que registrar: la app genera sola los asientos contables. Para apuntar sin pensar, usa el botón <strong>Apuntar</strong>.`}</Ayuda>
+
 <!-- Filtros -->
 <div class="mb-5 flex flex-wrap gap-2">
 	<select class="input h-9 w-auto text-sm" value={f.tipo ?? ''} onchange={(e) => filtrar('tipo', e.currentTarget.value)}>
-		<option value="">Gastos e ingresos</option><option value="gasto">Solo gastos</option><option value="ingreso">Solo ingresos</option>
+		<option value="">Todo</option><option value="gasto">Gastos</option><option value="ingreso">Ingresos</option><option value="aportacion">Entradas (aportaciones…)</option><option value="retirada">Salidas (reembolsos…)</option>
 	</select>
 	<select class="input h-9 w-auto text-sm" value={String(f.categoria ?? '')} onchange={(e) => filtrar('categoria', e.currentTarget.value)}>
 		<option value="">Todas las categorías</option>
@@ -49,7 +52,8 @@
 	{#if f.mes}<button class="chip h-9 border-acento px-3" onclick={() => filtrar('mes', null)}>{MESES[Number(f.mes) - 1]} ✕</button>{/if}
 	<span class="ml-auto flex gap-2">
 		<a href={csv} class="btn btn-icono h-9 sm:w-auto sm:px-3" aria-label="Exportar CSV" download><Download size={16} /><span class="hidden sm:inline">CSV</span></a>
-		<button class="btn btn-acento h-9" onclick={() => ((edit = null), (hMov = true))}><Plus size={16} /> Nuevo</button>
+		<button class="btn h-9" onclick={() => ((edit = null), (hMov = true))}>Formulario</button>
+		<a href="/contabilidad/nuevo" class="btn btn-acento h-9"><Plus size={16} /> Apuntar</a>
 	</span>
 </div>
 
@@ -111,10 +115,10 @@
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-sm font-medium">{m.concepto}</p>
 						<p class="truncate text-xs text-texto-3">
-							{fechaLarga(m.fecha)} · {m.categoria?.nombre ?? 'Sin categoría'} · {ETIQUETA_PAGO[m.pago]}{m.ivaPct ? ` · IVA ${m.ivaPct}%` : ''}{m.vehiculo ? ` · ` : ''}{#if m.vehiculo}<a href="/flota/{m.vehiculoId}?pestana=gastos" class="hover:text-texto">{m.vehiculo}</a>{/if}{m.proveedor ? ` · ${m.proveedor}` : ''}
+							{fechaLarga(m.fecha)} · {m.categoria?.nombre ?? (m.tipo === 'aportacion' ? 'Entrada de dinero' : m.tipo === 'retirada' ? 'Salida de dinero' : 'Sin categoría')} · {ETIQUETA_PAGO[m.pago]}{m.recurrenteId ? ' · mensual' : ''}{m.ivaPct ? ` · IVA ${m.ivaPct}%` : ''}{m.vehiculo ? ` · ` : ''}{#if m.vehiculo}<a href="/flota/{m.vehiculoId}?pestana=gastos" class="hover:text-texto">{m.vehiculo}</a>{/if}{m.proveedor ? ` · ${m.proveedor}` : ''}
 						</p>
 					</div>
-					<span class="cifra text-lg {m.tipo === 'ingreso' ? 'nivel-ok' : ''}">{m.tipo === 'ingreso' ? '+' : '−'}{euros(m.importeCent)}</span>
+					<span class="cifra text-lg {m.tipo === 'ingreso' ? 'nivel-ok' : m.tipo === 'aportacion' ? 'nivel-pronto' : ''}">{m.tipo === 'ingreso' || m.tipo === 'aportacion' ? '+' : '−'}{euros(m.importeCent)}</span>
 					<span class="flex opacity-60 group-hover:opacity-100">
 						<button class="btn btn-fantasma btn-icono h-8 w-8" onclick={() => ((edit = m), (hMov = true))} aria-label="Editar"><Pencil size={14} /></button>
 						<button class="btn btn-fantasma btn-icono btn-peligro h-8 w-8" onclick={() => borrar(m.id)} aria-label="Borrar"><Trash2 size={14} /></button>

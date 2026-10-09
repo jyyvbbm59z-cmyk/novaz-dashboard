@@ -1,7 +1,7 @@
 // Operaciones de escritura compartidas por varias páginas (ficha, captura rápida, restauración…).
 import { desglosarIva, sumarMeses } from '@novaz/core';
 import * as s from '@novaz/core/schema';
-import { CLASES_ENTRADA, FORMAS_PAGO, type ClaseEntrada, type FormaPago } from '@novaz/core/schema';
+import { CLASES_ENTRADA, FORMAS_PAGO, TIPOS_MOVIMIENTO, type ClaseEntrada, type FormaPago, type TipoMovimiento } from '@novaz/core/schema';
 import { and, eq } from 'drizzle-orm';
 import { borrarAdjuntosDe } from './adjuntos';
 import { registrarKm } from './datos';
@@ -91,17 +91,24 @@ export async function guardarMovimiento(locals: Locals, fd: FormData, fijo: { ve
 	const id = f.idOpcional('id');
 	const importe = f.euros('importe');
 	if (importe == null || importe === 0) throw new ErrorFormulario('Indica un importe');
-	const tipo = f.texto('tipo') === 'ingreso' ? 'ingreso' : 'gasto';
-	const categoriaId = f.idOpcional('categoriaId');
+	const tipoCrudo = f.texto('tipo');
+	const tipo = (TIPOS_MOVIMIENTO.includes(tipoCrudo as TipoMovimiento) ? tipoCrudo : 'gasto') as TipoMovimiento;
+	const financiero = tipo === 'aportacion' || tipo === 'retirada';
+	const categoriaId = financiero ? null : f.idOpcional('categoriaId');
 	const esInmovilizado = tipo === 'gasto' && f.bool('inmovilizado');
 	const cuentaInmov = f.texto('cuentaInmovilizado') ?? '213';
 	const cuentaPropia = f.texto('cuentaContable');
 	if (cuentaPropia && !/^\d{3,10}$/.test(cuentaPropia)) throw new ErrorFormulario('La cuenta contable debe ser un número (p. ej. 602)');
 
+	const contables = await datosContables(locals, categoriaId, f);
+	if (financiero) {
+		contables.ivaPct = 0;
+		if (contables.pago === 'socio') contables.pago = 'banco';
+	}
 	const valores = {
-		...(await datosContables(locals, categoriaId, f)),
+		...contables,
 		fecha: f.fecha('fecha') ?? locals.hoy,
-		tipo: tipo as 'gasto' | 'ingreso',
+		tipo,
 		importeCent: Math.abs(importe),
 		categoriaId,
 		concepto: f.obligatorio('concepto', 'concepto'),

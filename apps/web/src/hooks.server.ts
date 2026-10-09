@@ -1,9 +1,12 @@
 import { dev } from '$app/environment';
-import { crearDb, hoy, leerAjustes } from '@novaz/core';
+import { crearDb, hoy, leerAjustes, materializarRecurrentes } from '@novaz/core';
 import { error, type Handle } from '@sveltejs/kit';
 import { verificarAccess } from '$lib/server/auth';
 
 const HEX = /^#[0-9a-f]{3,8}$/i;
+
+// Las operaciones recurrentes (aportación mensual…) se apuntan una vez al día por instancia.
+let recurrentesAl = '';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const env = event.platform?.env;
@@ -23,6 +26,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.db = crearDb(env.DB);
 	event.locals.ajustes = await leerAjustes(event.locals.db);
 	event.locals.hoy = hoy(event.locals.ajustes.zonaHoraria);
+	if (recurrentesAl !== event.locals.hoy) {
+		recurrentesAl = event.locals.hoy;
+		await materializarRecurrentes(event.locals.db, event.locals.hoy).catch((e) => {
+			recurrentesAl = '';
+			console.error('Recurrentes:', e);
+		});
+	}
 
 	const { tema, acento } = event.locals.ajustes;
 	return resolve(event, {

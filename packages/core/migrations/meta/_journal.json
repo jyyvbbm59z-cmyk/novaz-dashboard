@@ -36,6 +36,20 @@
       "when": 1791554309455,
       "tag": "0004_cuentas_iva",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1791554535467,
+      "tag": "0005_recurrentes",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791554536317,
+      "tag": "0006_categorias_hogar",
+      "breakpoints": true
     }
   ]
 }

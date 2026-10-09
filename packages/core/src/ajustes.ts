@@ -1,6 +1,6 @@
 // Ajustes globales (tabla `ajustes`, clave → JSON). Los valores ausentes toman el defecto.
 
-export const EVENTOS_MOMENTO = ['tareaHecha', 'faseCompletada', 'restauracionTerminada', 'vencimientoRenovado', 'entradaCreada'] as const;
+export const EVENTOS_MOMENTO = ['tareaHecha', 'faseCompletada', 'restauracionTerminada', 'vencimientoRenovado', 'entradaCreada', 'cajaCuadrada'] as const;
 export type EventoMomento = (typeof EVENTOS_MOMENTO)[number];
 
 export const EFECTOS = ['ninguno', 'pulso', 'confeti', 'fuegos'] as const;
@@ -21,7 +21,8 @@ export const ETIQUETAS_EVENTO: Record<EventoMomento, string> = {
 	faseCompletada: 'Fase completada',
 	restauracionTerminada: 'Restauración terminada',
 	vencimientoRenovado: 'Vencimiento renovado',
-	entradaCreada: 'Entrada registrada'
+	entradaCreada: 'Entrada registrada',
+	cajaCuadrada: 'Caja cuadrada con el banco'
 };
 
 export interface Ajustes {
@@ -39,6 +40,8 @@ export interface Ajustes {
 	pagoPorDefecto: 'banco' | 'caja' | 'socio';
 	/** Tipo del impuesto de sociedades para la estimación (%). */
 	tipoImpuestoSociedades: number;
+	/** Última vez que se cuadró la tesorería con el banco real. */
+	ultimoCuadre: string | null;
 }
 
 export const AJUSTES_POR_DEFECTO: Ajustes = {
@@ -53,12 +56,14 @@ export const AJUSTES_POR_DEFECTO: Ajustes = {
 	momentosActivos: true,
 	pagoPorDefecto: 'banco',
 	tipoImpuestoSociedades: 25,
+	ultimoCuadre: null,
 	momentos: {
 		tareaHecha: { efecto: 'pulso', sonido: 'clic' },
 		faseCompletada: { efecto: 'confeti', sonido: 'campana' },
 		restauracionTerminada: { efecto: 'fuegos', sonido: 'aplausos' },
 		vencimientoRenovado: { efecto: 'confeti', sonido: 'llave' },
-		entradaCreada: { efecto: 'ninguno', sonido: 'ninguno' }
+		entradaCreada: { efecto: 'ninguno', sonido: 'ninguno' },
+		cajaCuadrada: { efecto: 'confeti', sonido: 'campana' }
 	}
 };
 

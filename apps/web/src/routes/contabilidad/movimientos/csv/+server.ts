@@ -19,7 +19,7 @@ export const GET = async ({ locals, url }) => {
 		.orderBy(asc(s.movimientos.fecha), asc(s.movimientos.id));
 	const cab = ['fecha', 'tipo', 'importe', 'categoria', 'concepto', 'proveedor', 'vehiculo', 'matricula', 'notas'];
 	const lineas = filas.map(({ m, categoria, vehiculo, matricula }) =>
-		[m.fecha, m.tipo, ((m.tipo === 'gasto' ? -1 : 1) * m.importeCent / 100).toFixed(2).replace('.', ','), categoria, m.concepto, m.proveedor, vehiculo, matricula, m.notas]
+		[m.fecha, m.tipo, (((m.tipo === 'gasto' || m.tipo === 'retirada') ? -1 : 1) * m.importeCent / 100).toFixed(2).replace('.', ','), categoria, m.concepto, m.proveedor, vehiculo, matricula, m.notas]
 			.map(celda)
 			.join(';')
 	);

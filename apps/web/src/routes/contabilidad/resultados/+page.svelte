@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Ayuda from '$comp/Ayuda.svelte';
 	import { euros } from '@novaz/core';
 	import { ChevronRight } from '@lucide/svelte';
 
@@ -28,6 +29,8 @@
 </script>
 
 <svelte:head><title>Pérdidas y ganancias · {data.ajustes.nombreTaller}</title></svelte:head>
+
+<Ayuda titulo="¿Qué es la cuenta de pérdidas y ganancias?">{@html `El resumen de lo que ha ganado o perdido la empresa en el año: ingresos arriba, gastos restando, y abajo el resultado. La amortización es la parte del año de lo que cuestan las máquinas que duran varios años. Toca una línea para ver sus cuentas.`}</Ayuda>
 
 <div class="tarjeta overflow-x-auto">
 	<table class="tabla">

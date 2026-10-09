@@ -4,6 +4,7 @@ import {
 	crearDb,
 	hoy as hoyEn,
 	leerAjustes,
+	materializarRecurrentes,
 	umbralAlcanzado,
 	volcado,
 	type Alerta,
@@ -30,8 +31,11 @@ export const CRON_COPIA = '0 3 * * 0';
 export async function avisosDelDia(env: Env, ahora = new Date()) {
 	const db = crearDb(env.DB);
 	const ajustes = await leerAjustes(db);
-	if (!env.TELEGRAM_TOKEN || !ajustes.telegramChatId) return;
 	const hoy = hoyEn(ajustes.zonaHoraria, ahora);
+	// Operaciones mensuales (aportación, alquiler…) aunque nadie abra la app
+	const creados = await materializarRecurrentes(db, hoy);
+	if (creados) console.log(`Recurrentes apuntados: ${creados}`);
+	if (!env.TELEGRAM_TOKEN || !ajustes.telegramChatId) return;
 	const lunes = new Date(`${hoy}T12:00:00Z`).getUTCDay() === 1;
 	await avisar(db, env, ajustes.telegramChatId, hoy, ajustes.urgenteDias, ajustes.nombreTaller, lunes && ajustes.resumenSemanal);
 }

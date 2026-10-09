@@ -3,7 +3,7 @@
 // Los asientos de movimientos, amortizaciones y liquidaciones de IVA se DERIVAN de los datos
 // cada vez (nunca se descuadran al editar o borrar). Solo los asientos manuales se guardan.
 import { diasEntre, sumarDias, sumarMeses } from './fechas';
-import type { FormaPago } from './schema';
+import type { FormaPago, TipoMovimiento } from './schema';
 
 // ─── Cuentas clave ───────────────────────────────────────────────────────────
 
@@ -11,6 +11,8 @@ export const CUENTA_PAGO: Record<FormaPago, string> = { banco: '572', caja: '570
 export const ETIQUETA_PAGO: Record<FormaPago, string> = { banco: 'Banco', caja: 'Caja', socio: 'Bolsillo del socio' };
 export const CUENTA_GASTO_DEFECTO = '629';
 export const CUENTA_INGRESO_DEFECTO = '759';
+/** Aportaciones de socios o propietarios: el dinero que metes sin ser capital ni préstamo. */
+export const CUENTA_APORTACION = '118';
 export const IVA_SOPORTADO = '472';
 export const IVA_REPERCUTIDO = '477';
 export const HP_ACREEDORA_IVA = '4750';
@@ -53,7 +55,7 @@ export interface Asiento {
 export interface MovimientoContable {
 	id: number;
 	fecha: string;
-	tipo: 'gasto' | 'ingreso';
+	tipo: TipoMovimiento;
 	importeCent: number;
 	ivaPct: number;
 	pago: FormaPago;
@@ -115,6 +117,22 @@ export function asientoDeMovimiento(m: MovimientoContable, cuentaCategoria: stri
 	const { base, cuota } = desglosarIva(m.importeCent, m.ivaPct);
 	const tesoreria = CUENTA_PAGO[m.pago] ?? '572';
 	const asiento: Asiento = { clave: `m${m.id}`, fecha: m.fecha, concepto: m.concepto, origen: 'movimiento', refId: m.id, apuntes: [] };
+	if (m.tipo === 'aportacion' || m.tipo === 'retirada') {
+		// Sin IVA: es dinero que entra o sale, no compra ni venta. El socio no puede "pagarse a sí mismo".
+		const caja = m.pago === 'socio' ? '572' : tesoreria;
+		const cuenta = m.cuentaContable || CUENTA_APORTACION;
+		asiento.apuntes =
+			m.tipo === 'aportacion'
+				? [
+						{ cuenta: caja, debe: m.importeCent, haber: 0 },
+						{ cuenta, debe: 0, haber: m.importeCent }
+					]
+				: [
+						{ cuenta, debe: m.importeCent, haber: 0 },
+						{ cuenta: caja, debe: 0, haber: m.importeCent }
+					];
+		return asiento;
+	}
 	if (m.tipo === 'gasto') {
 		const cuenta = m.cuentaContable || cuentaCategoria || CUENTA_GASTO_DEFECTO;
 		asiento.apuntes = [

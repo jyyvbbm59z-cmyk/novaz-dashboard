@@ -21,6 +21,20 @@ Solo se guardan los **asientos manuales** (`asientos` + `apuntes`). El resto se 
 - Cuenta de gasto/ingreso: la propia del movimiento, si no la de su categoría, si no 629/759.
 - El IVA va incluido en el importe; el % por defecto sale de la categoría.
 
+## Fácil para quien no sabe contabilidad
+
+- **Asistente** (`/contabilidad/nuevo`, catálogo en `packages/core/src/operaciones.ts`): cada
+  operación lleva cuenta, IVA típico, forma de pago y una explicación en llano. Vista previa del
+  asiento en vivo.
+- **Tipos de movimiento**: gasto, ingreso, `aportacion` (Debe tesorería / Haber 118, 170…) y
+  `retirada` (Debe 551, 118, 570… / Haber tesorería). Sin IVA.
+- **Recurrentes** (tabla `recurrentes`): se materializan como movimientos reales al llegar su fecha
+  (una vez al día en `hooks` y en el cron). `ultimaGenerada` evita recrear lo borrado.
+- **Tesorería** (`tesoreria.ts`): flujo mensual clasificado por contrapartida, previsión =
+  recurrentes + media de cobros/pagos sueltos de los 3 últimos meses, sugerencia de aportación
+  si el saldo previsto cae bajo cero, cuadre con el saldo real (ajuste a 626/678/759/118).
+- **Revisión** (`revision.ts`): consejos priorizados con enlace a la solución.
+
 ## Informes
 
 Resumen · Movimientos · Libro diario (con plantillas: capital, pago de IVA, reembolso al socio,
