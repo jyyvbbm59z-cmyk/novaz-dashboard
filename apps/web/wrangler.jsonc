@@ -24,7 +24,7 @@
 	],
 	"vars": {
 		// Cloudflare Access: dominio del equipo (p. ej. "novaz.cloudflareaccess.com") y AUD de la aplicación
-		"ACCESS_TEAM_DOMAIN": "",
+		"ACCESS_TEAM_DOMAIN": "novaz.cloudflareaccess.com",
 		"ACCESS_AUD": ""
 	},
 	"observability": { "enabled": true }

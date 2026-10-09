@@ -1,7 +1,7 @@
 import { dev } from '$app/environment';
 import { crearDb, hoy, leerAjustes, materializarRecurrentes } from '@novaz/core';
 import { error, type Handle } from '@sveltejs/kit';
-import { verificarAccess } from '$lib/server/auth';
+import { audSinVerificar, verificarAccess } from '$lib/server/auth';
 
 const HEX = /^#[0-9a-f]{3,8}$/i;
 
@@ -20,7 +20,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.locals.usuario = email;
 	} else {
 		// Nunca servir datos sin protección: Access debe estar configurado.
-		return new Response('Configura Cloudflare Access (ACCESS_TEAM_DOMAIN y ACCESS_AUD). Ver README.', { status: 503 });
+		// Ayuda de instalación: si Access ya está delante, el token trae el AUD (no es secreto) y lo mostramos.
+		const aud = audSinVerificar(event.request.headers.get('cf-access-jwt-assertion'));
+		const ayuda = aud
+			? `\n\nAccess ya está activo. El AUD de esta aplicación es:\n\n${aud}\n\nPonlo en ACCESS_AUD (apps/web/wrangler.jsonc).`
+			: '\n\nNo llega ningún token de Access: revisa que la aplicación de Access cubra esta URL.';
+		return new Response(`Configura Cloudflare Access (ACCESS_TEAM_DOMAIN y ACCESS_AUD). Ver README.${ayuda}`, {
+			status: 503,
+			headers: { 'content-type': 'text/plain; charset=utf-8' }
+		});
 	}
 
 	event.locals.db = crearDb(env.DB);

@@ -20,3 +20,15 @@ export async function verificarAccess(request: Request, equipo: string, aud: str
 		return null;
 	}
 }
+
+/** Lee el `aud` de un token SIN verificarlo. Solo para mostrarlo durante la instalación. */
+export function audSinVerificar(token: string | null): string | null {
+	if (!token) return null;
+	try {
+		const carga = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+		const aud = Array.isArray(carga.aud) ? carga.aud[0] : carga.aud;
+		return typeof aud === 'string' && /^[0-9a-f]{32,128}$/i.test(aud) ? aud : null;
+	} catch {
+		return null;
+	}
+}
