@@ -13,8 +13,7 @@
 		{
 			"binding": "DB",
 			"database_name": "novaz",
-			// El mismo id que en apps/web/wrangler.jsonc
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			"database_id": "8d5980dc-6344-4b43-a08c-b1d480cf3577",
 			"migrations_dir": "../../packages/core/migrations"
 		}
 	],
