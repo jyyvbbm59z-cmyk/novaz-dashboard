@@ -310,6 +310,11 @@ export async function resolverPendiente(locals: Locals, vehiculoId: number, fd: 
 		.update(s.pendientes)
 		.set({ estado: 'hecho', fechaCierre: entrada?.fecha ?? locals.hoy, entradaId: r.entradaId })
 		.where(eq(s.pendientes.id, pendienteId));
+	// Las fotos de la avería («antes») pasan a la entrada de reparación del historial
+	await locals.db
+		.update(s.adjuntos)
+		.set({ entidad: 'entrada', entidadId: r.entradaId })
+		.where(and(eq(s.adjuntos.entidad, 'pendiente'), eq(s.adjuntos.entidadId, pendienteId)));
 	return r;
 }
 

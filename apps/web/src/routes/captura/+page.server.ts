@@ -62,8 +62,8 @@ export const actions = {
 	}),
 	pendiente: accion(async ({ request, locals }) => {
 		const fd = await request.formData();
-		await guardarPendiente(locals, leer(fd).id('vehiculoId'), fd);
-		return { mensaje: 'Apuntado en «Por reparar»' };
+		const pendienteId = await guardarPendiente(locals, leer(fd).id('vehiculoId'), fd);
+		return { mensaje: 'Apuntado en «Por reparar»', pendienteId };
 	}),
 	tarea: accion(async ({ request, locals }) => {
 		const f = leer(await request.formData());

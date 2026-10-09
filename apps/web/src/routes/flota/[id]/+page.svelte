@@ -10,6 +10,7 @@
 	import MovimientoForm from '$comp/MovimientoForm.svelte';
 	import Nivel from '$comp/Nivel.svelte';
 	import Pestanas from '$comp/Pestanas.svelte';
+	import PendienteForm from '$comp/PendienteForm.svelte';
 	import Placa from '$comp/Placa.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import VencimientoForm from '$comp/VencimientoForm.svelte';
@@ -235,6 +236,8 @@
 									<span style="color: {PRIORIDAD[p.prioridad].color}">{PRIORIDAD[p.prioridad].texto}</span> · visto el {fechaLarga(p.fechaDetectado)}{p.kmDetectado != null ? ` a ${p.kmDetectado.toLocaleString('es-ES')} km` : ''}
 								</p>
 								{#if p.detalle}<p class="mt-1 text-sm whitespace-pre-line text-texto-2">{p.detalle}</p>{/if}
+								{#if data.adjuntosPend[p.id]?.length}<div class="mt-2 max-w-xs"><Galeria adjuntos={data.adjuntosPend[p.id]} columnas="grid-cols-4" /></div>{/if}
+								<div class="mt-1.5"><SubirArchivos entidad="pendiente" entidadId={p.id} vehiculoId={v.id} camara texto="Foto" clase="inline-flex items-center gap-1.5 text-xs text-texto-3 hover:text-texto [&_svg]:size-3.5" /></div>
 							</div>
 							<div class="flex shrink-0 items-center gap-1">
 								<button class="btn btn-acento h-9 px-3" onclick={() => resolver(p)}><Check size={16} /> <span class="hidden sm:inline">Reparado</span></button>
@@ -554,6 +557,7 @@
 		planes={planesVeh}
 		fases={data.fasesAbiertas}
 		entrada={entradaEdit}
+		adjuntosExistentes={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.adjuntos ?? []) : []}
 		gastosExistentes={entradaEdit ? data.movimientos.filter((m) => m.entradaId === entradaEdit!.id && m.tipo === 'gasto').sort((a, b) => a.id - b.id) : []}
 		claseInicial={pendResolver ? 'reparacion' : planHecho ? 'mantenimiento' : activa ? 'diario' : 'nota'}
 		planInicial={planHecho}
@@ -563,27 +567,7 @@
 </Hoja>
 
 <Hoja bind:abierta={hPendiente} titulo={pendEdit ? 'Editar avería' : 'Apuntar avería o trabajo pendiente'}>
-	<form method="POST" action="?/pendiente" use:enhance={enviar({ alTerminar: () => (hPendiente = false) })} class="flex flex-col gap-4">
-		{#if pendEdit}<input type="hidden" name="id" value={pendEdit.id} />{/if}
-		<label class="campo"><span>¿Qué hay que reparar? *</span><input name="titulo" class="input" required value={pendEdit?.titulo ?? ''} placeholder="Fuga de aceite en el motor de arranque" /></label>
-		<fieldset class="campo">
-			<span>Prioridad</span>
-			<div class="grid grid-cols-3 gap-2">
-				{#each Object.entries(PRIORIDAD) as [v, p] (v)}
-					<label class="cursor-pointer rounded-lg border border-borde bg-superficie-2 p-2.5 text-center text-sm font-semibold has-[:checked]:border-acento has-[:checked]:bg-acento/10">
-						<input type="radio" name="prioridad" value={v} checked={(pendEdit?.prioridad ?? 'media') === v} class="sr-only" />
-						<span class="mr-1 inline-block h-2 w-2 rounded-full" style="background:{p.color}"></span>{p.texto}
-					</label>
-				{/each}
-			</div>
-		</fieldset>
-		<div class="grid grid-cols-2 gap-3">
-			<label class="campo"><span>Visto el</span><input type="date" name="fechaDetectado" class="input" value={pendEdit?.fechaDetectado ?? data.hoy} /></label>
-			<label class="campo"><span>Km</span><input name="km" class="input" inputmode="numeric" value={pendEdit?.kmDetectado ?? data.km ?? ''} /></label>
-		</div>
-		<label class="campo"><span>Detalles</span><textarea name="detalle" class="input" rows="3" placeholder="Dónde está, qué pieza hace falta, referencias…">{pendEdit?.detalle ?? ''}</textarea></label>
-		<button class="btn btn-acento h-12">{pendEdit ? 'Guardar' : 'Apuntar'}</button>
-	</form>
+	<PendienteForm vehiculoId={v.id} hoy={data.hoy} km={data.km} pendiente={pendEdit} adjuntos={pendEdit ? (data.adjuntosPend[pendEdit.id] ?? []) : []} alGuardar={() => (hPendiente = false)} />
 </Hoja>
 
 <Hoja bind:abierta={hKm} titulo="Actualizar km">

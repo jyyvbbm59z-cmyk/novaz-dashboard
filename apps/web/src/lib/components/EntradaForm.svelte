@@ -4,9 +4,12 @@
 	import { avisar } from '$lib/avisos.svelte';
 	import { enviar } from '$lib/enviar';
 	import { subirArchivo } from '$lib/imagenes';
-	import type { Categoria, Entrada } from '@novaz/core/schema';
+	import type { Adjunto, Categoria, Entrada } from '@novaz/core/schema';
 	import { euros, eurosInput, parsearEuros } from '@novaz/core';
-	import { Camera, ImagePlus, Plus, X } from '@lucide/svelte';
+	import { Plus, X } from '@lucide/svelte';
+	import ColaFotos from '$comp/ColaFotos.svelte';
+	import Galeria from '$comp/Galeria.svelte';
+	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import { onMount } from 'svelte';
 
 	let {
@@ -22,6 +25,7 @@
 		planInicial = null,
 		planesIniciales = [],
 		gastosExistentes = [],
+		adjuntosExistentes = [],
 		faseInicial = null,
 		tituloInicial = '',
 		ocultos = {},
@@ -39,6 +43,7 @@
 		planInicial?: number | null;
 		planesIniciales?: number[];
 		gastosExistentes?: { id: number; concepto: string; importeCent: number; categoriaId: number | null; proveedor: string | null }[];
+		adjuntosExistentes?: Adjunto[];
 		faseInicial?: number | null;
 		tituloInicial?: string;
 		ocultos?: Record<string, string | number>;
@@ -90,7 +95,6 @@
 	const totalGastos = $derived(gastos.reduce((t, g) => t + (parsearEuros(g.importe) ?? 0), 0));
 	const nuevoGasto = () => gastos.push({ id: null, concepto: '', importe: '', categoriaId: String(catDefecto) });
 	let gastosAbierto = $state((() => gastosExistentes.length > 0)());
-	let previas = $derived(fotos.map((f) => URL.createObjectURL(f)));
 	const claveBorrador = $derived(`borrador:entrada:${vehiculoId}`);
 
 	onMount(() => {
@@ -112,11 +116,6 @@
 		} catch {}
 	});
 
-	function anadirFotos(e: Event) {
-		const input = e.currentTarget as HTMLInputElement;
-		fotos = [...fotos, ...(input.files ?? [])];
-		input.value = '';
-	}
 
 	const alTerminar = async (datos: Record<string, unknown>) => {
 		try {
@@ -191,6 +190,19 @@
 	{/if}
 	<label class="campo"><span>Detalle</span><textarea name="texto" class="input" rows="4" bind:value={texto} placeholder="Qué se hizo, piezas, referencias, sensaciones…"></textarea></label>
 
+	<div class="campo">
+		<span>Fotos</span>
+		{#if entrada}
+			{#if adjuntosExistentes.length}<Galeria adjuntos={adjuntosExistentes} columnas="grid-cols-5" />{/if}
+			<div class="flex flex-wrap gap-2">
+				<SubirArchivos entidad="entrada" entidadId={entrada.id} {vehiculoId} camara texto="Cámara" />
+				<SubirArchivos entidad="entrada" entidadId={entrada.id} {vehiculoId} texto="Galería" />
+			</div>
+		{:else}
+			<ColaFotos bind:fotos />
+		{/if}
+	</div>
+
 	<div class="grid grid-cols-3 gap-3">
 		<label class="campo"><span>Fecha</span><input type="date" name="fecha" class="input px-2" value={entrada?.fecha ?? hoy} /></label>
 		<label class="campo"><span>Km</span><input name="km" class="input" inputmode="numeric" value={entrada?.km ?? km ?? ''} /></label>
@@ -239,18 +251,6 @@
 		</div>
 	</details>
 
-	{#if !entrada}
-		<div class="flex flex-wrap items-center gap-2">
-			<label class="btn cursor-pointer"><Camera size={18} /> Cámara<input type="file" accept="image/*" capture="environment" class="sr-only" onchange={anadirFotos} /></label>
-			<label class="btn cursor-pointer"><ImagePlus size={18} /> Galería<input type="file" accept="image/*,application/pdf" multiple class="sr-only" onchange={anadirFotos} /></label>
-			{#each previas as src, i (src)}
-				<span class="relative h-10 w-10 overflow-hidden rounded-md bg-superficie-3">
-					{#if fotos[i]?.type.startsWith('image/')}<img {src} alt="" class="h-full w-full object-cover" />{:else}<span class="flex h-full items-center justify-center text-[0.6rem]">PDF</span>{/if}
-					<button type="button" class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100" onclick={() => (fotos = fotos.filter((_, j) => j !== i))} aria-label="Quitar"><X size={14} class="text-white" /></button>
-				</span>
-			{/each}
-		</div>
-	{/if}
 
 	<button class="btn btn-acento h-12">{entrada ? 'Guardar cambios' : 'Registrar'}</button>
 </form>

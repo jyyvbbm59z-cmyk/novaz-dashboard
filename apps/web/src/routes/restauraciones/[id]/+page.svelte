@@ -44,7 +44,7 @@
 	const abierta = (id: number) => abiertas[id] ?? id === actual;
 
 	let hEntrada = $state(false);
-	let entradaEdit = $state<Entrada | null>(null);
+	let entradaEdit = $state<(typeof data.entradas)[number] | null>(null);
 	let faseEntrada = $state<number | null>(null);
 	let hGasto = $state(false);
 	let gastoEdit = $state<Movimiento | null>(null);
@@ -296,6 +296,7 @@
 		categorias={data.catalogo.categorias}
 		fases={data.fases}
 		entrada={entradaEdit}
+		adjuntosExistentes={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.adjuntos ?? []) : []}
 		gastosExistentes={entradaEdit ? data.movimientos.filter((m) => m.entradaId === entradaEdit!.id && m.tipo === 'gasto').sort((a, b) => a.id - b.id) : []}
 		claseInicial="diario"
 		faseInicial={faseEntrada}

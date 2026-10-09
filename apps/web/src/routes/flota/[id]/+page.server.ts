@@ -145,7 +145,8 @@ export const load = async ({ params, locals }) => {
 			return { ...r, avance: a && a.total ? a.hechas / a.total : 0, tareas: a?.total ?? 0 };
 		}),
 		fasesAbiertas: fasesAbiertas.filter((f) => abiertas.some((r) => r.id === f.restauracionId)),
-		porReparar
+		porReparar,
+		adjuntosPend: await adjuntosDe(db, 'pendiente', porReparar.map((p) => p.id))
 	};
 };
 
@@ -181,8 +182,8 @@ export const actions = {
 	pendiente: accion(async ({ request, params, locals }) => {
 		const fd = await request.formData();
 		const nuevo = !leer(fd).idOpcional('id');
-		await guardarPendiente(locals, vid(params), fd);
-		return { mensaje: nuevo ? 'Apuntado en «Por reparar»' : 'Guardado' };
+		const pendienteId = await guardarPendiente(locals, vid(params), fd);
+		return { mensaje: nuevo ? 'Apuntado en «Por reparar»' : 'Guardado', pendienteId };
 	}),
 
 	resolver: accion(async ({ request, params, locals, platform }) => {

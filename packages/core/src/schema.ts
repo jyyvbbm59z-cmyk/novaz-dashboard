@@ -420,7 +420,7 @@ export const facturas = sqliteTable(
 // ─── Archivos ─────────────────────────────────────────────────────────────────
 
 
-export const ENTIDADES_ADJUNTO = ['vehiculo', 'entrada', 'vencimiento', 'movimiento', 'restauracion', 'ajuste'] as const;
+export const ENTIDADES_ADJUNTO = ['vehiculo', 'entrada', 'vencimiento', 'movimiento', 'restauracion', 'ajuste', 'pendiente'] as const;
 export type EntidadAdjunto = (typeof ENTIDADES_ADJUNTO)[number];
 
 export const adjuntos = sqliteTable(
