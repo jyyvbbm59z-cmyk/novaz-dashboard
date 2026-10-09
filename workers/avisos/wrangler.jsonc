@@ -1,0 +1,27 @@
+{
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "novaz-avisos",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-09-01",
+	// Sin URL pública: solo se ejecuta por cron.
+	"workers_dev": false,
+	"triggers": {
+		// UTC. Avisos diarios a las 07:00 (08:00/09:00 en Madrid) y copia los domingos a las 03:00
+		"crons": ["0 7 * * *", "0 3 * * 0"]
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "novaz",
+			// El mismo id que en apps/web/wrangler.jsonc
+			"database_id": "00000000-0000-0000-0000-000000000000",
+			"migrations_dir": "../../packages/core/migrations"
+		}
+	],
+	"r2_buckets": [{ "binding": "ARCHIVOS", "bucket_name": "novaz-archivos" }],
+	"vars": {
+		// URL pública de la app, para los enlaces de los mensajes
+		"APP_URL": ""
+	},
+	"observability": { "enabled": true }
+}

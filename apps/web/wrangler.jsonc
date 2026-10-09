@@ -1,0 +1,32 @@
+{
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "novaz-dashboard",
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"compatibility_date": "2026-09-01",
+	"compatibility_flags": ["nodejs_als"],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "novaz",
+			// Sustituir por el id real tras `wrangler d1 create novaz` (ver README)
+			"database_id": "00000000-0000-0000-0000-000000000000",
+			"migrations_dir": "../../packages/core/migrations"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "ARCHIVOS",
+			"bucket_name": "novaz-archivos"
+		}
+	],
+	"vars": {
+		// Cloudflare Access: dominio del equipo (p. ej. "novaz.cloudflareaccess.com") y AUD de la aplicación
+		"ACCESS_TEAM_DOMAIN": "",
+		"ACCESS_AUD": ""
+	},
+	"observability": { "enabled": true }
+}

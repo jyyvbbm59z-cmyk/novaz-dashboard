@@ -1,0 +1,231 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource/barlow-condensed/500.css';
+@import '@fontsource/barlow-condensed/600.css';
+@import '@fontsource/barlow-condensed/700.css';
+@import '@fontsource-variable/jetbrains-mono';
+
+@custom-variant dark (&:where([data-theme='oscuro'], [data-theme='oscuro'] *));
+
+/* ─── Tokens ──────────────────────────────────────────────────────────────── */
+:root,
+[data-theme='oscuro'] {
+	--acento: #f2a33a;
+	--fondo: #0d0e10;
+	--superficie: #15171a;
+	--superficie-2: #1c1f23;
+	--superficie-3: #252930;
+	--borde: #2a2e35;
+	--texto: #ecebe8;
+	--texto-2: #a3a8b0;
+	--texto-3: #6c727c;
+	--vencido: #f0524f;
+	--urgente: #ff9440;
+	--pronto: #7aa2ff;
+	--ok: #4cc38a;
+	--sombra: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px -12px rgb(0 0 0 / 0.6);
+	color-scheme: dark;
+}
+
+[data-theme='claro'] {
+	--fondo: #f3f2ef;
+	--superficie: #ffffff;
+	--superficie-2: #f7f6f3;
+	--superficie-3: #ecebe7;
+	--borde: #dfddd7;
+	--texto: #17181a;
+	--texto-2: #565b63;
+	--texto-3: #8b9098;
+	--vencido: #d63a37;
+	--urgente: #e0701b;
+	--pronto: #3d6fe0;
+	--ok: #1f9d63;
+	--sombra: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -16px rgb(0 0 0 / 0.25);
+	color-scheme: light;
+}
+
+@theme inline {
+	--font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-display: 'Barlow Condensed', 'Inter Variable', sans-serif;
+	--font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+	--color-acento: var(--acento);
+	--color-fondo: var(--fondo);
+	--color-superficie: var(--superficie);
+	--color-superficie-2: var(--superficie-2);
+	--color-superficie-3: var(--superficie-3);
+	--color-borde: var(--borde);
+	--color-texto: var(--texto);
+	--color-texto-2: var(--texto-2);
+	--color-texto-3: var(--texto-3);
+	--color-vencido: var(--vencido);
+	--color-urgente: var(--urgente);
+	--color-pronto: var(--pronto);
+	--color-ok: var(--ok);
+}
+
+/* ─── Base ────────────────────────────────────────────────────────────────── */
+@layer base {
+	html {
+		background: var(--fondo);
+		color: var(--texto);
+		-webkit-tap-highlight-color: transparent;
+		text-rendering: optimizeLegibility;
+	}
+	body {
+		@apply font-sans antialiased;
+		min-height: 100dvh;
+		font-feature-settings: 'cv11', 'ss01';
+	}
+	h1,
+	h2,
+	h3 {
+		@apply font-display tracking-wide uppercase;
+		font-weight: 700;
+		line-height: 1.05;
+	}
+	::selection {
+		background: color-mix(in oklab, var(--acento) 35%, transparent);
+	}
+	:focus-visible {
+		outline: 2px solid var(--acento);
+		outline-offset: 2px;
+	}
+	input,
+	select,
+	textarea,
+	button {
+		font: inherit;
+		color: inherit;
+	}
+}
+
+/* ─── Componentes ─────────────────────────────────────────────────────────── */
+@layer components {
+	.tarjeta {
+		@apply rounded-xl border border-borde bg-superficie;
+		box-shadow: var(--sombra);
+	}
+	.cifra {
+		@apply font-display font-semibold tabular-nums;
+		letter-spacing: 0.01em;
+	}
+	.etiqueta {
+		@apply text-[0.7rem] font-semibold tracking-[0.12em] text-texto-3 uppercase;
+	}
+	.btn {
+		@apply inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-borde bg-superficie-2 px-4 text-sm font-medium whitespace-nowrap transition select-none;
+	}
+	.btn:hover {
+		@apply bg-superficie-3;
+	}
+	.btn:active {
+		transform: translateY(1px);
+	}
+	.btn:disabled {
+		@apply cursor-not-allowed opacity-50;
+	}
+	.btn-acento {
+		@apply border-transparent font-semibold;
+		background: var(--acento);
+		color: #111;
+	}
+	.btn-acento:hover {
+		background: color-mix(in oklab, var(--acento) 88%, white);
+	}
+	.btn-fantasma {
+		@apply border-transparent bg-transparent;
+	}
+	.btn-peligro {
+		color: var(--vencido);
+	}
+	.btn-icono {
+		@apply h-10 w-10 px-0;
+	}
+	.campo {
+		@apply flex flex-col gap-1.5;
+	}
+	.campo > span:first-child {
+		@apply text-xs font-medium text-texto-2;
+	}
+	.input {
+		@apply h-11 w-full rounded-lg border border-borde bg-superficie-2 px-3 text-[0.95rem] transition outline-none;
+	}
+	textarea.input {
+		@apply h-auto min-h-24 py-2.5 leading-relaxed;
+	}
+	.input:focus {
+		border-color: var(--acento);
+		box-shadow: 0 0 0 3px color-mix(in oklab, var(--acento) 22%, transparent);
+	}
+	.input::placeholder {
+		color: var(--texto-3);
+	}
+	select.input {
+		@apply appearance-none pr-9;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236c727c' stroke-width='2'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 0.75rem center;
+	}
+	.chip {
+		@apply inline-flex h-6 items-center gap-1.5 rounded-full border border-borde bg-superficie-2 px-2.5 text-xs font-medium whitespace-nowrap;
+	}
+	.punto {
+		@apply inline-block h-2 w-2 shrink-0 rounded-full;
+	}
+	.pestanas {
+		@apply flex gap-1 overflow-x-auto border-b border-borde;
+		scrollbar-width: none;
+	}
+	.pestana {
+		@apply -mb-px border-b-2 border-transparent px-3 py-2.5 text-sm font-medium whitespace-nowrap text-texto-2 transition;
+	}
+	.pestana[aria-current='page'] {
+		color: var(--texto);
+		border-color: var(--acento);
+	}
+	.lista-filas > * + * {
+		@apply border-t border-borde;
+	}
+	.vacio {
+		@apply rounded-xl border border-dashed border-borde px-6 py-10 text-center text-sm text-texto-3;
+	}
+}
+
+@utility nivel-vencido {
+	color: var(--vencido);
+}
+@utility nivel-urgente {
+	color: var(--urgente);
+}
+@utility nivel-pronto {
+	color: var(--pronto);
+}
+@utility nivel-ok {
+	color: var(--ok);
+}
+
+@utility pb-seguro {
+	padding-bottom: calc(env(safe-area-inset-bottom) + 5.5rem);
+}
+
+@keyframes pulso-acento {
+	0% {
+		box-shadow: 0 0 0 0 color-mix(in oklab, var(--acento) 60%, transparent);
+	}
+	100% {
+		box-shadow: 0 0 0 14px transparent;
+	}
+}
+.anim-pulso {
+	animation: pulso-acento 0.6s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}

@@ -1,0 +1,21 @@
+{
+	"name": "Novaz · Taller",
+	"short_name": "Novaz",
+	"description": "Flota, mantenimientos y restauraciones del taller Novaz",
+	"lang": "es",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"background_color": "#0d0e10",
+	"theme_color": "#0d0e10",
+	"icons": [
+		{ "src": "/icono-192.png", "sizes": "192x192", "type": "image/png" },
+		{ "src": "/icono-512.png", "sizes": "512x512", "type": "image/png" },
+		{ "src": "/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+		{ "src": "/icono.svg", "sizes": "any", "type": "image/svg+xml" }
+	],
+	"shortcuts": [
+		{ "name": "Registrar", "url": "/captura", "icons": [{ "src": "/icono-192.png", "sizes": "192x192" }] },
+		{ "name": "Flota", "url": "/flota" }
+	]
+}
