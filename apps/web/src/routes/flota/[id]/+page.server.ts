@@ -22,7 +22,8 @@ import {
 	guardarMovimiento,
 	guardarVencimiento
 } from '$lib/server/acciones';
-import { borrarAdjuntos } from '$lib/server/adjuntos';
+import { adjuntosDe, borrarAdjuntos } from '$lib/server/adjuntos';
+import { crearFactura } from '$lib/server/facturas';
 import { avanceRestauraciones, comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
@@ -122,6 +123,8 @@ export const load = async ({ params, locals }) => {
 		sinRegistrar,
 		mantenimiento,
 		movimientos: movs.map((x) => ({ ...x.m, categoria: x.categoria })),
+		adjuntosMov: await adjuntosDe(db, 'movimiento', movs.map((x) => x.m.id)),
+		facturas: await db.select().from(s.facturas).where(eq(s.facturas.vehiculoId, id)).orderBy(desc(s.facturas.fecha), desc(s.facturas.id)),
 		totales: {
 			gasto: gastos.reduce((a, x) => a + x.m.importeCent, 0),
 			gastoAnio: gastos.filter((x) => x.m.fecha.startsWith(anio)).reduce((a, x) => a + x.m.importeCent, 0),
@@ -159,6 +162,11 @@ export const actions = {
 	entrada: accion(async ({ request, params, locals }) => {
 		const r = await guardarEntrada(locals, vid(params), await request.formData());
 		return { mensaje: r.nueva ? 'Entrada registrada' : 'Entrada actualizada', momento: r.nueva ? 'entradaCreada' : undefined, entradaId: r.entradaId };
+	}),
+
+	factura: accion(async ({ request, params, locals }) => {
+		const r = await crearFactura(locals, vid(params), await request.formData());
+		return { mensaje: `${r.numero} generada`, facturaId: r.id, numero: r.numero };
 	}),
 
 	pendiente: accion(async ({ request, params, locals }) => {
@@ -213,8 +221,8 @@ export const actions = {
 		return { mensaje: nuevo ? 'Movimiento registrado' : 'Movimiento actualizado' };
 	}),
 
-	borrarGasto: accion(async ({ request, locals }) => {
-		await borrarMovimiento(locals, leer(await request.formData()).id('id'));
+	borrarGasto: accion(async ({ request, locals, platform }) => {
+		await borrarMovimiento(locals, leer(await request.formData()).id('id'), platform!.env.ARCHIVOS);
 		return { mensaje: 'Movimiento borrado' };
 	}),
 

@@ -57,6 +57,13 @@
       "when": 1791570086193,
       "tag": "0007_pendientes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791572007949,
+      "tag": "0008_facturas",
+      "breakpoints": true
     }
   ]
 }

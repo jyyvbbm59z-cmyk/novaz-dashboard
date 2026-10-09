@@ -14,7 +14,14 @@ export const actions = {
 	guardar: accion(async ({ request, locals }) => {
 		const f = leer(await request.formData());
 		const id = f.idOpcional('id');
-		const v = { nombre: f.obligatorio('nombre', 'nombre'), telefono: f.texto('telefono'), email: f.texto('email'), notas: f.texto('notas') };
+		const v = {
+			nombre: f.obligatorio('nombre', 'nombre'),
+			telefono: f.texto('telefono'),
+			email: f.texto('email'),
+			nif: f.texto('nif')?.toUpperCase() ?? null,
+			direccion: f.texto('direccion'),
+			notas: f.texto('notas')
+		};
 		if (id) await locals.db.update(s.contactos).set(v).where(eq(s.contactos.id, id));
 		else await locals.db.insert(s.contactos).values(v);
 		return { mensaje: id ? 'Contacto actualizado' : 'Contacto creado' };

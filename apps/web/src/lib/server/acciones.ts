@@ -81,7 +81,7 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 export async function borrarEntrada(locals: Locals, bucket: R2Bucket, id: number) {
 	await borrarAdjuntosDe(locals.db, bucket, 'entrada', id);
 	const movs = await locals.db.select({ id: s.movimientos.id }).from(s.movimientos).where(eq(s.movimientos.entradaId, id));
-	for (const m of movs) await borrarMovimiento(locals, m.id);
+	for (const m of movs) await borrarMovimiento(locals, m.id, bucket);
 	await locals.db.delete(s.entradas).where(eq(s.entradas.id, id));
 }
 
@@ -148,8 +148,9 @@ export async function guardarMovimiento(locals: Locals, fd: FormData, fijo: { ve
 	return movimientoId;
 }
 
-/** Borra un movimiento y, si lo había, el inmovilizado que generó. */
-export async function borrarMovimiento(locals: Locals, id: number) {
+/** Borra un movimiento, el inmovilizado que generó y sus archivos (factura escaneada…). */
+export async function borrarMovimiento(locals: Locals, id: number, bucket?: R2Bucket) {
+	if (bucket) await borrarAdjuntosDe(locals.db, bucket, 'movimiento', id);
 	await locals.db.delete(s.inmovilizado).where(eq(s.inmovilizado.movimientoId, id));
 	await locals.db.delete(s.movimientos).where(eq(s.movimientos.id, id));
 }

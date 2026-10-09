@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import type { CampoDef, FasePlantilla } from './campos';
+import type { LineaFactura } from './facturacion';
 
 // Convenciones: fechas de negocio como texto ISO 'YYYY-MM-DD', importes en céntimos (entero),
 // marcas de tiempo como texto 'YYYY-MM-DD HH:MM:SS' (UTC) generado por SQLite.
@@ -96,6 +97,8 @@ export const contactos = sqliteTable('contactos', {
 	nombre: text('nombre').notNull(),
 	telefono: text('telefono'),
 	email: text('email'),
+	nif: text('nif'),
+	direccion: text('direccion'),
 	notas: text('notas'),
 	creado: creado()
 });
@@ -367,6 +370,38 @@ export const inmovilizado = sqliteTable('inmovilizado', {
 	creado: creado()
 });
 
+// ─── Facturas ─────────────────────────────────────────────────────────────────
+
+/** Facturas e informes de trabajos. Guardan una "foto" de los datos: no cambian si luego editas algo. */
+export const facturas = sqliteTable(
+	'facturas',
+	{
+		id: id(),
+		tipo: text('tipo', { enum: ['factura', 'informe'] }).notNull().default('factura'),
+		serie: text('serie').notNull(),
+		anio: integer('anio').notNull(),
+		numero: integer('numero').notNull(),
+		fecha: text('fecha').notNull(),
+		vehiculoId: integer('vehiculo_id').references(() => vehiculos.id, { onDelete: 'set null' }),
+		contactoId: integer('contacto_id').references(() => contactos.id, { onDelete: 'set null' }),
+		cliente: text('cliente', { mode: 'json' }).$type<{ nombre: string; nif?: string | null; direccion?: string | null; email?: string | null; telefono?: string | null }>(),
+		vehiculo: text('vehiculo', { mode: 'json' }).$type<{ alias: string; marca?: string | null; modelo?: string | null; anio?: number | null; matricula?: string | null; bastidor?: string | null }>(),
+		km: integer('km'),
+		lineas: text('lineas', { mode: 'json' }).$type<LineaFactura[]>().notNull().default([]),
+		ivaPct: integer('iva_pct').notNull().default(21),
+		baseCent: integer('base_cent').notNull().default(0),
+		ivaCent: integer('iva_cent').notNull().default(0),
+		totalCent: integer('total_cent').notNull().default(0),
+		notas: text('notas'),
+		entradas: text('entradas', { mode: 'json' }).$type<number[]>().notNull().default([]),
+		/** Ingreso registrado al cobrarla. */
+		movimientoId: integer('movimiento_id').references(() => movimientos.id, { onDelete: 'set null' }),
+		anulada: bool('anulada').notNull().default(false),
+		creado: creado()
+	},
+	(t) => [uniqueIndex('facturas_numero_idx').on(t.serie, t.anio, t.numero), index('facturas_vehiculo_idx').on(t.vehiculoId)]
+);
+
 // ─── Archivos ─────────────────────────────────────────────────────────────────
 
 
@@ -420,3 +455,4 @@ export type ApunteManual = typeof apuntes.$inferSelect;
 export type Inmovilizado = typeof inmovilizado.$inferSelect;
 export type Recurrente = typeof recurrentes.$inferSelect;
 export type Pendiente = typeof pendientes.$inferSelect;
+export type Factura = typeof facturas.$inferSelect;

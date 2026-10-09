@@ -7,7 +7,7 @@
 	import { accion } from '$lib/enviar';
 	import { ETIQUETA_PAGO, euros, fechaLarga } from '@novaz/core';
 	import type { Movimiento } from '@novaz/core/schema';
-	import { Download, Pencil, Plus, Trash2 } from '@lucide/svelte';
+	import { Download, Paperclip, Pencil, Plus, Trash2 } from '@lucide/svelte';
 
 	let { data } = $props();
 	const f = $derived(data.filtros);
@@ -118,6 +118,7 @@
 							{fechaLarga(m.fecha)} · {m.categoria?.nombre ?? (m.tipo === 'aportacion' ? 'Entrada de dinero' : m.tipo === 'retirada' ? 'Salida de dinero' : 'Sin categoría')} · {ETIQUETA_PAGO[m.pago]}{m.recurrenteId ? ' · mensual' : ''}{m.ivaPct ? ` · IVA ${m.ivaPct}%` : ''}{m.vehiculo ? ` · ` : ''}{#if m.vehiculo}<a href="/flota/{m.vehiculoId}?pestana=gastos" class="hover:text-texto">{m.vehiculo}</a>{/if}{m.proveedor ? ` · ${m.proveedor}` : ''}
 						</p>
 					</div>
+					{#if data.adjuntos[m.id]?.length}<button class="chip h-6 shrink-0 px-2" onclick={() => ((edit = m), (hMov = true))} title="Ver factura"><Paperclip size={12} />{data.adjuntos[m.id].length}</button>{/if}
 					<span class="cifra text-lg {m.tipo === 'ingreso' ? 'nivel-ok' : m.tipo === 'aportacion' ? 'nivel-pronto' : ''}">{m.tipo === 'ingreso' || m.tipo === 'aportacion' ? '+' : '−'}{euros(m.importeCent)}</span>
 					<span class="flex opacity-60 group-hover:opacity-100">
 						<button class="btn btn-fantasma btn-icono h-8 w-8" onclick={() => ((edit = m), (hMov = true))} aria-label="Editar"><Pencil size={14} /></button>
@@ -130,5 +131,5 @@
 </section>
 
 <Hoja bind:abierta={hMov} titulo={edit ? 'Editar movimiento' : 'Nuevo movimiento'}>
-	<MovimientoForm accion="?/guardar" categorias={data.catalogo.categorias} hoy={data.hoy} movimiento={edit} vehiculos={data.vehiculosMenu} cuentas={data.cuentas} inmovilizado={edit ? data.bienes.find((b) => b.movimientoId === edit!.id) : null} pagoPorDefecto={data.ajustes.pagoPorDefecto} alGuardar={() => (hMov = false)} />
+	<MovimientoForm accion="?/guardar" categorias={data.catalogo.categorias} hoy={data.hoy} movimiento={edit} vehiculos={data.vehiculosMenu} cuentas={data.cuentas} inmovilizado={edit ? data.bienes.find((b) => b.movimientoId === edit!.id) : null} pagoPorDefecto={data.ajustes.pagoPorDefecto} adjuntos={edit ? (data.adjuntos[edit.id] ?? []) : []} alGuardar={() => (hMov = false)} />
 </Hoja>

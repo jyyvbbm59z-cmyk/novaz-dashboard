@@ -42,6 +42,11 @@ export interface Ajustes {
 	tipoImpuestoSociedades: number;
 	/** Última vez que se cuadró la tesorería con el banco real. */
 	ultimoCuadre: string | null;
+	/** Datos que aparecen en las facturas. */
+	fiscal: { razonSocial: string; nif: string; direccion: string; email: string; telefono: string; iban: string };
+	serieFactura: string;
+	tarifaHoraCent: number;
+	pieFactura: string;
 }
 
 export const AJUSTES_POR_DEFECTO: Ajustes = {
@@ -57,6 +62,10 @@ export const AJUSTES_POR_DEFECTO: Ajustes = {
 	pagoPorDefecto: 'banco',
 	tipoImpuestoSociedades: 25,
 	ultimoCuadre: null,
+	fiscal: { razonSocial: 'Novaz', nif: '', direccion: '', email: '', telefono: '', iban: '' },
+	serieFactura: 'NVZ',
+	tarifaHoraCent: 3500,
+	pieFactura: 'Gracias por confiar en Novaz.',
 	momentos: {
 		tareaHecha: { efecto: 'pulso', sonido: 'clic' },
 		faseCompletada: { efecto: 'confeti', sonido: 'campana' },

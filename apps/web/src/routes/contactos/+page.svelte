@@ -39,6 +39,7 @@
 				</div>
 				{#if c.telefono}<a href="tel:{c.telefono}" class="flex items-center gap-2 text-sm text-texto-2 hover:text-texto"><Phone size={14} />{c.telefono}</a>{/if}
 				{#if c.email}<a href="mailto:{c.email}" class="flex items-center gap-2 text-sm text-texto-2 hover:text-texto"><Mail size={14} />{c.email}</a>{/if}
+				{#if c.nif || c.direccion}<p class="text-xs text-texto-3">{[c.nif, c.direccion].filter(Boolean).join(' · ')}</p>{/if}
 				{#if c.notas}<p class="text-sm whitespace-pre-line text-texto-3">{c.notas}</p>{/if}
 				{#if vs.length}
 					<div class="mt-1 flex flex-wrap gap-1.5">{#each vs as v (v.id)}<a href="/flota/{v.id}" class="chip hover:border-acento">{v.alias}</a>{/each}</div>
@@ -55,6 +56,10 @@
 		<div class="grid grid-cols-2 gap-3">
 			<label class="campo"><span>Teléfono</span><input name="telefono" type="tel" class="input" value={edit?.telefono ?? ''} /></label>
 			<label class="campo"><span>Email</span><input name="email" type="email" class="input" value={edit?.email ?? ''} /></label>
+		</div>
+		<div class="grid grid-cols-[9rem_1fr] gap-3">
+			<label class="campo"><span>NIF / DNI</span><input name="nif" class="input font-mono uppercase" value={edit?.nif ?? ''} /></label>
+			<label class="campo"><span>Dirección</span><input name="direccion" class="input" value={edit?.direccion ?? ''} /></label>
 		</div>
 		<label class="campo"><span>Notas</span><textarea name="notas" class="input" rows="3">{edit?.notas ?? ''}</textarea></label>
 		<button class="btn btn-acento h-12">Guardar</button>

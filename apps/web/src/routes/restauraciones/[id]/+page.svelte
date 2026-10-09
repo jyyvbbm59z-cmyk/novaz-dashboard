@@ -13,6 +13,7 @@
 	import { euros, eurosInput, fechaLarga } from '@novaz/core';
 	import type { Entrada, Movimiento } from '@novaz/core/schema';
 	import { ArrowDown, ArrowUp, Check, ChevronDown, Flag, NotebookPen, Pencil, Plus, ReceiptText, Settings2, Trash2 } from '@lucide/svelte';
+	import { Paperclip } from '@lucide/svelte';
 
 	let { data } = $props();
 	const r = $derived(data.restauracion);
@@ -257,6 +258,7 @@
 							<p class="truncate text-sm font-medium">{m.concepto}</p>
 							<p class="text-xs text-texto-3">{fechaLarga(m.fecha)} · {m.categoria?.nombre ?? 'Sin categoría'}{m.proveedor ? ` · ${m.proveedor}` : ''}</p>
 						</div>
+						{#if data.adjuntosMov[m.id]?.length}<button class="chip h-6 shrink-0 px-2" onclick={() => ((gastoEdit = m), (hGasto = true))} title="Ver factura"><Paperclip size={12} />{data.adjuntosMov[m.id].length}</button>{/if}
 						<span class="cifra text-lg {m.tipo === 'ingreso' ? 'nivel-ok' : ''}">{euros(m.importeCent)}</span>
 						<span class="flex opacity-60 group-hover:opacity-100">
 							<button class="btn btn-fantasma btn-icono h-8 w-8" onclick={() => ((gastoEdit = m), (hGasto = true))} aria-label="Editar"><Pencil size={14} /></button>
@@ -301,7 +303,7 @@
 </Hoja>
 
 <Hoja bind:abierta={hGasto} titulo={gastoEdit ? 'Editar gasto' : 'Nuevo gasto'}>
-	<MovimientoForm pagoPorDefecto={data.ajustes.pagoPorDefecto} categorias={data.catalogo.categorias} hoy={data.hoy} movimiento={gastoEdit} alGuardar={() => (hGasto = false)} />
+	<MovimientoForm pagoPorDefecto={data.ajustes.pagoPorDefecto} categorias={data.catalogo.categorias} hoy={data.hoy} movimiento={gastoEdit} adjuntos={gastoEdit ? (data.adjuntosMov[gastoEdit.id] ?? []) : []} alGuardar={() => (hGasto = false)} />
 </Hoja>
 
 <Hoja bind:abierta={hDatos} titulo="Restauración">

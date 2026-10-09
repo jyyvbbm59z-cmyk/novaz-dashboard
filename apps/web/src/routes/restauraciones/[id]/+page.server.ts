@@ -3,7 +3,7 @@ import * as s from '@novaz/core/schema';
 import { error, redirect } from '@sveltejs/kit';
 import { and, asc, desc, eq, inArray, max, or } from 'drizzle-orm';
 import { borrarEntrada, borrarMovimiento, guardarEntrada, guardarMovimiento, marcarTarea } from '$lib/server/acciones';
-import { borrarAdjuntos, borrarAdjuntosDe } from '$lib/server/adjuntos';
+import { adjuntosDe, borrarAdjuntos, borrarAdjuntosDe } from '$lib/server/adjuntos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
 export const load = async ({ params, locals }) => {
@@ -63,6 +63,7 @@ export const load = async ({ params, locals }) => {
 		}),
 		entradas: entradas.map((x) => ({ ...x.e, fase: x.fase, adjuntos: adjuntos.filter((a) => a.entidad === 'entrada' && a.entidadId === x.e.id) })),
 		movimientos: movs.map((x) => ({ ...x.m, categoria: x.categoria })),
+		adjuntosMov: await adjuntosDe(db, 'movimiento', movs.map((x) => x.m.id)),
 		adjuntos,
 		antesDespues: fotos.length >= 2 ? { antes: fotos[0], despues: fotos[fotos.length - 1] } : null,
 		resumen: {
@@ -166,8 +167,8 @@ export const actions = {
 		return { mensaje: nuevo ? 'Gasto registrado' : 'Gasto actualizado' };
 	}),
 
-	borrarGasto: accion(async ({ request, locals }) => {
-		await borrarMovimiento(locals, leer(await request.formData()).id('id'));
+	borrarGasto: accion(async ({ request, locals, platform }) => {
+		await borrarMovimiento(locals, leer(await request.formData()).id('id'), platform!.env.ARCHIVOS);
 		return { mensaje: 'Gasto borrado' };
 	}),
 

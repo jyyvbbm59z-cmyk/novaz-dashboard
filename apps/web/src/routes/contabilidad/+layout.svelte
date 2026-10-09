@@ -10,6 +10,7 @@
 		['/contabilidad', 'Resumen'],
 		['/contabilidad/tesoreria', 'Tesorería'],
 		['/contabilidad/movimientos', 'Movimientos'],
+		['/contabilidad/facturas', 'Facturas'],
 		['/contabilidad/diario', 'Libro diario'],
 		['/contabilidad/mayor', 'Mayor'],
 		['/contabilidad/resultados', 'Pérdidas y ganancias'],

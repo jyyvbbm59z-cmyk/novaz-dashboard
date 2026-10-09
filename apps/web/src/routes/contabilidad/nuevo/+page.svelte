@@ -58,7 +58,7 @@
 		ivaPct = op.ivaPct;
 		pago = op.pago ?? (op.tipo === 'aportacion' || op.tipo === 'retirada' ? 'banco' : data.ajustes.pagoPorDefecto);
 		// Solo se marca sola cuando el importe es fijo; luz o agua cambian cada factura
-		mensual = op.id === 'aportacionMensual' || op.id === 'alquiler';
+		mensual = op.id === 'aportacionMensual' || op.id === 'transferenciaMensual' || op.id === 'alquiler';
 		importe = page.url.searchParams.get('importe') ?? '';
 		proveedor = '';
 		fecha = data.hoy;

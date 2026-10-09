@@ -14,9 +14,11 @@
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import VencimientoForm from '$comp/VencimientoForm.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { euros, fechaLarga, mostrarCampo, textoDias } from '@novaz/core';
+	import { euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias } from '@novaz/core';
+	import FacturaForm from '$comp/FacturaForm.svelte';
 	import type { Entrada, Movimiento, Pendiente, Vencimiento } from '@novaz/core/schema';
-	import { Check, CircleAlert, Gauge, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
+	import { Check, CircleAlert, Download, FileText, Gauge, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
+	import { Paperclip } from '@lucide/svelte';
 
 	let { data } = $props();
 	const v = $derived(data.vehiculo);
@@ -53,6 +55,22 @@
 	let gastoEdit = $state<Movimiento | null>(null);
 	let hObra = $state(false);
 	let hPendiente = $state(false);
+
+	// ─── Facturar: selección de operaciones del historial
+	let facturando = $state(false);
+	let seleccion = $state<number[]>([]);
+	let hFactura = $state(false);
+	const alternarSel = (id: number) => (seleccion = seleccion.includes(id) ? seleccion.filter((x) => x !== id) : [...seleccion, id]);
+	const elegidas = $derived(data.entradas.filter((e) => seleccion.includes(e.id)).sort((a, b) => a.fecha.localeCompare(b.fecha)));
+	const kmsElegidos = $derived(elegidas.map((e) => e.km));
+	const kmDistintos = $derived(new Set(kmsElegidos.filter((k) => k != null)).size > 1);
+	function generar() {
+		hFactura = true;
+	}
+	function salirFacturar() {
+		facturando = false;
+		seleccion = [];
+	}
 	let pendEdit = $state<Pendiente | null>(null);
 	let pendResolver = $state<Pendiente | null>(null);
 	const PRIORIDAD: Record<string, { texto: string; color: string }> = {
@@ -228,13 +246,30 @@
 				</div>
 			</section>
 		{/if}
+		{#if data.entradas.length}
+			<div class="mb-4 flex items-center justify-between gap-2">
+				<p class="etiqueta">{facturando ? 'Marca las operaciones a facturar' : 'Historial'}</p>
+				{#if facturando}
+					<button class="btn btn-fantasma h-8 text-xs" onclick={salirFacturar}>Cancelar</button>
+				{:else}
+					<button class="btn h-8 text-xs" onclick={() => (facturando = true)}><FileText size={14} /> Facturar</button>
+				{/if}
+			</div>
+		{/if}
 		{#if !data.entradas.length}
 			<div class="vacio">Sin entradas todavía. Registra la primera: un mantenimiento, una nota o el diario de obra.</div>
 		{:else}
 			<ol class="relative ml-2 border-l border-borde">
 				{#each data.entradas as e (e.id)}
 					<li id="entrada-{e.id}" class="relative mb-6 ml-6 scroll-mt-28">
-						<span class="absolute top-1.5 -left-[1.95rem] h-3 w-3 rounded-full ring-4 ring-fondo" style="background:{colorClase[e.clase]}"></span>
+						{#if facturando}
+							<button class="absolute -inset-y-1 -right-1 -left-10 z-10 rounded-lg transition hover:bg-acento/5" onclick={() => alternarSel(e.id)} aria-pressed={seleccion.includes(e.id)} aria-label="Seleccionar {e.titulo}"></button>
+							<span class="absolute top-0.5 -left-[2.3rem] flex h-5 w-5 items-center justify-center rounded-md border-2 ring-4 ring-fondo transition {seleccion.includes(e.id) ? 'border-acento bg-acento text-black' : 'border-texto-3 bg-fondo'}">
+								{#if seleccion.includes(e.id)}<Check size={13} strokeWidth={3.5} />{/if}
+							</span>
+						{:else}
+							<span class="absolute top-1.5 -left-[1.95rem] h-3 w-3 rounded-full ring-4 ring-fondo" style="background:{colorClase[e.clase]}"></span>
+						{/if}
 						<div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-texto-3">
 							<span class="font-semibold text-texto-2">{fechaLarga(e.fecha)}</span>
 							<span>· {nombreClase[e.clase]}</span>
@@ -399,6 +434,24 @@
 			{/if}
 		</section>
 	{:else if pestana === 'gastos'}
+		{#if data.facturas.length}
+			<section class="mb-6">
+				<p class="etiqueta mb-2">Facturas e informes</p>
+				<ul class="tarjeta lista-filas">
+					{#each data.facturas as f (f.id)}
+						<li class="flex items-center gap-3 px-4 py-2.5 {f.anulada ? 'opacity-50' : ''}">
+							<FileText size={16} class="shrink-0 text-texto-3" />
+							<div class="min-w-0 flex-1">
+								<p class="truncate text-sm font-medium">{numeroFactura(f.serie, f.anio, f.numero)}{f.anulada ? ' · anulada' : ''}</p>
+								<p class="text-xs text-texto-3">{fechaLarga(f.fecha)} · {f.tipo === 'factura' ? (f.movimientoId ? 'cobrada' : 'pendiente de cobro') : 'informe'}</p>
+							</div>
+							{#if f.tipo === 'factura'}<span class="cifra text-lg">{euros(f.totalCent)}</span>{/if}
+							<a href="/facturas/{f.id}/pdf?descargar" class="btn btn-fantasma btn-icono h-8 w-8" aria-label="Descargar PDF" download><Download size={15} /></a>
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
 		<div class="mb-4 flex items-center justify-between">
 			<p class="text-sm text-texto-2">Gastado: <strong class="cifra text-lg text-texto">{euros(data.totales.gasto)}</strong>{#if data.totales.ingreso} · Ingresos: <strong class="cifra text-lg nivel-ok">{euros(data.totales.ingreso)}</strong>{/if}</p>
 			<button class="btn" onclick={() => ((gastoEdit = null), (hGasto = true))}><Plus size={16} /> Movimiento</button>
@@ -414,6 +467,7 @@
 							<p class="truncate text-sm font-medium">{m.concepto}</p>
 							<p class="text-xs text-texto-3">{fechaLarga(m.fecha)} · {m.categoria?.nombre ?? 'Sin categoría'}{m.proveedor ? ` · ${m.proveedor}` : ''}</p>
 						</div>
+						{#if data.adjuntosMov[m.id]?.length}<button class="chip h-6 shrink-0 px-2" onclick={() => ((gastoEdit = m), (hGasto = true))} title="Ver factura"><Paperclip size={12} />{data.adjuntosMov[m.id].length}</button>{/if}
 						<span class="cifra text-lg {m.tipo === 'ingreso' ? 'nivel-ok' : ''}">{m.tipo === 'ingreso' ? '+' : ''}{euros(m.importeCent)}</span>
 						<span class="flex opacity-60 group-hover:opacity-100">
 							<button class="btn btn-fantasma btn-icono h-8 w-8" aria-label="Editar" onclick={() => ((gastoEdit = m), (hGasto = true))}><Pencil size={14} /></button>
@@ -461,6 +515,30 @@
 		</div>
 	{/if}
 </div>
+
+{#if facturando}
+	<div class="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-40 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-borde bg-superficie-3/95 p-2.5 pl-4 shadow-2xl backdrop-blur lg:bottom-6">
+		<span class="flex-1 text-sm font-medium">{seleccion.length} {seleccion.length === 1 ? 'operación' : 'operaciones'}</span>
+		<button class="btn btn-fantasma h-10" onclick={salirFacturar}>Cancelar</button>
+		<button class="btn btn-acento h-10" disabled={!seleccion.length} onclick={generar}><FileText size={16} /> Generar</button>
+	</div>
+{/if}
+
+<Hoja bind:abierta={hFactura} titulo={v.propietario === 'tercero' ? 'Nueva factura' : 'Nuevo documento'} ancho="max-w-2xl">
+	<FacturaForm
+		lineasIniciales={lineasDesdeEntradas(
+			elegidas,
+			data.movimientos.filter((m) => m.tipo === 'gasto' && m.entradaId != null && seleccion.includes(m.entradaId)),
+			data.ajustes.tarifaHoraCent
+		)}
+		entradas={elegidas.map((e) => e.id)}
+		km={kmFactura(kmsElegidos, data.km)}
+		kmAviso={kmDistintos ? 'Las operaciones tienen kilometrajes distintos: se pone el total actual del vehículo.' : null}
+		contacto={contacto ?? null}
+		tipoInicial={v.propietario === 'tercero' ? 'factura' : 'informe'}
+		hoy={data.hoy}
+	/>
+</Hoja>
 
 <!-- Hojas -->
 <Hoja bind:abierta={hEntrada} titulo={entradaEdit ? 'Editar entrada' : pendResolver ? 'Reparado' : planHecho ? 'Mantenimiento hecho' : 'Nueva entrada'}>
@@ -526,7 +604,7 @@
 </Hoja>
 
 <Hoja bind:abierta={hGasto} titulo={gastoEdit ? 'Editar movimiento' : 'Nuevo movimiento'}>
-	<MovimientoForm pagoPorDefecto={data.ajustes.pagoPorDefecto} categorias={cat.categorias} hoy={data.hoy} movimiento={gastoEdit} alGuardar={() => (hGasto = false)} />
+	<MovimientoForm pagoPorDefecto={data.ajustes.pagoPorDefecto} categorias={cat.categorias} hoy={data.hoy} movimiento={gastoEdit} adjuntos={gastoEdit ? (data.adjuntosMov[gastoEdit.id] ?? []) : []} alGuardar={() => (hGasto = false)} />
 </Hoja>
 
 <Hoja bind:abierta={hObra} titulo="Nueva restauración">

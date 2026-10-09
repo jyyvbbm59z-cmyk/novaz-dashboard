@@ -2,7 +2,9 @@
 	import { enhance } from '$app/forms';
 	import { enviar } from '$lib/enviar';
 	import { CUENTAS_INMOVILIZADO, desglosarIva, ETIQUETA_PAGO, euros, eurosInput, parsearEuros, TIPOS_IVA } from '@novaz/core';
-	import type { Categoria, Cuenta, FormaPago, Inmovilizado, Movimiento, TipoMovimiento } from '@novaz/core/schema';
+	import type { Adjunto, Categoria, Cuenta, FormaPago, Inmovilizado, Movimiento, TipoMovimiento } from '@novaz/core/schema';
+	import Galeria from '$comp/Galeria.svelte';
+	import SubirArchivos from '$comp/SubirArchivos.svelte';
 
 	let {
 		accion = '?/gasto',
@@ -14,6 +16,7 @@
 		cuentas = [],
 		inmovilizado = null,
 		pagoPorDefecto = 'banco',
+		adjuntos = [],
 		alGuardar
 	}: {
 		accion?: string;
@@ -25,6 +28,7 @@
 		cuentas?: Cuenta[];
 		inmovilizado?: Inmovilizado | null;
 		pagoPorDefecto?: FormaPago;
+		adjuntos?: Adjunto[];
 		alGuardar?: () => void;
 	} = $props();
 
@@ -77,6 +81,20 @@
 		ivaPct = categorias.find((c) => c.id === Number(categoriaId))?.ivaPct ?? ivaPct;
 	}
 </script>
+
+{#if movimiento}
+	<section class="mb-5 rounded-lg border border-borde bg-superficie-2 p-3">
+		<div class="mb-2 flex items-center justify-between gap-2">
+			<p class="etiqueta">Factura y adjuntos {adjuntos.length ? `· ${adjuntos.length}` : ''}</p>
+			<SubirArchivos entidad="movimiento" entidadId={movimiento.id} vehiculoId={movimiento.vehiculoId} texto="Adjuntar" clase="btn h-8 text-xs" />
+		</div>
+		{#if adjuntos.length}
+			<Galeria {adjuntos} columnas="grid-cols-4" />
+		{:else}
+			<p class="text-xs text-texto-3">Sin archivos. Adjunta la foto o el PDF de la factura.</p>
+		{/if}
+	</section>
+{/if}
 
 <form method="POST" action={accion} use:enhance={enviar({ alTerminar: alGuardar })} class="flex flex-col gap-4">
 	{#if movimiento}<input type="hidden" name="id" value={movimiento.id} />{/if}

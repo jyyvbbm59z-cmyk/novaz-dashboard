@@ -66,6 +66,25 @@ export const actions = {
 		return { mensaje: 'Guardado' };
 	}),
 
+	facturacion: accion(async ({ request, locals }) => {
+		const f = leer(await request.formData());
+		const tarifa = f.euros('tarifaHora');
+		await guardar(locals.db, {
+			fiscal: {
+				razonSocial: f.texto('razonSocial') ?? '',
+				nif: f.texto('nif')?.toUpperCase() ?? '',
+				direccion: f.texto('direccion') ?? '',
+				email: f.texto('email') ?? '',
+				telefono: f.texto('telefono') ?? '',
+				iban: f.texto('iban')?.toUpperCase() ?? ''
+			},
+			serieFactura: (f.texto('serie') ?? 'NVZ').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) || 'NVZ',
+			tarifaHoraCent: tarifa != null && tarifa >= 0 ? tarifa : 3500,
+			pieFactura: f.texto('pie') ?? ''
+		});
+		return { mensaje: 'Datos de facturación guardados' };
+	}),
+
 	momentos: accion(async ({ request, locals }) => {
 		const fd = await request.formData();
 		const f = leer(fd);

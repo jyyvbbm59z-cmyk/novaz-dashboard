@@ -1,6 +1,7 @@
 import * as s from '@novaz/core/schema';
 import { desc, eq, sql } from 'drizzle-orm';
 import { borrarMovimiento, guardarMovimiento } from '$lib/server/acciones';
+import { adjuntosDe, borrarAdjuntos } from '$lib/server/adjuntos';
 import { accion, leer } from '$lib/server/form';
 import { filtroMovimientos } from './filtro';
 
@@ -40,6 +41,7 @@ export const load = async ({ locals, url }) => {
 		movimientos: lista,
 		filtros,
 		cuentas: await db.select().from(s.cuentas).orderBy(s.cuentas.codigo),
+		adjuntos: await adjuntosDe(db, 'movimiento', lista.map((m) => m.id)),
 		bienes: await db.select().from(s.inmovilizado),
 		meses,
 		totales: {
@@ -56,8 +58,12 @@ export const actions = {
 		await guardarMovimiento(locals, fd);
 		return { mensaje: nuevo ? 'Movimiento registrado' : 'Movimiento actualizado' };
 	}),
-	borrar: accion(async ({ request, locals }) => {
-		await borrarMovimiento(locals, leer(await request.formData()).id('id'));
+	borrarAdjunto: accion(async ({ request, locals, platform }) => {
+		await borrarAdjuntos(locals.db, platform!.env.ARCHIVOS, [leer(await request.formData()).id('id')]);
+		return { mensaje: 'Archivo borrado' };
+	}),
+	borrar: accion(async ({ request, locals, platform }) => {
+		await borrarMovimiento(locals, leer(await request.formData()).id('id'), platform!.env.ARCHIVOS);
 		return { mensaje: 'Movimiento borrado' };
 	})
 };

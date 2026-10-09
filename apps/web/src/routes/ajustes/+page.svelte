@@ -3,7 +3,7 @@
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import { enviar } from '$lib/enviar';
 	import { probarMomento } from '$lib/momentos';
-	import { EFECTOS, ETIQUETAS_EVENTO, EVENTOS_MOMENTO, SONIDOS, type Efecto, type Sonido } from '@novaz/core';
+	import { EFECTOS, ETIQUETAS_EVENTO, EVENTOS_MOMENTO, eurosInput, SONIDOS, type Efecto, type Sonido } from '@novaz/core';
 	import { Download, Play, Send } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -88,6 +88,26 @@
 				</select>
 			</label>
 			<label class="campo"><span>Impuesto de sociedades (%)</span><input name="tipoImpuestoSociedades" class="input" inputmode="decimal" value={a.tipoImpuestoSociedades} /></label>
+		</div>
+		<button class="btn btn-acento w-fit">Guardar</button>
+	</form>
+
+	<!-- Facturación -->
+	<form method="POST" action="?/facturacion" use:enhance={enviar({ reset: false })} class="tarjeta flex flex-col gap-4 p-5 lg:col-span-2">
+		<div>
+			<h2 class="text-2xl">Facturación</h2>
+			<p class="text-sm text-texto-3">Aparece en tus facturas e informes de trabajos.</p>
+		</div>
+		<div class="grid gap-3 sm:grid-cols-3">
+			<label class="campo sm:col-span-2"><span>Nombre o razón social</span><input name="razonSocial" class="input" value={a.fiscal.razonSocial} /></label>
+			<label class="campo"><span>NIF</span><input name="nif" class="input font-mono uppercase" value={a.fiscal.nif} /></label>
+			<label class="campo sm:col-span-3"><span>Dirección</span><input name="direccion" class="input" value={a.fiscal.direccion} /></label>
+			<label class="campo"><span>Email</span><input name="email" type="email" class="input" value={a.fiscal.email} /></label>
+			<label class="campo"><span>Teléfono</span><input name="telefono" class="input" value={a.fiscal.telefono} /></label>
+			<label class="campo"><span>IBAN (forma de pago)</span><input name="iban" class="input font-mono uppercase" value={a.fiscal.iban} /></label>
+			<label class="campo"><span>Serie de facturas</span><input name="serie" class="input font-mono uppercase" value={a.serieFactura} /></label>
+			<label class="campo"><span>Tarifa por hora (€)</span><input name="tarifaHora" class="input" inputmode="decimal" value={eurosInput(a.tarifaHoraCent)} /></label>
+			<label class="campo sm:col-span-3"><span>Pie de factura</span><input name="pie" class="input" value={a.pieFactura} /></label>
 		</div>
 		<button class="btn btn-acento w-fit">Guardar</button>
 	</form>
