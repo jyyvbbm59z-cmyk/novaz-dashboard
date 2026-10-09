@@ -42,9 +42,9 @@ export const load = async ({ locals }) => {
 };
 
 export const actions = {
-	entrada: accion(async ({ request, locals }) => {
+	entrada: accion(async ({ request, locals, platform }) => {
 		const fd = await request.formData();
-		const r = await guardarEntrada(locals, leer(fd).id('vehiculoId'), fd);
+		const r = await guardarEntrada(locals, leer(fd).id('vehiculoId'), fd, platform!.env.ARCHIVOS);
 		return { mensaje: 'Registrado', momento: 'entradaCreada', entradaId: r.entradaId };
 	}),
 	gasto: accion(async ({ request, locals }) => {

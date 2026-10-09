@@ -23,7 +23,7 @@ async function datosContables(locals: Locals, categoriaId: number | null, f: Ret
 	};
 }
 
-export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: FormData) {
+export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: FormData, bucket?: R2Bucket) {
 	const { db, hoy } = locals;
 	const f = leer(fd);
 	const id = f.idOpcional('id');
@@ -70,8 +70,11 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 	}
 
 	// Gastos: varias líneas (filtro, aceite…) con proveedor y forma de pago comunes.
-	// Compatibilidad: un único `importe` + `categoriaId` se trata como una línea.
-	let lineas: { concepto: string; importeCent: number; categoriaId: number | null }[] = [];
+	// Al editar (`sincronizarGastos`), la lista enviada es la verdad: las líneas con id se
+	// actualizan, las que ya no vienen se borran y las nuevas se crean. Nunca se duplica.
+	// Compatibilidad: un único `importe` + `categoriaId` se trata como una línea nueva.
+	type Linea = { id: number | null; concepto: string; importeCent: number; categoriaId: number | null };
+	let lineas: Linea[] = [];
 	const json = f.texto('gastos');
 	if (json) {
 		try {
@@ -79,6 +82,7 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 			if (Array.isArray(crudo))
 				lineas = crudo
 					.map((l) => ({
+						id: Number.isInteger(Number(l?.id)) && Number(l?.id) > 0 ? Number(l.id) : null,
 						concepto: String(l?.concepto ?? '').trim(),
 						importeCent: Math.round(Number(l?.importeCent) || 0),
 						categoriaId: Number.isInteger(Number(l?.categoriaId)) && Number(l?.categoriaId) > 0 ? Number(l.categoriaId) : null
@@ -89,8 +93,42 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 		}
 	} else {
 		const importe = f.euros('importe');
-		if (importe && !id) lineas = [{ concepto: titulo, importeCent: importe, categoriaId: f.idOpcional('categoriaId') }];
+		if (importe && !id) lineas = [{ id: null, concepto: titulo, importeCent: importe, categoriaId: f.idOpcional('categoriaId') }];
 	}
+	const proveedor = f.texto('proveedor');
+	const pago = f.texto('pago');
+
+	if (id && f.bool('sincronizarGastos')) {
+		const existentes = await db
+			.select()
+			.from(s.movimientos)
+			.where(and(eq(s.movimientos.entradaId, entradaId), eq(s.movimientos.tipo, 'gasto')));
+		const quedan = new Set(lineas.map((l) => l.id).filter((x): x is number => x != null));
+		for (const m of existentes) if (!quedan.has(m.id)) await borrarMovimiento(locals, m.id, bucket);
+		for (const l of lineas) {
+			const m = l.id != null ? existentes.find((x) => x.id === l.id) : undefined;
+			if (!m) continue;
+			const cambios: Partial<typeof s.movimientos.$inferInsert> = {
+				concepto: l.concepto || titulo,
+				importeCent: l.importeCent,
+				fecha,
+				vehiculoId,
+				restauracionId
+			};
+			if (l.categoriaId !== m.categoriaId) {
+				cambios.categoriaId = l.categoriaId;
+				const cat = l.categoriaId ? await db.select({ iva: s.categorias.ivaPct }).from(s.categorias).where(eq(s.categorias.id, l.categoriaId)).get() : null;
+				if (cat) cambios.ivaPct = cat.iva;
+			}
+			if (proveedor) cambios.proveedor = proveedor;
+			if (pago && FORMAS_PAGO.includes(pago as FormaPago)) cambios.pago = pago as FormaPago;
+			await db.update(s.movimientos).set(cambios).where(eq(s.movimientos.id, m.id));
+		}
+		lineas = lineas.filter((l) => l.id == null || !existentes.some((x) => x.id === l.id));
+	} else {
+		lineas = lineas.filter((l) => l.id == null);
+	}
+
 	for (const l of lineas) {
 		const datos = new FormData();
 		datos.set('tipo', 'gasto');
@@ -98,10 +136,8 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 		datos.set('fecha', fecha);
 		datos.set('concepto', l.concepto || titulo);
 		if (l.categoriaId) datos.set('categoriaId', String(l.categoriaId));
-		for (const k of ['proveedor', 'pago']) {
-			const v = f.texto(k);
-			if (v) datos.set(k, v);
-		}
+		if (proveedor) datos.set('proveedor', proveedor);
+		if (pago) datos.set('pago', pago);
 		const movId = await guardarMovimiento(locals, datos, { vehiculoId, restauracionId });
 		await db.update(s.movimientos).set({ entradaId }).where(eq(s.movimientos.id, movId));
 	}
@@ -262,13 +298,13 @@ export async function guardarPendiente(locals: Locals, vehiculoId: number, fd: F
 }
 
 /** Cierra un pendiente creando la entrada de reparación (con su gasto, si lo hay). */
-export async function resolverPendiente(locals: Locals, vehiculoId: number, fd: FormData) {
+export async function resolverPendiente(locals: Locals, vehiculoId: number, fd: FormData, bucket?: R2Bucket) {
 	const pendienteId = leer(fd).id('pendienteId');
 	const p = await locals.db.select().from(s.pendientes).where(and(eq(s.pendientes.id, pendienteId), eq(s.pendientes.vehiculoId, vehiculoId))).get();
 	if (!p) throw new ErrorFormulario('Pendiente no encontrado');
 	if (!fd.get('clase')) fd.set('clase', 'reparacion');
 	if (!fd.get('titulo')) fd.set('titulo', p.titulo);
-	const r = await guardarEntrada(locals, vehiculoId, fd);
+	const r = await guardarEntrada(locals, vehiculoId, fd, bucket);
 	const entrada = await locals.db.select({ fecha: s.entradas.fecha }).from(s.entradas).where(eq(s.entradas.id, r.entradaId)).get();
 	await locals.db
 		.update(s.pendientes)

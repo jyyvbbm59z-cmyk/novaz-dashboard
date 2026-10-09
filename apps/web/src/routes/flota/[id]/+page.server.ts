@@ -168,8 +168,8 @@ export const actions = {
 		return { mensaje: 'Lectura borrada' };
 	}),
 
-	entrada: accion(async ({ request, params, locals }) => {
-		const r = await guardarEntrada(locals, vid(params), await request.formData());
+	entrada: accion(async ({ request, params, locals, platform }) => {
+		const r = await guardarEntrada(locals, vid(params), await request.formData(), platform!.env.ARCHIVOS);
 		return { mensaje: r.nueva ? 'Entrada registrada' : 'Entrada actualizada', momento: r.nueva ? 'entradaCreada' : undefined, entradaId: r.entradaId };
 	}),
 
@@ -185,8 +185,8 @@ export const actions = {
 		return { mensaje: nuevo ? 'Apuntado en «Por reparar»' : 'Guardado' };
 	}),
 
-	resolver: accion(async ({ request, params, locals }) => {
-		const r = await resolverPendiente(locals, vid(params), await request.formData());
+	resolver: accion(async ({ request, params, locals, platform }) => {
+		const r = await resolverPendiente(locals, vid(params), await request.formData(), platform!.env.ARCHIVOS);
 		return { mensaje: '¡Reparado! Pasa al historial', momento: 'tareaHecha', entradaId: r.entradaId };
 	}),
 
@@ -204,10 +204,10 @@ export const actions = {
 	}),
 
 	/** Marca un mantenimiento como hecho hoy (o en la fecha dada). */
-	hecho: accion(async ({ request, params, locals }) => {
+	hecho: accion(async ({ request, params, locals, platform }) => {
 		const fd = await request.formData();
 		fd.set('clase', 'mantenimiento');
-		const r = await guardarEntrada(locals, vid(params), fd);
+		const r = await guardarEntrada(locals, vid(params), fd, platform!.env.ARCHIVOS);
 		return { mensaje: 'Mantenimiento registrado', momento: 'entradaCreada', entradaId: r.entradaId };
 	}),
 

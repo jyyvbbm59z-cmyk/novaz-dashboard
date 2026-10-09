@@ -554,6 +554,7 @@
 		planes={planesVeh}
 		fases={data.fasesAbiertas}
 		entrada={entradaEdit}
+		gastosExistentes={entradaEdit ? data.movimientos.filter((m) => m.entradaId === entradaEdit!.id && m.tipo === 'gasto').sort((a, b) => a.id - b.id) : []}
 		claseInicial={pendResolver ? 'reparacion' : planHecho ? 'mantenimiento' : activa ? 'diario' : 'nota'}
 		planInicial={planHecho}
 		planesIniciales={entradaEdit?.planes.map((p) => p.id) ?? []}

@@ -148,10 +148,10 @@ export const actions = {
 		return { mensaje: 'Fase borrada' };
 	}),
 
-	entrada: accion(async ({ request, params, locals }) => {
+	entrada: accion(async ({ request, params, locals, platform }) => {
 		const fd = await request.formData();
 		fd.set('restauracionId', String(rid(params)));
-		const r = await guardarEntrada(locals, await vehiculoDe(locals, rid(params)), fd);
+		const r = await guardarEntrada(locals, await vehiculoDe(locals, rid(params)), fd, platform!.env.ARCHIVOS);
 		return { mensaje: r.nueva ? 'Entrada en el diario' : 'Entrada actualizada', momento: r.nueva ? 'entradaCreada' : undefined, entradaId: r.entradaId };
 	}),
 

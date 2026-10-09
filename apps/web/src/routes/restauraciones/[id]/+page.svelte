@@ -296,6 +296,7 @@
 		categorias={data.catalogo.categorias}
 		fases={data.fases}
 		entrada={entradaEdit}
+		gastosExistentes={entradaEdit ? data.movimientos.filter((m) => m.entradaId === entradaEdit!.id && m.tipo === 'gasto').sort((a, b) => a.id - b.id) : []}
 		claseInicial="diario"
 		faseInicial={faseEntrada}
 		alGuardar={() => (hEntrada = false)}

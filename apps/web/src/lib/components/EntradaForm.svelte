@@ -5,7 +5,7 @@
 	import { enviar } from '$lib/enviar';
 	import { subirArchivo } from '$lib/imagenes';
 	import type { Categoria, Entrada } from '@novaz/core/schema';
-	import { euros, parsearEuros } from '@novaz/core';
+	import { euros, eurosInput, parsearEuros } from '@novaz/core';
 	import { Camera, ImagePlus, Plus, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
@@ -21,6 +21,7 @@
 		claseInicial = 'nota',
 		planInicial = null,
 		planesIniciales = [],
+		gastosExistentes = [],
 		faseInicial = null,
 		tituloInicial = '',
 		ocultos = {},
@@ -37,6 +38,7 @@
 		claseInicial?: string;
 		planInicial?: number | null;
 		planesIniciales?: number[];
+		gastosExistentes?: { id: number; concepto: string; importeCent: number; categoriaId: number | null; proveedor: string | null }[];
 		faseInicial?: number | null;
 		tituloInicial?: string;
 		ocultos?: Record<string, string | number>;
@@ -74,17 +76,20 @@
 	// ─── Gastos y materiales desglosados
 	const categoriasGasto = $derived(categorias.filter((c) => c.tipo === 'gasto'));
 	const catDefecto = $derived((categoriasGasto.find((c) => /recambio/i.test(c.nombre)) ?? categoriasGasto[0])?.id ?? '');
-	let gastos = $state<{ concepto: string; importe: string; categoriaId: string }[]>([]);
+	let gastos = $state<{ id: number | null; concepto: string; importe: string; categoriaId: string }[]>(
+		(() => gastosExistentes.map((g) => ({ id: g.id, concepto: g.concepto, importe: eurosInput(g.importeCent), categoriaId: g.categoriaId ? String(g.categoriaId) : '' })))()
+	);
+	const proveedorInicial = (() => gastosExistentes.find((g) => g.proveedor)?.proveedor ?? '')();
 	const gastosJson = $derived(
 		JSON.stringify(
 			gastos
-				.map((g) => ({ concepto: g.concepto.trim(), importeCent: parsearEuros(g.importe) ?? 0, categoriaId: Number(g.categoriaId) || null }))
+				.map((g) => ({ id: g.id, concepto: g.concepto.trim(), importeCent: parsearEuros(g.importe) ?? 0, categoriaId: Number(g.categoriaId) || null }))
 				.filter((g) => g.importeCent > 0)
 		)
 	);
 	const totalGastos = $derived(gastos.reduce((t, g) => t + (parsearEuros(g.importe) ?? 0), 0));
-	const nuevoGasto = () => gastos.push({ concepto: '', importe: '', categoriaId: String(catDefecto) });
-	let gastosAbierto = $state(false);
+	const nuevoGasto = () => gastos.push({ id: null, concepto: '', importe: '', categoriaId: String(catDefecto) });
+	let gastosAbierto = $state((() => gastosExistentes.length > 0)());
 	let previas = $derived(fotos.map((f) => URL.createObjectURL(f)));
 	const claveBorrador = $derived(`borrador:entrada:${vehiculoId}`);
 
@@ -206,6 +211,7 @@
 		</summary>
 		<div class="flex flex-col gap-2 px-3 pb-3">
 			<input type="hidden" name="gastos" value={gastosJson} />
+			{#if entrada}<input type="hidden" name="sincronizarGastos" value="1" />{/if}
 			{#each gastos as g, i (i)}
 				<div class="grid grid-cols-[1fr_5.5rem_auto] gap-2">
 					<input bind:value={g.concepto} class="input h-10 text-sm" placeholder={i === 0 ? 'Filtro de aceite' : 'Aceite 10W40 4 L'} aria-label="Concepto" />
@@ -219,7 +225,7 @@
 			<button type="button" class="btn h-9 w-fit text-xs" onclick={nuevoGasto}><Plus size={14} /> Añadir línea</button>
 			{#if gastos.length}
 				<div class="grid grid-cols-2 gap-2">
-					<label class="campo"><span>Proveedor</span><input name="proveedor" class="input h-10" placeholder="Tienda o taller" /></label>
+					<label class="campo"><span>Proveedor</span><input name="proveedor" class="input h-10" placeholder="Tienda o taller" value={proveedorInicial} /></label>
 					<label class="campo">
 						<span>Pagado con</span>
 						<select name="pago" class="input h-10">
@@ -229,7 +235,7 @@
 				</div>
 				<p class="text-xs text-texto-3">Cada línea es un gasto con su IVA. En la factura saldrá como «Material: …» bajo esta operación.</p>
 			{/if}
-			{#if entrada}<p class="text-xs text-texto-3">Los gastos ya apuntados de esta entrada se editan en la pestaña Gastos.</p>{/if}
+			{#if entrada && gastosExistentes.length}<p class="text-xs text-texto-3">Cambia o quita (✕) las líneas aquí: se actualiza el gasto en la contabilidad, sin duplicar.</p>{/if}
 		</div>
 	</details>
 
