@@ -1,5 +1,5 @@
 // Operaciones de escritura compartidas por varias páginas (ficha, captura rápida, restauración…).
-import { desglosarIva, sumarMeses } from '@novaz/core';
+import { desglosarIva, expandirIncluidos, sumarMeses } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { CLASES_ENTRADA, FORMAS_PAGO, PRIORIDADES, TIPOS_MOVIMIENTO, type ClaseEntrada, type FormaPago, type Prioridad, type TipoMovimiento } from '@novaz/core/schema';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -42,8 +42,11 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 
 	let titulo = f.texto('titulo');
 	if (!titulo && planIds.length) {
-		const planes = await db.select({ nombre: s.planesMantenimiento.nombre }).from(s.planesMantenimiento).where(inArray(s.planesMantenimiento.id, planIds));
-		titulo = planes.map((p) => p.nombre).join(' + ') || null;
+		const planes = await db
+			.select({ codigo: s.planesMantenimiento.codigo, nombre: s.planesMantenimiento.nombre })
+			.from(s.planesMantenimiento)
+			.where(inArray(s.planesMantenimiento.id, planIds));
+		titulo = planes.map((p) => (p.codigo ? `${p.codigo} · ${p.nombre}` : p.nombre)).join(' + ') || null;
 	}
 	if (!titulo) {
 		const texto = f.texto('texto');
@@ -51,7 +54,21 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 	}
 	if (!titulo) throw new ErrorFormulario('Escribe un título o una descripción');
 
-	const valores = { vehiculoId, clase, fecha, km, titulo, texto: f.texto('texto'), horas: f.decimal('horas'), restauracionId, faseId };
+	// Tareas de la revisión con su resultado (presión medida, observaciones…)
+	let checklist: s.TareaHecha[] | null = null;
+	const crudoChecklist = f.texto('checklist');
+	if (crudoChecklist) {
+		try {
+			const c = JSON.parse(crudoChecklist);
+			if (Array.isArray(c))
+				checklist = c
+					.map((t) => ({ plan: String(t?.plan ?? ''), tarea: String(t?.tarea ?? '').trim(), hecha: Boolean(t?.hecha), nota: String(t?.nota ?? '').trim() || null }))
+					.filter((t) => t.tarea);
+		} catch {
+			throw new ErrorFormulario('Lista de tareas mal formada');
+		}
+	}
+	const valores = { vehiculoId, clase, fecha, km, titulo, texto: f.texto('texto'), horas: f.decimal('horas'), restauracionId, faseId, checklist: clase === 'mantenimiento' && checklist?.length ? checklist : null };
 
 	let entradaId: number;
 	if (id) {
@@ -63,10 +80,15 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 	}
 	await registrarKm(db, vehiculoId, fecha, km, 'entrada');
 
-	// Planes renovados: solo los de mantenimiento; al editar se sustituyen
+	// Planes renovados: solo los de mantenimiento; al editar se sustituyen.
+	// Las revisiones incluidas cuentan también (hacer la I3 renueva la I2 y la I1).
 	if (clase === 'mantenimiento' || id) {
 		await db.delete(s.entradasPlanes).where(eq(s.entradasPlanes.entradaId, entradaId));
-		if (clase === 'mantenimiento' && planIds.length) await db.insert(s.entradasPlanes).values(planIds.map((planId) => ({ entradaId, planId })));
+		if (clase === 'mantenimiento' && planIds.length) {
+			const planes = await db.select({ id: s.planesMantenimiento.id, incluye: s.planesMantenimiento.incluye }).from(s.planesMantenimiento);
+			const todos = expandirIncluidos(planIds, planes);
+			await db.insert(s.entradasPlanes).values(todos.map((planId) => ({ entradaId, planId })));
+		}
 	}
 
 	// Gastos: varias líneas (filtro, aceite…) con proveedor y forma de pago comunes.

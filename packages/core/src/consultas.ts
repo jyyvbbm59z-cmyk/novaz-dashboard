@@ -11,6 +11,7 @@ import {
 	lecturasValidas,
 	planAplica,
 	ritmoKmDia,
+	tienePlanesPropios,
 	type Lectura,
 	type Nivel
 } from './alertas';
@@ -136,8 +137,9 @@ export async function cargarAlertas(
 			const ls = lecturasValidas(lecturas.get(veh.id) ?? []);
 			const km = kmActual(ls);
 			const ritmo = ritmoKmDia(ls, opts.hoy);
+			const propios = tienePlanesPropios(planes, veh.id);
 			for (const plan of planes) {
-				if (!planAplica(plan, veh)) continue;
+				if (!planAplica(plan, veh, propios)) continue;
 				const ultima = ultimas.get(`${veh.id}:${plan.id}`) ?? null;
 				const e = estadoMantenimiento(plan, ultima, { hoy: opts.hoy, kmActual: km, ritmo, urgenteDias: opts.urgenteDias });
 				if (e.sinHistorial) continue;
@@ -151,7 +153,7 @@ export async function cargarAlertas(
 					vehiculoId: veh.id,
 					vehiculo: veh.alias,
 					matricula: veh.matricula,
-					titulo: plan.nombre,
+					titulo: plan.codigo ? `${plan.codigo} · ${plan.nombre}` : plan.nombre,
 					detalle: partes.join(' · '),
 					nivel: e.nivel,
 					dias: e.diasRestantes,

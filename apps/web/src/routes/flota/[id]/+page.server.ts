@@ -5,6 +5,9 @@ import {
 	lecturasSospechosas,
 	metricasKm,
 	planAplica,
+	plantillaSugerida,
+	PLANTILLAS_REVISION,
+	tienePlanesPropios,
 	ritmoKmDia,
 	tipoVencimientoAplica
 } from '@novaz/core';
@@ -24,6 +27,7 @@ import {
 } from '$lib/server/acciones';
 import { adjuntosDe, borrarAdjuntos } from '$lib/server/adjuntos';
 import { crearFactura } from '$lib/server/facturas';
+import { aplicarPlantilla } from '$lib/server/revisiones';
 import { avanceRestauraciones, comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
@@ -80,9 +84,11 @@ export const load = async ({ params, locals }) => {
 	const km = kmActual(validas);
 	const ritmo = ritmoKmDia(validas, hoy);
 
-	// Mantenimiento: estado de cada plan aplicable
+	// Mantenimiento: estado de cada plan aplicable (los propios del vehículo sustituyen a los del tipo)
+	const propios = tienePlanesPropios(planes, v.id);
 	const mantenimiento = planes
-		.filter((p) => planAplica(p, v))
+		.filter((p) => planAplica(p, v, propios))
+		.sort((a, b) => a.orden - b.orden || (a.codigo ?? a.nombre).localeCompare(b.codigo ?? b.nombre))
 		.map((p) => {
 			const ultima = entradas.find((x) => planesDe(x.e.id).some((l) => l.planId === p.id))?.e ?? null;
 			return {
@@ -146,6 +152,8 @@ export const load = async ({ params, locals }) => {
 		}),
 		fasesAbiertas: fasesAbiertas.filter((f) => abiertas.some((r) => r.id === f.restauracionId)),
 		porReparar,
+		plantillaSugerida: propios ? null : (plantillaSugerida(v)?.id ?? null),
+		plantillas: propios ? [] : PLANTILLAS_REVISION.map((p) => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion, fuente: p.fuente, niveles: p.niveles.map((n) => ({ codigo: n.codigo, nombre: n.nombre, cadaDias: n.cadaDias, cadaMeses: n.cadaMeses, cadaKm: n.cadaKm, tareas: n.tareas, notas: n.notas ?? null })) })),
 		adjuntosPend: await adjuntosDe(db, 'pendiente', porReparar.map((p) => p.id))
 	};
 };
@@ -172,6 +180,11 @@ export const actions = {
 	entrada: accion(async ({ request, params, locals, platform }) => {
 		const r = await guardarEntrada(locals, vid(params), await request.formData(), platform!.env.ARCHIVOS);
 		return { mensaje: r.nueva ? 'Entrada registrada' : 'Entrada actualizada', momento: r.nueva ? 'entradaCreada' : undefined, entradaId: r.entradaId };
+	}),
+
+	aplicarPlantilla: accion(async ({ request, params, locals }) => {
+		const r = await aplicarPlantilla(locals, vid(params), leer(await request.formData()).obligatorio('plantilla'));
+		return { mensaje: `${r.niveles} revisiones creadas${r.heredadas ? ` · ${r.heredadas} registros heredados de tu historial` : ''}` };
 	}),
 
 	factura: accion(async ({ request, params, locals }) => {

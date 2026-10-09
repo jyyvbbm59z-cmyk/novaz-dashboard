@@ -15,10 +15,10 @@
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import VencimientoForm from '$comp/VencimientoForm.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias } from '@novaz/core';
+	import { euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad } from '@novaz/core';
 	import FacturaForm from '$comp/FacturaForm.svelte';
 	import type { Entrada, Movimiento, Pendiente, Vencimiento } from '@novaz/core/schema';
-	import { Check, CircleAlert, Download, FileText, Gauge, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
+	import { Check, CircleAlert, Download, FileText, Gauge, ListChecks, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
 	import { Paperclip } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -29,7 +29,7 @@
 	const contacto = $derived(cat.contactos.find((c) => c.id === v.contactoId));
 	const portada = $derived(data.adjuntos.find((a) => a.id === v.portadaId));
 	const activa = $derived(data.restauraciones.find((r) => r.estado !== 'terminada'));
-	const planesVeh = $derived(data.mantenimiento.map((m) => ({ id: m.plan.id, nombre: m.plan.nombre })));
+	const planesVeh = $derived(data.mantenimiento.map((m) => ({ id: m.plan.id, nombre: m.plan.nombre, codigo: m.plan.codigo, tareas: m.plan.tareas, incluye: m.plan.incluye })));
 	const alertasVeh = $derived(data.alertas.filter((a) => a.vehiculoId === v.id));
 
 	const PESTANAS = [
@@ -55,6 +55,8 @@
 	let hGasto = $state(false);
 	let gastoEdit = $state<Movimiento | null>(null);
 	let hObra = $state(false);
+	let hPlantilla = $state(false);
+	let plantillaVer = $state('');
 	let hPendiente = $state(false);
 
 	// ─── Facturar: selección de operaciones del historial
@@ -290,6 +292,19 @@
 							</span>
 						</div>
 						{#if e.texto}<p class="mt-1 text-sm leading-relaxed whitespace-pre-line text-texto-2">{e.texto}</p>{/if}
+						{#if e.checklist?.length}
+							{@const hechas = e.checklist.filter((t) => t.hecha).length}
+							<details class="mt-2 max-w-lg">
+								<summary class="cursor-pointer text-xs text-texto-3 select-none hover:text-texto"><span class={hechas === e.checklist.length ? 'nivel-ok' : ''}>✓ {hechas}/{e.checklist.length} tareas</span>{#if e.checklist.some((t) => t.nota)} · con notas{/if}</summary>
+								<ul class="mt-1.5 flex flex-col gap-1 border-l border-borde pl-3 text-xs">
+									{#each e.checklist as t, i (i)}
+										<li class={t.hecha ? 'text-texto-2' : 'text-texto-3 line-through decoration-texto-3/60'}>
+											<span class={t.hecha ? 'nivel-ok' : ''}>{t.hecha ? '✓' : '✗'}</span> {t.tarea}{#if t.nota}<span class="ml-1 text-acento">— {t.nota}</span>{/if}
+										</li>
+									{/each}
+								</ul>
+							</details>
+						{/if}
 						{#if e.adjuntos.length}
 							<div class="mt-3 max-w-md"><Galeria adjuntos={e.adjuntos} accionPortada="?/portada" portadaId={v.portadaId} columnas="grid-cols-4" /></div>
 						{/if}
@@ -352,6 +367,17 @@
 			{/if}
 		</div>
 	{:else if pestana === 'mantenimiento'}
+		{#if data.plantillas.length}
+			{@const sugerida = data.plantillas.find((p) => p.id === data.plantillaSugerida)}
+			<div class="tarjeta mb-4 flex flex-wrap items-center gap-3 border-acento/40 p-4">
+				<ListChecks size={22} class="shrink-0 text-acento" />
+				<div class="min-w-0 flex-1">
+					<p class="font-semibold">{sugerida ? `Plan del fabricante: ${sugerida.nombre}` : 'Revisiones por niveles (I1, I2…)'}</p>
+					<p class="text-xs text-texto-3">{sugerida ? 'Revisiones I1–I5 con sus tareas, según el manual. Sustituyen a los planes genéricos solo en este vehículo y heredan tu historial.' : 'Agrupa el mantenimiento en revisiones con lista de tareas.'}</p>
+				</div>
+				<button class="btn btn-acento h-9" onclick={() => ((plantillaVer = data.plantillaSugerida ?? data.plantillas[0].id), (hPlantilla = true))}>Ver y aplicar</button>
+			</div>
+		{/if}
 		{#if !data.mantenimiento.length}
 			<div class="vacio">No hay planes de mantenimiento para este tipo de vehículo. Créalos en <a href="/ajustes/mantenimiento" class="text-acento">Ajustes</a>.</div>
 		{:else}
@@ -359,11 +385,12 @@
 				{#each data.mantenimiento as m (m.plan.id)}
 					<article class="tarjeta flex flex-col gap-3 p-4">
 						<div class="flex items-start justify-between gap-2">
-							<div>
-								<h3 class="text-xl">{m.plan.nombre}</h3>
-								<p class="text-xs text-texto-3">
-									Cada {[m.plan.cadaKm ? `${m.plan.cadaKm.toLocaleString('es-ES')} km` : null, m.plan.cadaMeses ? `${m.plan.cadaMeses} meses` : null].filter(Boolean).join(' o ')}
-								</p>
+							<div class="flex items-start gap-3">
+								{#if m.plan.codigo}<span class="flex h-10 min-w-10 items-center justify-center rounded-lg bg-acento/15 px-2 font-display text-xl font-bold text-acento">{m.plan.codigo}</span>{/if}
+								<div>
+									<h3 class="text-xl">{m.plan.nombre}</h3>
+									<p class="text-xs text-texto-3 first-letter:uppercase">{textoPeriodicidad(m.plan)}{m.plan.incluye.length ? ` · incluye ${data.mantenimiento.filter((x) => m.plan.incluye.includes(x.plan.id)).map((x) => x.plan.codigo ?? x.plan.nombre).join(', ')}` : ''}</p>
+								</div>
 							</div>
 							{#if m.estado.sinHistorial}<span class="chip text-texto-3">Sin registro</span>{:else}<Nivel nivel={m.estado.nivel} />{/if}
 						</div>
@@ -380,7 +407,13 @@
 								</div>
 							</dl>
 						{/if}
-						<button class="btn mt-auto" onclick={() => nuevaEntrada(m.plan.id)}><Check size={16} /> {m.estado.sinHistorial ? 'Registrar el último' : 'Hecho'}</button>
+						{#if m.plan.tareas.length}
+							<details class="text-sm">
+								<summary class="cursor-pointer text-xs text-texto-3 select-none hover:text-texto">{m.plan.tareas.length} tareas</summary>
+								<ul class="mt-1.5 flex list-disc flex-col gap-0.5 pl-5 text-xs text-texto-2">{#each m.plan.tareas as t (t)}<li>{t}</li>{/each}</ul>
+							</details>
+						{/if}
+						<button class="btn mt-auto" onclick={() => nuevaEntrada(m.plan.id)}><Check size={16} /> {m.estado.sinHistorial ? 'Registrar la última' : 'Hecha'}</button>
 					</article>
 				{/each}
 			</div>
@@ -544,6 +577,39 @@
 	/>
 </Hoja>
 
+<Hoja bind:abierta={hPlantilla} titulo="Revisiones por niveles" ancho="max-w-2xl">
+	{@const pl = data.plantillas.find((p) => p.id === plantillaVer)}
+	<div class="flex flex-col gap-4">
+		{#if data.plantillas.length > 1}
+			<select bind:value={plantillaVer} class="input">
+				{#each data.plantillas as p (p.id)}<option value={p.id}>{p.nombre}{p.id === data.plantillaSugerida ? ' (recomendada)' : ''}</option>{/each}
+			</select>
+		{/if}
+		{#if pl}
+			<p class="text-sm text-texto-2">{pl.descripcion}</p>
+			<div class="flex flex-col gap-2">
+				{#each pl.niveles as n (n.codigo)}
+					<details class="rounded-lg border border-borde bg-superficie-2">
+						<summary class="flex cursor-pointer items-center gap-3 px-3 py-2.5 select-none">
+							<span class="font-display text-lg font-bold text-acento">{n.codigo}</span>
+							<span class="flex-1 text-sm font-semibold">{n.nombre}</span>
+							<span class="text-xs text-texto-3">{textoPeriodicidad(n)}</span>
+						</summary>
+						<ul class="flex list-disc flex-col gap-0.5 px-3 pb-3 pl-8 text-xs text-texto-2">{#each n.tareas as t (t)}<li>{t}</li>{/each}</ul>
+						{#if n.notas}<p class="px-3 pb-3 text-xs text-texto-3">{n.notas}</p>{/if}
+					</details>
+				{/each}
+			</div>
+			<p class="text-xs text-texto-3">Fuente: {pl.fuente}</p>
+			<form method="POST" action="?/aplicarPlantilla" use:enhance={enviar({ alTerminar: () => (hPlantilla = false) })}>
+				<input type="hidden" name="plantilla" value={pl.id} />
+				<button class="btn btn-acento h-12 w-full">Aplicar a {v.alias}</button>
+			</form>
+			<p class="text-xs text-texto-3">Podrás cambiar tareas e intervalos en Ajustes → Mantenimiento.</p>
+		{/if}
+	</div>
+</Hoja>
+
 <!-- Hojas -->
 <Hoja bind:abierta={hEntrada} titulo={entradaEdit ? 'Editar entrada' : pendResolver ? 'Reparado' : planHecho ? 'Mantenimiento hecho' : 'Nueva entrada'}>
 	<EntradaForm
@@ -557,6 +623,7 @@
 		planes={planesVeh}
 		fases={data.fasesAbiertas}
 		entrada={entradaEdit}
+		checklistInicial={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.checklist ?? null) : null}
 		adjuntosExistentes={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.adjuntos ?? []) : []}
 		gastosExistentes={entradaEdit ? data.movimientos.filter((m) => m.entradaId === entradaEdit!.id && m.tipo === 'gasto').sort((a, b) => a.id - b.id) : []}
 		claseInicial={pendResolver ? 'reparacion' : planHecho ? 'mantenimiento' : activa ? 'diario' : 'nota'}

@@ -11,3 +11,4 @@ export * from './tesoreria';
 export * from './operaciones';
 export * from './revision';
 export * from './facturacion';
+export * from './revisiones';

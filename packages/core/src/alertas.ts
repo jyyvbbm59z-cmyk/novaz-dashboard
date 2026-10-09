@@ -85,6 +85,7 @@ export function ritmoKmDia(lecturas: Lectura[], hoy: string, ventanaDias = 365):
 export interface Plan {
 	cadaKm: number | null;
 	cadaMeses: number | null;
+	cadaDias?: number | null;
 	avisoKm: number;
 	avisoDias: number;
 }
@@ -105,12 +106,13 @@ export function estadoMantenimiento(
 	ultima: { fecha: string; km: number | null } | null,
 	opts: { hoy: string; kmActual: number | null; ritmo: number | null; urgenteDias?: number }
 ): EstadoMantenimiento {
-	const urgenteDias = opts.urgenteDias ?? 7;
+	// "Urgente" se adapta al plan: una revisión cada 2 semanas no puede estar en rojo media vida
+	const urgenteDias = Math.min(opts.urgenteDias ?? 7, Math.max(1, Math.floor(plan.avisoDias / 2)));
 	if (!ultima) {
 		return { sinHistorial: true, proximaFecha: null, proximoKm: null, kmRestantes: null, diasRestantes: null, motivo: null, nivel: 'ok' };
 	}
 
-	const proximaFecha = plan.cadaMeses ? sumarMeses(ultima.fecha, plan.cadaMeses) : null;
+	const proximaFecha = plan.cadaDias ? sumarDias(ultima.fecha, plan.cadaDias) : plan.cadaMeses ? sumarMeses(ultima.fecha, plan.cadaMeses) : null;
 	const diasFecha = proximaFecha ? diasEntre(opts.hoy, proximaFecha) : null;
 	const nivelFecha = diasFecha != null ? nivelPorDias(diasFecha, plan.avisoDias, urgenteDias) : 'ok';
 
@@ -148,14 +150,24 @@ export function estadoMantenimiento(
 	};
 }
 
+/**
+ * ¿Se aplica el plan a este vehículo? Si el vehículo tiene planes propios (p. ej. el plan del
+ * fabricante), esos sustituyen a los genéricos de su tipo.
+ */
 export function planAplica(
 	plan: { vehiculoId: number | null; tipoVehiculoId: number | null; activo: boolean },
-	vehiculo: { id: number; tipoId: number }
+	vehiculo: { id: number; tipoId: number },
+	tienePropios = false
 ): boolean {
 	if (!plan.activo) return false;
 	if (plan.vehiculoId != null) return plan.vehiculoId === vehiculo.id;
+	if (tienePropios) return false;
 	return plan.tipoVehiculoId == null || plan.tipoVehiculoId === vehiculo.tipoId;
 }
+
+/** ¿Tiene el vehículo planes propios activos? */
+export const tienePlanesPropios = (planes: { vehiculoId: number | null; activo: boolean }[], vehiculoId: number) =>
+	planes.some((p) => p.activo && p.vehiculoId === vehiculoId);
 
 export function tipoVencimientoAplica(tipo: { tiposVehiculoIds: number[]; activo: boolean }, tipoVehiculoId: number): boolean {
 	return tipo.activo && (tipo.tiposVehiculoIds.length === 0 || tipo.tiposVehiculoIds.includes(tipoVehiculoId));

@@ -3,6 +3,13 @@ import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from
 import type { CampoDef, FasePlantilla } from './campos';
 import type { LineaFactura } from './facturacion';
 
+export interface TareaHecha {
+	plan: string;
+	tarea: string;
+	hecha: boolean;
+	nota?: string | null;
+}
+
 // Convenciones: fechas de negocio como texto ISO 'YYYY-MM-DD', importes en céntimos (entero),
 // marcas de tiempo como texto 'YYYY-MM-DD HH:MM:SS' (UTC) generado por SQLite.
 const id = () => integer('id').primaryKey({ autoIncrement: true });
@@ -67,9 +74,18 @@ export const tiposVencimiento = sqliteTable('tipos_vencimiento', {
 
 export const planesMantenimiento = sqliteTable('planes_mantenimiento', {
 	id: id(),
+	/** Código corto de la revisión (I1, I2…). */
+	codigo: text('codigo'),
 	nombre: text('nombre').notNull(),
 	cadaKm: integer('cada_km'),
 	cadaMeses: integer('cada_meses'),
+	/** Periodicidad en días (p. ej. 14 = cada dos semanas). Si está, manda sobre los meses. */
+	cadaDias: integer('cada_dias'),
+	/** Lista de tareas de la revisión. */
+	tareas: text('tareas', { mode: 'json' }).$type<string[]>().notNull().default([]),
+	/** Otros planes que quedan hechos al hacer este (la I3 incluye la I2 y la I1). */
+	incluye: text('incluye', { mode: 'json' }).$type<number[]>().notNull().default([]),
+	orden: integer('orden').notNull().default(0),
 	/** Ámbito: un tipo de vehículo, un vehículo concreto o (ambos null) todos. */
 	tipoVehiculoId: integer('tipo_vehiculo_id').references(() => tiposVehiculo.id, { onDelete: 'cascade' }),
 	vehiculoId: integer('vehiculo_id').references(() => vehiculos.id, { onDelete: 'cascade' }),
@@ -232,6 +248,8 @@ export const entradas = sqliteTable(
 		titulo: text('titulo').notNull(),
 		texto: text('texto'),
 		horas: real('horas'),
+		/** Tareas de las revisiones hechas en esta entrada, con su resultado. */
+		checklist: text('checklist', { mode: 'json' }).$type<TareaHecha[]>(),
 		/** Obsoleto: sustituido por `entradasPlanes` (una entrada puede renovar varios planes). */
 		planId: integer('plan_id').references(() => planesMantenimiento.id, { onDelete: 'set null' }),
 		restauracionId: integer('restauracion_id').references(() => restauraciones.id, { onDelete: 'set null' }),

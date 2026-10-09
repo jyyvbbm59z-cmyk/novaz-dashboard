@@ -4,7 +4,8 @@
 	import { avisar } from '$lib/avisos.svelte';
 	import { enviar } from '$lib/enviar';
 	import { subirArchivo } from '$lib/imagenes';
-	import type { Adjunto, Categoria, Entrada } from '@novaz/core/schema';
+	import type { Adjunto, Categoria, Entrada, TareaHecha } from '@novaz/core/schema';
+	import { expandirIncluidos } from '@novaz/core';
 	import { euros, eurosInput, parsearEuros } from '@novaz/core';
 	import { Plus, X } from '@lucide/svelte';
 	import ColaFotos from '$comp/ColaFotos.svelte';
@@ -26,6 +27,7 @@
 		planesIniciales = [],
 		gastosExistentes = [],
 		adjuntosExistentes = [],
+		checklistInicial = null,
 		faseInicial = null,
 		tituloInicial = '',
 		ocultos = {},
@@ -36,7 +38,7 @@
 		hoy: string;
 		km?: number | null;
 		categorias: Categoria[];
-		planes?: { id: number; nombre: string }[];
+		planes?: { id: number; nombre: string; codigo?: string | null; tareas?: string[]; incluye?: number[] }[];
 		fases?: { id: number; nombre: string }[];
 		entrada?: Entrada | null;
 		claseInicial?: string;
@@ -44,6 +46,7 @@
 		planesIniciales?: number[];
 		gastosExistentes?: { id: number; concepto: string; importeCent: number; categoriaId: number | null; proveedor: string | null }[];
 		adjuntosExistentes?: Adjunto[];
+		checklistInicial?: TareaHecha[] | null;
 		faseInicial?: number | null;
 		tituloInicial?: string;
 		ocultos?: Record<string, string | number>;
@@ -73,6 +76,43 @@
 		const t = normalizar(titulo);
 		planesSel = planes.filter((p) => normalizar(p.nombre).split(/\W+/).some((w) => w.length >= 4 && t.includes(w))).map((p) => p.id);
 	});
+	// ─── Tareas de las revisiones elegidas (y de las que incluyen)
+	const etiqueta = (p: { codigo?: string | null; nombre: string }) => (p.codigo ? `${p.codigo} · ${p.nombre}` : p.nombre);
+	const grupos = $derived.by(() => {
+		const todos = expandirIncluidos(planesSel, planes.map((p) => ({ id: p.id, incluye: p.incluye ?? [] })));
+		return todos
+			.map((id) => planes.find((p) => p.id === id))
+			.filter((p): p is (typeof planes)[number] => Boolean(p?.tareas?.length))
+			.map((p) => ({ plan: p, incluida: !planesSel.includes(p.id) }));
+	});
+	// Estado de cada tarea: clave "plan|tarea"
+	let marcas = $state<Record<string, { hecha: boolean; nota: string }>>(
+		(() => Object.fromEntries((checklistInicial ?? []).map((t) => [`${t.plan}|${t.tarea}`, { hecha: t.hecha, nota: t.nota ?? '' }])))()
+	);
+	// El estado de una tarea solo se crea al tocarla (nunca durante el pintado)
+	function fijarMarca(clave: string, cambio: Partial<{ hecha: boolean; nota: string }>) {
+		const previa = marcas[clave] ?? { hecha: false, nota: '' };
+		marcas[clave] = { ...previa, ...cambio };
+	}
+	let notaAbierta = $state<string | null>(null);
+	// Abierto/cerrado de cada grupo: lo decide quien lo toca (si no, al recontar se vuelve a plegar)
+	let gruposAbiertos = $state<Record<number, boolean>>({});
+	// Se guardan las revisiones elegidas y, de las incluidas, solo las que se han tocado
+	const tocado = (g: (typeof grupos)[number]) => (g.plan.tareas ?? []).some((t) => marcas[`${etiqueta(g.plan)}|${t}`]);
+	const checklistJson = $derived(
+		JSON.stringify(
+			grupos.filter((g) => !g.incluida || tocado(g)).flatMap((g) =>
+				(g.plan.tareas ?? []).map((t) => {
+					const m = marcas[`${etiqueta(g.plan)}|${t}`];
+					return { plan: etiqueta(g.plan), tarea: t, hecha: m?.hecha ?? false, nota: m?.nota || null };
+				})
+			)
+		)
+	);
+	function marcarTodas(p: (typeof planes)[number], valor: boolean) {
+		for (const t of p.tareas ?? []) fijarMarca(`${etiqueta(p)}|${t}`, { hecha: valor });
+	}
+
 	function alternarPlan(id: number) {
 		planesTocados = true;
 		planesSel = planesSel.includes(id) ? planesSel.filter((x) => x !== id) : [...planesSel, id];
@@ -141,6 +181,7 @@
 		gastosAbierto = false;
 		planesSel = [];
 		planesTocados = false;
+		marcas = {};
 		alGuardar?.();
 	};
 </script>
@@ -180,13 +221,52 @@
 						onclick={() => alternarPlan(p.id)}
 						aria-pressed={planesSel.includes(p.id)}
 					>
-						{planesSel.includes(p.id) ? '✓ ' : ''}{p.nombre}
+						{planesSel.includes(p.id) ? '✓ ' : ''}{#if p.codigo}<strong class="font-mono">{p.codigo}</strong> {/if}{p.nombre}
 					</button>
 				{/each}
 			</div>
 			{#each planesSel as id (id)}<input type="hidden" name="planIds" value={id} />{/each}
-			<span class="text-xs text-texto-3">Así su aviso vuelve a contar desde esta fecha y estos km.</span>
+			<span class="text-xs text-texto-3">Así su aviso vuelve a contar desde esta fecha y estos km{planes.some((p) => p.incluye?.length) ? '. Las revisiones grandes cuentan también como las pequeñas que incluyen.' : '.'}</span>
 		</fieldset>
+
+		{#if grupos.length}
+			<input type="hidden" name="checklist" value={checklistJson} />
+			<div class="flex flex-col gap-2">
+				{#each grupos as g (g.plan.id)}
+					{@const hechas = (g.plan.tareas ?? []).filter((t) => marcas[`${etiqueta(g.plan)}|${t}`]?.hecha).length}
+					<details
+						class="rounded-lg border border-borde bg-superficie-2"
+						open={gruposAbiertos[g.plan.id] ?? !g.incluida}
+						ontoggle={(e) => (gruposAbiertos[g.plan.id] = e.currentTarget.open)}
+					>
+						<summary class="flex cursor-pointer items-center gap-2 px-3 py-2.5 text-sm select-none">
+							<span class="flex-1 font-semibold">{etiqueta(g.plan)}{#if g.incluida}<span class="ml-1 font-normal text-texto-3">(incluida)</span>{/if}</span>
+							<span class="font-mono text-xs {hechas === g.plan.tareas?.length ? 'nivel-ok' : 'text-texto-3'}">{hechas}/{g.plan.tareas?.length}</span>
+						</summary>
+						<ul class="flex flex-col px-2 pb-2">
+							{#each g.plan.tareas ?? [] as t (t)}
+								{@const clave = `${etiqueta(g.plan)}|${t}`}
+								{@const m = marcas[clave] ?? { hecha: false, nota: '' }}
+								<li class="rounded-md px-1 py-1 hover:bg-superficie-3/60">
+									<div class="flex items-start gap-2.5">
+										<input type="checkbox" checked={m.hecha} onchange={(e) => fijarMarca(clave, { hecha: e.currentTarget.checked })} class="mt-0.5 h-5 w-5 shrink-0 accent-[var(--acento)]" aria-label={t} />
+										<span class="flex-1 text-sm {m.hecha ? 'text-texto-3 line-through' : ''}">{t}</span>
+										<button type="button" class="shrink-0 text-xs {m.nota ? 'text-acento' : 'text-texto-3'} hover:text-texto" onclick={() => (notaAbierta = notaAbierta === clave ? null : clave)}>{m.nota ? 'nota ✎' : '+ nota'}</button>
+									</div>
+									{#if notaAbierta === clave || m.nota}
+										<input value={m.nota} oninput={(e) => fijarMarca(clave, { nota: e.currentTarget.value })} class="input mt-1.5 ml-7 h-8 w-[calc(100%-1.75rem)] text-xs" placeholder="Resultado u observación (p. ej. 2,2 / 2,4 bar)" />
+									{/if}
+								</li>
+							{/each}
+						</ul>
+						<div class="flex justify-end gap-3 px-3 pb-2.5 text-xs">
+							<button type="button" class="text-texto-3 hover:text-texto" onclick={() => marcarTodas(g.plan, false)}>Desmarcar</button>
+							<button type="button" class="font-semibold text-acento" onclick={() => marcarTodas(g.plan, true)}>Marcar todas</button>
+						</div>
+					</details>
+				{/each}
+			</div>
+		{/if}
 	{/if}
 	<label class="campo"><span>Detalle</span><textarea name="texto" class="input" rows="4" bind:value={texto} placeholder="Qué se hizo, piezas, referencias, sensaciones…"></textarea></label>
 

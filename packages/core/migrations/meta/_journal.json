@@ -71,6 +71,13 @@
       "when": 1791576929746,
       "tag": "0009_entradas_planes",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1791579033348,
+      "tag": "0010_revisiones",
+      "breakpoints": true
     }
   ]
 }
