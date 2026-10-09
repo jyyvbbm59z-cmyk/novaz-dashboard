@@ -14,6 +14,8 @@
     "build": "npm run build -w apps/web",
     "db:generate": "npm run db:generate -w packages/core",
     "db:migrate:local": "npm run db:migrate:local -w apps/web",
-    "deploy": "npm run deploy -w apps/web && npm run deploy -w workers/avisos"
+    "deploy": "npm run deploy -w apps/web && npm run deploy -w workers/avisos",
+    "cf:web": "npm run build && cd apps/web && npx wrangler d1 migrations apply novaz --remote && npx wrangler deploy",
+    "cf:avisos": "cd workers/avisos && npx wrangler deploy"
   }
 }

@@ -124,14 +124,20 @@ La app verifica la firma del token de Access en cada petición. Aunque alguien l
 Cada mañana se avisa al cruzar cada umbral (por defecto 30, 7 y 1 días antes, y al vencer),
 sin repetir. Los lunes llega un resumen semanal.
 
-### 6. Despliegue automático desde GitHub
+### 6. Despliegue automático (Cloudflare conectado a GitHub)
 
-1. Crea el repositorio y haz `git push` de `main`.
-2. En GitHub → Settings → Secrets and variables → Actions, añade:
-   - `CLOUDFLARE_ACCOUNT_ID`
-   - `CLOUDFLARE_API_TOKEN`: plantilla *Edit Cloudflare Workers* más permiso **D1: Edit**.
-3. Cada push a `main` ejecuta tests y comprobaciones, aplica migraciones y despliega los dos
-   workers. Los pull requests solo se comprueban.
+Cloudflare **Workers Builds** escucha el repositorio y despliega en cada push a `main`.
+Hay que crear dos Workers desde *Workers y Pages → Crear → Importar un repositorio*:
+
+| | App web | Avisos |
+|---|---|---|
+| Nombre del Worker | `novaz-dashboard` | `novaz-avisos` |
+| Directorio raíz | `/` | `/` |
+| Comando de compilación | *(vacío)* | *(vacío)* |
+| Comando de despliegue | `npm run cf:web` | `npm run cf:avisos` |
+
+`cf:web` compila, aplica las migraciones de D1 y despliega. La versión de Node sale de `.nvmrc`.
+GitHub Actions (`comprobar.yml`) solo pasa tests, tipos y build en cada push y pull request.
 
 ### 7. Instalar en el móvil
 
