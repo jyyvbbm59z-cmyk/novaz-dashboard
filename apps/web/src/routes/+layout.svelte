@@ -6,21 +6,11 @@
 	import Buscador from '$comp/Buscador.svelte';
 	import Logo from '$comp/Logo.svelte';
 	import { configurarMomentos } from '$lib/momentos';
-	import { Boxes, BookOpenText, CarFront, FileText, House, LayoutGrid, Plus, ReceiptText, Search, Settings, ShoppingCart, Users, Warehouse, Wrench } from '@lucide/svelte';
-	import Hoja from '$comp/Hoja.svelte';
+	import { Boxes, BookOpenText, CarFront, House, Plus, Search, Settings, ShoppingCart, Users, Warehouse, Wrench } from '@lucide/svelte';
 
 	let { data, children } = $props();
 	let buscando = $state(false);
 	let altoCabecera = $state(0);
-	let menuMas = $state(false);
-	const MAS = [
-		{ href: '/local', texto: 'El local', icono: Warehouse },
-		{ href: '/inventario', texto: 'Inventario', icono: Boxes },
-		{ href: '/inventario/compras', texto: 'Lista de la compra', icono: ShoppingCart },
-		{ href: '/contabilidad/facturas', texto: 'Facturas', icono: FileText },
-		{ href: '/contactos', texto: 'Contactos', icono: Users },
-		{ href: '/ajustes', texto: 'Ajustes', icono: Settings }
-	];
 
 	$effect(() => configurarMomentos(data.ajustes));
 
@@ -44,41 +34,60 @@
 		});
 	});
 
-	const GRUPOS = [
+	// Cuatro áreas, con los mismos nombres en escritorio y móvil
+	interface Pagina {
+		href: string;
+		texto: string;
+		icono: typeof House;
+		/** Otras rutas que cuentan como esta página. */
+		tambien?: string[];
+	}
+	interface Area {
+		titulo: string;
+		icono: typeof House;
+		paginas: Pagina[];
+	}
+	const AREAS: Area[] = [
 		{
-			titulo: 'Taller',
-			items: [
-				{ href: '/', texto: 'Inicio', icono: House },
+			titulo: 'Vehículos',
+			icono: CarFront,
+			paginas: [
 				{ href: '/flota', texto: 'Flota', icono: CarFront },
 				{ href: '/restauraciones', texto: 'Restauraciones', icono: Wrench },
-				{ href: '/local', texto: 'El local', icono: Warehouse },
-				{ href: '/inventario', texto: 'Inventario', icono: Boxes },
 				{ href: '/contactos', texto: 'Contactos', icono: Users }
 			]
 		},
 		{
-			titulo: 'Dinero',
-			items: [
-				{ href: '/contabilidad/movimientos', texto: 'Movimientos', icono: ReceiptText },
-				{ href: '/contabilidad', texto: 'Contabilidad', icono: BookOpenText, exacta: true }
+			titulo: 'Taller',
+			icono: Warehouse,
+			paginas: [
+				{ href: '/local', texto: 'El local', icono: Warehouse },
+				{ href: '/inventario', texto: 'Inventario', icono: Boxes },
+				{ href: '/compras', texto: 'Compras', icono: ShoppingCart }
 			]
 		},
-		{ titulo: 'Sistema', items: [{ href: '/ajustes', texto: 'Ajustes', icono: Settings }] }
-	];
-	const MOVIL = [
-		{ href: '/', texto: 'Inicio', icono: House },
-		{ href: '/flota', texto: 'Flota', icono: CarFront },
-		null,
-		{ href: '/restauraciones', texto: 'Obras', icono: Wrench },
-		{ href: '/contabilidad', texto: 'Dinero', icono: BookOpenText }
+		{
+			titulo: 'Dinero',
+			icono: BookOpenText,
+			paginas: [{ href: '/contabilidad', texto: 'Dinero', icono: BookOpenText, tambien: ['/facturas'] }]
+		}
 	];
 
 	const ruta = $derived(page.url.pathname);
-	function activo(href: string, exacta = false) {
-		if (href === '/') return ruta === '/';
-		if (exacta) return ruta === href || (ruta.startsWith(href + '/') && !ruta.startsWith('/contabilidad/movimientos'));
-		return ruta === href || ruta.startsWith(href + '/');
-	}
+	const dentro = (href: string) => ruta === href || ruta.startsWith(href + '/');
+	const paginaActiva = (p: Pagina) => dentro(p.href) || (p.tambien ?? []).some(dentro);
+	const areaActiva = $derived(AREAS.find((a) => a.paginas.some(paginaActiva)) ?? null);
+	// En el móvil, las páginas principales de un área llevan arriba un selector para saltar entre ellas
+	const selectorArea = $derived(
+		areaActiva && areaActiva.paginas.length > 1 && areaActiva.paginas.some((p) => ruta === p.href || (p.href === '/inventario' && dentro(p.href))) ? areaActiva : null
+	);
+	const barraMovil = $derived([
+		{ href: '/', texto: 'Inicio', icono: House, on: ruta === '/' },
+		{ href: '/flota', texto: 'Vehículos', icono: CarFront, on: areaActiva === AREAS[0] },
+		null,
+		{ href: '/local', texto: 'Taller', icono: Warehouse, on: areaActiva === AREAS[1] },
+		{ href: '/contabilidad', texto: 'Dinero', icono: BookOpenText, on: areaActiva === AREAS[2] }
+	]);
 	const urgentes = $derived(data.alertas.filter((a) => a.nivel === 'vencido' || a.nivel === 'urgente').length);
 
 	function teclas(e: KeyboardEvent) {
@@ -109,29 +118,33 @@
 		</button>
 
 		<nav class="flex flex-col gap-5">
-			{#each GRUPOS as g (g.titulo)}
+			{#snippet enlace(n: Pagina, on: boolean)}
+				<a
+					href={n.href}
+					aria-current={on ? 'page' : undefined}
+					class="group relative flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium text-texto-2 transition hover:bg-superficie-2 hover:text-texto aria-[current=page]:bg-superficie-2 aria-[current=page]:text-texto"
+				>
+					{#if on}<span class="absolute top-2 bottom-2 -left-3 w-[3px] rounded-r-full" style="background: var(--acento)"></span>{/if}
+					<n.icono size={17} strokeWidth={1.75} class={on ? 'text-acento' : 'text-texto-3 group-hover:text-texto-2'} />
+					{n.texto}
+					{#if n.href === '/' && urgentes}
+						<span class="ml-auto rounded-full bg-vencido px-1.5 text-[0.68rem] leading-[1.15rem] font-bold text-white">{urgentes}</span>
+					{/if}
+				</a>
+			{/snippet}
+			<div class="flex flex-col gap-0.5">{@render enlace({ href: '/', texto: 'Inicio', icono: House }, ruta === '/')}</div>
+			{#each AREAS as a (a.titulo)}
 				<div class="flex flex-col gap-0.5">
-					<p class="mb-1 px-3 text-[0.62rem] font-semibold tracking-[0.16em] text-texto-3/80 uppercase">{g.titulo}</p>
-					{#each g.items as n (n.href)}
-						{@const on = activo(n.href, 'exacta' in n && n.exacta)}
-						<a
-							href={n.href}
-							aria-current={on ? 'page' : undefined}
-							class="group relative flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium text-texto-2 transition hover:bg-superficie-2 hover:text-texto aria-[current=page]:bg-superficie-2 aria-[current=page]:text-texto"
-						>
-							{#if on}<span class="absolute top-2 bottom-2 -left-3 w-[3px] rounded-r-full" style="background: var(--acento)"></span>{/if}
-							<n.icono size={17} strokeWidth={1.75} class={on ? 'text-acento' : 'text-texto-3 group-hover:text-texto-2'} />
-							{n.texto}
-							{#if n.href === '/' && urgentes}
-								<span class="ml-auto rounded-full bg-vencido px-1.5 text-[0.68rem] leading-[1.15rem] font-bold text-white">{urgentes}</span>
-							{/if}
-						</a>
-					{/each}
+					{#if a.paginas.length > 1}<p class="mb-1 px-3 text-[0.62rem] font-semibold tracking-[0.16em] text-texto-3/80 uppercase">{a.titulo}</p>{/if}
+					{#each a.paginas as n (n.href)}{@render enlace(n, paginaActiva(n))}{/each}
 				</div>
 			{/each}
 		</nav>
 
-		<a href="/captura" class="btn btn-acento mt-auto h-11 shadow-[0_8px_24px_-10px_var(--acento)]"><Plus size={18} strokeWidth={2.4} /> Registrar</a>
+		<div class="mt-auto flex gap-2">
+			<a href="/captura" class="btn btn-acento h-11 flex-1 shadow-[0_8px_24px_-10px_var(--acento)]"><Plus size={18} strokeWidth={2.4} /> Registrar</a>
+			<a href="/ajustes" class="btn btn-icono h-11 w-11 {dentro('/ajustes') ? 'border-acento/60 text-acento' : 'text-texto-3'}" aria-label="Ajustes" title="Ajustes"><Settings size={18} /></a>
+		</div>
 	</aside>
 
 	<!-- Cabecera (móvil) -->
@@ -143,11 +156,21 @@
 		<a href="/" class="py-2.5"><Logo nombre={data.ajustes.nombreTaller} compacto marca={data.ajustes.logoApp} /></a>
 		<div class="-mr-2 flex items-center">
 			<button class="btn btn-fantasma btn-icono" onclick={() => (buscando = true)} aria-label="Buscar"><Search size={20} /></button>
-			<button class="btn btn-fantasma btn-icono" onclick={() => (menuMas = true)} aria-label="Más secciones"><LayoutGrid size={20} /></button>
+			<a href="/ajustes" class="btn btn-fantasma btn-icono {dentro('/ajustes') ? 'text-acento' : ''}" aria-label="Ajustes"><Settings size={20} /></a>
 		</div>
 	</header>
 
 	<main class="mx-auto w-full max-w-6xl px-4 pt-5 pb-seguro sm:px-6 lg:px-10 lg:pt-9 lg:pb-16" style="view-transition-name: contenido">
+		{#if selectorArea}
+			<nav class="-mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 lg:hidden" style="scrollbar-width:none" aria-label={selectorArea.titulo}>
+				{#each selectorArea.paginas as p (p.href)}
+					{@const on = paginaActiva(p)}
+					<a href={p.href} aria-current={on ? 'page' : undefined} class="chip h-9 shrink-0 gap-1.5 px-3.5 text-sm font-semibold {on ? 'border-acento/60 bg-acento/10 text-texto' : 'text-texto-3'}">
+						<p.icono size={15} class={on ? 'text-acento' : ''} />{p.texto}
+					</a>
+				{/each}
+			</nav>
+		{/if}
 		{@render children()}
 	</main>
 
@@ -156,9 +179,9 @@
 		class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-borde bg-fondo/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
 		style="view-transition-name: barra-inferior"
 	>
-		{#each MOVIL as n, i (i)}
+		{#each barraMovil as n, i (i)}
 			{#if n}
-				{@const on = activo(n.href)}
+				{@const on = n.on}
 				<a href={n.href} aria-current={on ? 'page' : undefined} class="relative flex h-16 flex-col items-center justify-center gap-1 text-[0.66rem] font-semibold tracking-wide {on ? 'text-texto' : 'text-texto-3'}">
 					<span class="flex h-7 w-12 items-center justify-center rounded-full transition {on ? 'bg-acento/15' : ''}">
 						<n.icono size={21} strokeWidth={on ? 2.1 : 1.7} class={on ? 'text-acento' : ''} />
@@ -182,15 +205,6 @@
 	</nav>
 </div>
 
-<Hoja bind:abierta={menuMas} titulo="Secciones">
-	<nav class="grid grid-cols-3 gap-2">
-		{#each MAS as n (n.href)}
-			<a href={n.href} onclick={() => (menuMas = false)} class="tarjeta flex flex-col items-center gap-2 px-2 py-4 text-center text-xs font-medium transition active:scale-95 {activo(n.href) ? 'border-acento/60' : ''}">
-				<n.icono size={22} strokeWidth={1.75} class={activo(n.href) ? 'text-acento' : 'text-texto-2'} />{n.texto}
-			</a>
-		{/each}
-	</nav>
-</Hoja>
 
 <Buscador bind:abierto={buscando} vehiculos={data.vehiculosMenu} />
 <Avisos />

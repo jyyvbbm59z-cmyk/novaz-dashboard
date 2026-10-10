@@ -100,7 +100,16 @@
 	</section>
 {/if}
 
-<form method="POST" action={accion} use:enhance={enviar({ alTerminar: alGuardar })} class="flex flex-col gap-4">
+{#if movimiento?.cuadreSaldoCent != null}
+	<div class="flex flex-col gap-3 rounded-lg bg-superficie-2 p-4 text-sm">
+		<p class="font-semibold">Ajuste de cuadre con el {movimiento.pago === 'caja' ? 'efectivo' : 'banco'}</p>
+		<p class="text-texto-2">
+			Ese día tenías <strong class="cifra">{euros(movimiento.cuadreSaldoCent)}</strong>. El importe se recalcula solo para que el saldo coincida, así que no se edita a mano.
+		</p>
+		<a href="/contabilidad/tesoreria" class="btn w-fit">Ir a tesorería para deshacerlo</a>
+	</div>
+{/if}
+<form method="POST" action={accion} use:enhance={enviar({ alTerminar: alGuardar })} class="flex flex-col gap-4 {movimiento?.cuadreSaldoCent != null ? 'hidden' : ''}">
 	{#if movimiento}<input type="hidden" name="id" value={movimiento.id} />{/if}
 	{#if vehiculoFijo}<input type="hidden" name="vehiculoId" value={vehiculoFijo} />{/if}
 	{#each Object.entries(ocultos) as [k, v] (k)}<input type="hidden" name={k} value={v} />{/each}

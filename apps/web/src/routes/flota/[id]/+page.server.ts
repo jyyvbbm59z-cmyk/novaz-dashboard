@@ -29,7 +29,7 @@ import {
 import { adjuntosDe, borrarAdjuntos } from '$lib/server/adjuntos';
 import { crearFactura } from '$lib/server/facturas';
 import { aplicarPlantilla } from '$lib/server/revisiones';
-import { cargarInventario } from '$lib/server/inventario';
+import { cargarInventario, cerrarCompras } from '$lib/server/inventario';
 import { avanceRestauraciones, comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
@@ -185,7 +185,10 @@ export const load = async ({ params, locals }) => {
 		porReparar,
 		plantillaSugerida: propios ? null : (plantillaSugerida(v)?.id ?? null),
 		plantillas: propios ? [] : PLANTILLAS_REVISION.map((p) => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion, fuente: p.fuente, niveles: p.niveles.map((n) => ({ codigo: n.codigo, nombre: n.nombre, cadaDias: n.cadaDias, cadaMeses: n.cadaMeses, cadaKm: n.cadaKm, tareas: n.tareas, notas: n.notas ?? null })) })),
-		adjuntosPend: await adjuntosDe(db, 'pendiente', porReparar.map((p) => p.id))
+		adjuntosPend: await adjuntosDe(db, 'pendiente', porReparar.map((p) => p.id)),
+		comprasPend: porReparar.length
+			? await db.select().from(s.listaCompra).where(inArray(s.listaCompra.pendienteId, porReparar.map((p) => p.id))).orderBy(asc(s.listaCompra.id))
+			: []
 	};
 };
 
@@ -236,10 +239,12 @@ export const actions = {
 	}),
 
 	descartarPendiente: accion(async ({ request, params, locals }) => {
+		const id = leer(await request.formData()).id('id');
 		await locals.db
 			.update(s.pendientes)
 			.set({ estado: 'descartado', fechaCierre: locals.hoy })
-			.where(and(eq(s.pendientes.id, leer(await request.formData()).id('id')), eq(s.pendientes.vehiculoId, vid(params))));
+			.where(and(eq(s.pendientes.id, id), eq(s.pendientes.vehiculoId, vid(params))));
+		await cerrarCompras(locals.db, { pendienteId: id });
 		return { mensaje: 'Descartado' };
 	}),
 

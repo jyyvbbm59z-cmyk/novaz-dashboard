@@ -1,6 +1,6 @@
 import { claseFlujo, esTesoreria, prevision, sumarMeses, type Asiento } from '@novaz/core';
 import * as s from '@novaz/core/schema';
-import { asc, eq, isNotNull } from 'drizzle-orm';
+import { asc, eq, isNotNull, or } from 'drizzle-orm';
 
 /** Saldos, gasto habitual, previsión a 6 meses y sugerencia de aportación. */
 export async function estadoTesoreria(locals: App.Locals, asientos: Asiento[]) {
@@ -11,7 +11,10 @@ export async function estadoTesoreria(locals: App.Locals, asientos: Asiento[]) {
 			.from(s.recurrentes)
 			.leftJoin(s.categorias, eq(s.recurrentes.categoriaId, s.categorias.id))
 			.orderBy(asc(s.recurrentes.dia)),
-		db.select({ id: s.movimientos.id }).from(s.movimientos).where(isNotNull(s.movimientos.recurrenteId))
+		db
+			.select({ id: s.movimientos.id })
+			.from(s.movimientos)
+			.where(or(isNotNull(s.movimientos.recurrenteId), isNotNull(s.movimientos.cuadreSaldoCent)))
 	]);
 
 	const hastaHoy = asientos.filter((a) => a.fecha <= hoy);
@@ -19,7 +22,7 @@ export async function estadoTesoreria(locals: App.Locals, asientos: Asiento[]) {
 	const banco = saldo('572');
 	const caja = saldo('570');
 
-	// Cobros y pagos "habituales": media de los 3 meses completos anteriores, sin recurrentes ni financiación
+	// Cobros y pagos "habituales": media de los 3 meses completos anteriores, sin recurrentes, cuadres ni financiación
 	const recurrenteIds = new Set(deRecurrente.map((m) => m.id));
 	const desde = sumarMeses(`${hoy.slice(0, 7)}-01`, -3);
 	const hasta = `${hoy.slice(0, 7)}-01`;
@@ -35,6 +38,9 @@ export async function estadoTesoreria(locals: App.Locals, asientos: Asiento[]) {
 		if (delta < 0) pagos -= delta;
 	}
 	habitual = Math.round(habitual / 3);
+	const habitualCalculado = habitual;
+	const fijado = locals.ajustes.gastoHabitualCent;
+	if (fijado != null) habitual = -Math.abs(fijado);
 
 	const reglas = recurrentes.map((x) => x.r);
 	const prev = prevision(banco + caja, hoy, reglas, habitual, 6);
@@ -48,6 +54,8 @@ export async function estadoTesoreria(locals: App.Locals, asientos: Asiento[]) {
 		banco,
 		caja,
 		habitual,
+		habitualCalculado,
+		habitualFijado: fijado != null,
 		gastoMedioMensual: Math.round(pagos / 3),
 		prevision: prev,
 		sugerencia,

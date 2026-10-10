@@ -5,6 +5,7 @@ import { CLASES_ENTRADA, FORMAS_PAGO, PRIORIDADES, TIPOS_MOVIMIENTO, type ClaseE
 import { and, eq, inArray } from 'drizzle-orm';
 import { borrarAdjuntosDe } from './adjuntos';
 import { registrarKm } from './datos';
+import { cerrarCompras, sincronizarCompras } from './inventario';
 import { ErrorFormulario, leer } from './form';
 
 type Locals = App.Locals;
@@ -328,13 +329,16 @@ export async function guardarPendiente(locals: Locals, vehiculoId: number, fd: F
 		fechaDetectado: f.fecha('fechaDetectado') ?? locals.hoy,
 		kmDetectado: f.entero('km')
 	};
+	let pendienteId = id;
 	if (id) {
 		await locals.db.update(s.pendientes).set(valores).where(and(eq(s.pendientes.id, id), eq(s.pendientes.vehiculoId, vehiculoId)));
-		return id;
+	} else {
+		const [p] = await locals.db.insert(s.pendientes).values(valores).returning({ id: s.pendientes.id });
+		await registrarKm(locals.db, vehiculoId, valores.fechaDetectado, valores.kmDetectado);
+		pendienteId = p.id;
 	}
-	const [p] = await locals.db.insert(s.pendientes).values(valores).returning({ id: s.pendientes.id });
-	await registrarKm(locals.db, vehiculoId, valores.fechaDetectado, valores.kmDetectado);
-	return p.id;
+	if (fd.has('compras')) await sincronizarCompras(locals.db, String(fd.get('compras')), { pendienteId: pendienteId!, vehiculoId });
+	return pendienteId!;
 }
 
 /** Cierra un pendiente creando la entrada de reparación (con su gasto, si lo hay). */
@@ -350,6 +354,7 @@ export async function resolverPendiente(locals: Locals, vehiculoId: number, fd: 
 		.update(s.pendientes)
 		.set({ estado: 'hecho', fechaCierre: entrada?.fecha ?? locals.hoy, entradaId: r.entradaId })
 		.where(eq(s.pendientes.id, pendienteId));
+	await cerrarCompras(locals.db, { pendienteId });
 	// Las fotos de la avería («antes») pasan a la entrada de reparación del historial
 	await locals.db
 		.update(s.adjuntos)

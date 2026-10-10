@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Cabecera from '$comp/Cabecera.svelte';
 	import Hoja from '$comp/Hoja.svelte';
 	import { avisar } from '$lib/avisos.svelte';
 	import { accion, enviar } from '$lib/enviar';
@@ -8,9 +9,15 @@
 	let { data } = $props();
 	const revision = $derived(data.automaticos.filter((i) => i.motivo === 'revision'));
 	const reponer = $derived(data.automaticos.filter((i) => i.motivo === 'stock'));
-	const pendientesManual = $derived(data.manual.filter((i) => !i.comprado));
+	const claveOrigen = (i: { pendienteId: number | null; tareaLocalId: number | null }) => (i.pendienteId ? `p${i.pendienteId}` : i.tareaLocalId ? `t${i.tareaLocalId}` : null);
+	const pendientesManual = $derived(data.manual.filter((i) => !i.comprado && !claveOrigen(i)));
+	const ligados = $derived(
+		data.origenes
+			.map((o) => ({ ...o, items: data.manual.filter((i) => !i.comprado && claveOrigen(i) === o.clave) }))
+			.filter((o) => o.items.length)
+	);
 	const compradosManual = $derived(data.manual.filter((i) => i.comprado));
-	const total = $derived(revision.length + reponer.length + pendientesManual.length);
+	const total = $derived(revision.length + reponer.length + pendientesManual.length + ligados.reduce((t, o) => t + o.items.length, 0));
 
 	// Hoja «comprado»
 	interface Compra {
@@ -19,11 +26,15 @@
 		vehiculoId: number | null;
 		itemId: number | null;
 		unidad: string | null;
+		/** Para qué es (avería, tarea del local): el gasto va ahí y no al inventario. */
+		destino?: string;
 	}
 	let hCompra = $state(false);
 	let compra = $state<Compra | null>(null);
+	let alInventario = $state(true);
 	function abrir(c: Compra) {
 		compra = c;
+		alInventario = !c.destino;
 		hCompra = true;
 	}
 
@@ -31,6 +42,7 @@
 		const lineas = [
 			...revision.map((i) => `• ${i.texto} (${i.detalle})`),
 			...reponer.map((i) => `• ${i.texto}`),
+			...ligados.flatMap((o) => o.items.map((i) => `• ${i.texto} (${o.titulo})`)),
 			...pendientesManual.map((i) => `• ${i.texto}${i.cantidad ? ` × ${i.cantidad} ${i.unidad ?? ''}` : ''}`)
 		];
 		const texto = `Lista de la compra · ${data.ajustes.nombreTaller}\n${lineas.join('\n')}`;
@@ -45,6 +57,8 @@
 </script>
 
 <svelte:head><title>Lista de la compra · {data.ajustes.nombreTaller}</title></svelte:head>
+
+<Cabecera antetitulo="Taller" titulo="Lista de la compra" />
 
 <form method="POST" action="?/anadir" use:enhance={enviar()} class="mb-5 flex gap-2">
 	<input name="texto" class="input flex-1" placeholder="Añadir: lija de 400, pintura…" required />
@@ -91,6 +105,14 @@
 				</ul>
 			</section>
 		{/if}
+		{#each ligados as o (o.clave)}
+			<section>
+				<a href={o.href} class="mb-2 flex items-baseline gap-2 hover:text-texto"><span class="etiqueta">Para: {o.titulo}</span><span class="text-xs text-texto-3">{o.detalle} →</span></a>
+				<ul class="tarjeta lista-filas">
+					{#each o.items as i (i.id)}{@render fila(i.texto, '', { texto: i.texto, articuloId: i.articuloId, vehiculoId: i.vehiculoId, itemId: i.id, unidad: i.unidad, destino: o.detalle === 'El local' ? `la tarea «${o.titulo}»` : `${o.detalle.replace(' · avería', '')} (${o.titulo})` }, 'manual', i.id)}{/each}
+				</ul>
+			</section>
+		{/each}
 		{#if pendientesManual.length}
 			<section>
 				<p class="etiqueta mb-2">Apuntado a mano</p>
@@ -126,10 +148,14 @@
 			</div>
 			{#if !compra.articuloId}
 				<label class="flex items-start gap-3 text-sm">
-					<input type="checkbox" name="alInventario" checked class="mt-0.5 h-5 w-5 accent-[var(--acento)]" />
-					<span>Añadir al inventario<span class="block text-xs text-texto-3">Así sabrás que lo tienes y no volverá a salir en la lista.</span></span>
+					<input type="checkbox" name="alInventario" bind:checked={alInventario} class="mt-0.5 h-5 w-5 accent-[var(--acento)]" />
+					<span>Añadir al inventario<span class="block text-xs text-texto-3">{compra.destino ? 'Solo si te sobra y lo guardas en el taller.' : 'Así sabrás que lo tienes y no volverá a salir en la lista.'}</span></span>
 				</label>
-				<select name="tipoArticulo" class="input"><option value="recambio">Es un recambio</option><option value="consumible">Es un consumible</option></select>
+				{#if alInventario}
+					<select name="tipoArticulo" class="input"><option value="recambio">Es un recambio</option><option value="consumible">Es un consumible</option></select>
+				{:else if compra.destino}
+					<p class="text-xs text-texto-2">El gasto se apunta a {compra.destino}.</p>
+				{/if}
 			{:else}
 				<p class="text-xs text-texto-3">Se sumará a lo que ya tienes en el inventario.</p>
 			{/if}

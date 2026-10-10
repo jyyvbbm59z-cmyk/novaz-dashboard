@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { euros, fechaLarga, textoDias } from '@novaz/core';
+	import { diasEntre, euros, fechaLarga, textoDias } from '@novaz/core';
 	import { ArrowRight, Boxes, CircleCheck, ShoppingCart, Warehouse, Wrench } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -28,9 +28,9 @@
 	<section>
 		<div class="mb-3 flex items-baseline justify-between">
 			<h2 class="text-2xl">Lo que viene</h2>
-			<span class="text-xs text-texto-3">{pendientes.length ? `${pendientes.length} pendientes` : ''}</span>
+			<span class="text-xs text-texto-3">{pendientes.length + data.taller.local.length ? `${pendientes.length + data.taller.localTotal} pendientes` : ''}</span>
 		</div>
-		{#if !pendientes.length}
+		{#if !pendientes.length && !data.taller.local.length}
 			<div class="tarjeta flex items-center gap-3 p-5 text-texto-2">
 				<CircleCheck class="nivel-ok" size={22} /> Todo al día. Papeles y mantenimientos en regla.
 			</div>
@@ -50,7 +50,32 @@
 						</a>
 					</li>
 				{/each}
+				{#each data.taller.local as t (t.id)}
+					{@const vencida = t.fechaLimite != null && t.fechaLimite < data.hoy}
+					{@const nivel = t.prioridad === 'alta' || vencida ? 'vencido' : t.prioridad === 'media' ? 'urgente' : 'pronto'}
+					<li>
+						<a href="/local" class="flex items-center gap-3 px-4 py-3 transition hover:bg-superficie-2">
+							<span class="h-9 w-1 shrink-0 rounded-full" style="background: var(--{nivel})"></span>
+							<div class="min-w-0 flex-1">
+								<p class="truncate font-medium">{t.titulo} <span class="font-normal text-texto-3">· El local</span></p>
+								<p class="truncate text-xs text-texto-3">{t.zona ?? 'Tarea del local'}{t.pasos.length ? ` · ${t.pasos.filter((p) => p.hecho).length}/${t.pasos.length} pasos` : ''}</p>
+							</div>
+							<span class="cifra shrink-0 text-right text-base nivel-{nivel}">
+								{#if t.fechaLimite}{textoDias(diasEntre(data.hoy, t.fechaLimite))}{:else}<Warehouse size={16} class="text-texto-3" />{/if}
+							</span>
+						</a>
+					</li>
+				{/each}
+				{#if data.taller.localTotal > data.taller.local.length}
+					<li><a href="/local" class="block px-4 py-2.5 text-xs text-texto-3 hover:text-texto">Y {data.taller.localTotal - data.taller.local.length} más en el local →</a></li>
+				{/if}
 			</ul>
+		{/if}
+		{#if data.taller.compras || data.taller.fueraDeSitio}
+			<div class="mt-3 flex flex-wrap gap-2">
+				{#if data.taller.compras}<a href="/compras" class="chip h-9 px-3 hover:text-texto"><ShoppingCart size={14} /> {data.taller.compras} por comprar</a>{/if}
+				{#if data.taller.fueraDeSitio}<a href="/inventario" class="chip h-9 px-3 nivel-urgente"><Boxes size={14} /> {data.taller.fueraDeSitio} {data.taller.fueraDeSitio === 1 ? 'herramienta sin localizar' : 'herramientas sin localizar'}</a>{/if}
+			</div>
 		{/if}
 	</section>
 
@@ -78,33 +103,6 @@
 			{/if}
 		</div>
 	</section>
-
-	<!-- El local, compras e inventario -->
-	{#if data.taller.localTotal || data.taller.compras || data.taller.fueraDeSitio}
-		<section class="lg:col-span-2">
-			<div class="grid grid-cols-2 gap-3 sm:grid-cols-[2fr_1fr_1fr]">
-				<a href="/local" class="tarjeta col-span-2 flex flex-col gap-2 p-4 sm:col-span-1 transition hover:border-texto-3/40">
-					<p class="etiqueta flex items-center gap-1.5"><Warehouse size={13} /> El local · {data.taller.localTotal} {data.taller.localTotal === 1 ? "pendiente" : "pendientes"}</p>
-					{#each data.taller.local as t (t.id)}
-						<p class="flex items-center gap-2 text-sm">
-							<span class="punto" style="background: {t.prioridad === 'alta' || (t.fechaLimite && t.fechaLimite < data.hoy) ? 'var(--vencido)' : t.prioridad === 'media' ? 'var(--urgente)' : 'var(--texto-3)'}"></span>
-							<span class="truncate">{t.titulo}</span>{#if t.zona}<span class="shrink-0 text-xs text-texto-3">· {t.zona}</span>{/if}
-						</p>
-					{:else}
-						<p class="text-sm text-texto-3">Nada pendiente.</p>
-					{/each}
-				</a>
-				<a href="/inventario/compras" class="tarjeta p-4 transition hover:border-texto-3/40">
-					<p class="etiqueta flex items-center gap-1.5"><ShoppingCart size={13} /> Por comprar</p>
-					<p class="cifra mt-1 text-3xl {data.taller.compras ? '' : 'text-texto-3'}">{data.taller.compras}</p>
-				</a>
-				<a href="/inventario" class="tarjeta p-4 transition hover:border-texto-3/40">
-					<p class="etiqueta flex items-center gap-1.5"><Boxes size={13} /> Sin localizar</p>
-					<p class="cifra mt-1 text-3xl {data.taller.fueraDeSitio ? 'nivel-urgente' : 'text-texto-3'}">{data.taller.fueraDeSitio}</p>
-				</a>
-			</div>
-		</section>
-	{/if}
 
 	<!-- Restauraciones -->
 	<section class="lg:col-span-2">

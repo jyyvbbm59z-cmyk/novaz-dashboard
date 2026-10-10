@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { asientoDeMovimiento, cuadra, type MovimientoContable } from '../src/contabilidad';
+import { asientoDeMovimiento, cuadra, type Asiento, type MovimientoContable } from '../src/contabilidad';
+import { ajusteCuadre } from '../src/libros';
 import { explicarOperacion, operacion, OPERACIONES } from '../src/operaciones';
-import { claseFlujo, efectoCaja, fechasRecurrente, flujoDeCaja, prevision } from '../src/tesoreria';
+import { claseFlujo, diferenciasCuadre, efectoCaja, fechasRecurrente, flujoDeCaja, prevision } from '../src/tesoreria';
 
 const mov = (o: Partial<MovimientoContable>): MovimientoContable => ({
 	id: 1, fecha: '2026-02-10', tipo: 'gasto', importeCent: 12100, ivaPct: 21, pago: 'banco', concepto: 'x', cuentaContable: null, ...o
@@ -84,5 +85,57 @@ describe('asistente', () => {
 		const luz = operacion('luz')!;
 		expect(explicarOperacion(luz, 12100, 21, 'banco', 'Suministros').join(' ')).toMatch(/Salen 121,00\s€ del banco.*100,00\s€ son gasto.*21,00\s€ de IVA/);
 		expect(explicarOperacion(operacion('aportacion')!, 20000, 0, 'banco', 'Aportaciones').join(' ')).toMatch(/No es un ingreso/);
+	});
+});
+
+describe('cuadre vivo', () => {
+	const mov = (id: number, fecha: string, efecto: number, cuenta = '572'): Asiento => ({
+		clave: `m${id}`,
+		fecha,
+		concepto: '',
+		origen: 'movimiento',
+		refId: id,
+		apuntes: [
+			{ cuenta, debe: Math.max(efecto, 0), haber: Math.max(-efecto, 0) },
+			{ cuenta: '629', debe: Math.max(-efecto, 0), haber: Math.max(efecto, 0) }
+		]
+	});
+
+	it('cubre la diferencia con el saldo real de ese día', () => {
+		const d = diferenciasCuadre([mov(1, '2026-09-01', -30000)], [{ id: 9, fecha: '2026-10-10', cuenta: '572', saldoCent: 52037 }]);
+		expect(d.get(9)).toBe(82037);
+	});
+
+	it('un gasto apuntado después con fecha anterior no descuadra el saldo de hoy', () => {
+		const cuadre = [{ id: 9, fecha: '2026-10-10', cuenta: '572', saldoCent: 52037 }];
+		const antes = [mov(1, '2026-09-01', -30000)];
+		const despues = [...antes, mov(2, '2026-08-15', -12000)];
+		const saldoHoy = (asientos: Asiento[]) =>
+			asientos.reduce((t, a) => t + a.apuntes.filter((p) => p.cuenta === '572').reduce((s, p) => s + p.debe - p.haber, 0), 0) + diferenciasCuadre(asientos, cuadre).get(9)!;
+		expect(saldoHoy(antes)).toBe(52037);
+		expect(saldoHoy(despues)).toBe(52037);
+		// Lo posterior al cuadre sí cuenta
+		expect(saldoHoy([...despues, mov(3, '2026-10-12', -2000)])).toBe(50037);
+	});
+
+	it('encadena cuadres de la misma cuenta y separa banco de caja', () => {
+		const d = diferenciasCuadre(
+			[mov(1, '2026-09-01', -10000), mov(2, '2026-09-20', -5000), mov(3, '2026-09-05', -700, '570')],
+			[
+				{ id: 10, fecha: '2026-09-10', cuenta: '572', saldoCent: 0 },
+				{ id: 11, fecha: '2026-09-30', cuenta: '572', saldoCent: 1000 },
+				{ id: 12, fecha: '2026-09-30', cuenta: '570', saldoCent: 0 }
+			]
+		);
+		expect(d.get(10)).toBe(10000);
+		expect(d.get(11)).toBe(6000);
+		expect(d.get(12)).toBe(700);
+	});
+
+	it('el ajuste cambia de tipo según el signo', () => {
+		expect(ajusteCuadre({ tipo: 'aportacion', concepto: 'Aportación sin apuntar', pago: 'banco', cuentaContable: '118' }, -500)).toMatchObject({ tipo: 'gasto', importeCent: 500, cuentaContable: '678' });
+		expect(ajusteCuadre({ tipo: 'gasto', concepto: 'Comisiones', pago: 'banco', cuentaContable: '626' }, -500)).toMatchObject({ cuentaContable: '626', concepto: 'Comisiones' });
+		expect(ajusteCuadre({ tipo: 'gasto', concepto: 'Comisiones', pago: 'banco', cuentaContable: '626' }, 800)).toMatchObject({ tipo: 'aportacion', importeCent: 800, cuentaContable: '118' });
+		expect(ajusteCuadre({ tipo: 'ingreso', concepto: 'Ingreso sin identificar', pago: 'banco', cuentaContable: '759' }, 800)).toMatchObject({ tipo: 'ingreso', cuentaContable: '759' });
 	});
 });

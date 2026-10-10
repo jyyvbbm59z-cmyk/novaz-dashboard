@@ -11,6 +11,7 @@
 	import Nivel from '$comp/Nivel.svelte';
 	import Pestanas from '$comp/Pestanas.svelte';
 	import PendienteForm from '$comp/PendienteForm.svelte';
+	import ComprasLigadas from '$comp/ComprasLigadas.svelte';
 	import Placa from '$comp/Placa.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import VencimientoForm from '$comp/VencimientoForm.svelte';
@@ -238,6 +239,7 @@
 									<span style="color: {PRIORIDAD[p.prioridad].color}">{PRIORIDAD[p.prioridad].texto}</span> · visto el {fechaLarga(p.fechaDetectado)}{p.kmDetectado != null ? ` a ${p.kmDetectado.toLocaleString('es-ES')} km` : ''}
 								</p>
 								{#if p.detalle}<p class="mt-1 text-sm whitespace-pre-line text-texto-2">{p.detalle}</p>{/if}
+								<ComprasLigadas items={data.comprasPend.filter((c) => c.pendienteId === p.id)} />
 								{#if data.adjuntosPend[p.id]?.length}<div class="mt-2 max-w-xs"><Galeria adjuntos={data.adjuntosPend[p.id]} columnas="grid-cols-4" /></div>{/if}
 								<div class="mt-1.5"><SubirArchivos entidad="pendiente" entidadId={p.id} vehiculoId={v.id} camara texto="Foto" clase="inline-flex items-center gap-1.5 text-xs text-texto-3 hover:text-texto [&_svg]:size-3.5" /></div>
 							</div>
@@ -675,7 +677,7 @@
 </Hoja>
 
 <Hoja bind:abierta={hPendiente} titulo={pendEdit ? 'Editar avería' : 'Apuntar avería o trabajo pendiente'}>
-	<PendienteForm vehiculoId={v.id} hoy={data.hoy} km={data.km} pendiente={pendEdit} adjuntos={pendEdit ? (data.adjuntosPend[pendEdit.id] ?? []) : []} alGuardar={() => (hPendiente = false)} />
+	<PendienteForm vehiculoId={v.id} hoy={data.hoy} km={data.km} pendiente={pendEdit} compras={pendEdit ? data.comprasPend.filter((c) => c.pendienteId === pendEdit!.id).map((c) => c.texto) : []} adjuntos={pendEdit ? (data.adjuntosPend[pendEdit.id] ?? []) : []} alGuardar={() => (hPendiente = false)} />
 </Hoja>
 
 <Hoja bind:abierta={hKm} titulo="Actualizar km">

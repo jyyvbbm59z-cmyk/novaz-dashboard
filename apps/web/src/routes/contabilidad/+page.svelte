@@ -28,6 +28,12 @@
 			<p class="mt-2 text-sm text-texto-2">
 				{beneficio ? 'Beneficio' : 'Pérdida'}{margen != null ? ` · margen ${margen} %` : ''} · {data.asientos} asientos
 			</p>
+			{#if !beneficio && data.tesoreria.banco + data.tesoreria.caja >= 0}
+				<p class="mt-2 max-w-sm text-xs text-texto-3">
+					Normal si apenas facturas: es lo que ha costado el taller este año. Tus aportaciones no cuentan como ingreso, pero cubren ese gasto: en el banco tienes
+					<strong class="text-texto-2">{euros(data.tesoreria.banco + data.tesoreria.caja, { redondo: true })}</strong>.
+				</p>
+			{/if}
 			<div class="mt-4 flex gap-5 text-sm">
 				<span class="flex items-center gap-1.5"><ArrowDownLeft size={16} class="nivel-ok" /> <span class="cifra text-lg">{euros(data.ingresos, { redondo: true })}</span> <span class="text-texto-3">ingresos</span></span>
 				<span class="flex items-center gap-1.5"><ArrowUpRight size={16} class="text-texto-3" /> <span class="cifra text-lg">{euros(data.gastos, { redondo: true })}</span> <span class="text-texto-3">gastos</span></span>

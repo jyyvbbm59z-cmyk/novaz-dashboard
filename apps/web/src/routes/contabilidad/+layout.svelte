@@ -6,11 +6,14 @@
 
 	let { data, children } = $props();
 
+	// Lo del día a día delante; los libros contables, juntos en una sola pestaña
 	const SECCIONES = [
 		['/contabilidad', 'Resumen'],
 		['/contabilidad/tesoreria', 'Tesorería'],
 		['/contabilidad/movimientos', 'Movimientos'],
-		['/contabilidad/facturas', 'Facturas'],
+		['/contabilidad/facturas', 'Facturas']
+	] as const;
+	const LIBROS = [
 		['/contabilidad/diario', 'Libro diario'],
 		['/contabilidad/mayor', 'Mayor'],
 		['/contabilidad/resultados', 'Pérdidas y ganancias'],
@@ -21,7 +24,11 @@
 	] as const;
 
 	const sufijo = $derived(page.url.searchParams.has('ejercicio') ? `?ejercicio=${data.ejercicio}` : '');
-	const pestanas = $derived(SECCIONES.map(([href, texto]) => ({ href: href + sufijo, texto, activa: page.url.pathname === href })));
+	const enLibros = $derived(LIBROS.some(([href]) => page.url.pathname === href));
+	const pestanas = $derived([
+		...SECCIONES.map(([href, texto]) => ({ href: href + sufijo, texto, activa: page.url.pathname === href })),
+		{ href: LIBROS[0][0] + sufijo, texto: 'Libros', activa: enLibros }
+	]);
 
 	function cambiarEjercicio(e: Event) {
 		const u = new URL(page.url);
@@ -49,6 +56,13 @@
 </div>
 
 <Pestanas {pestanas} fija />
+{#if enLibros}
+	<nav class="-mx-4 mt-3 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0" style="scrollbar-width:none" aria-label="Libros contables">
+		{#each LIBROS as [href, texto] (href)}
+			<a href={href + sufijo} class="chip h-8 shrink-0 px-3 text-xs font-semibold {page.url.pathname === href ? 'border-acento/60 bg-acento/10 text-texto' : 'text-texto-3'}" aria-current={page.url.pathname === href ? 'page' : undefined}>{texto}</a>
+		{/each}
+	</nav>
+{/if}
 
 <div class="mt-6 min-h-[60dvh]">
 	{@render children()}

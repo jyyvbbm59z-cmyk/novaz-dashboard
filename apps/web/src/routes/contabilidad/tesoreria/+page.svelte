@@ -4,7 +4,7 @@
 	import Cifra from '$comp/Cifra.svelte';
 	import Hoja from '$comp/Hoja.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { diasEntre, ETIQUETA_FLUJO, euros, eurosInput, parsearEuros, type ClaseFlujo } from '@novaz/core';
+	import { diasEntre, ETIQUETA_FLUJO, euros, eurosInput, fechaLarga, parsearEuros, type ClaseFlujo } from '@novaz/core';
 	import type { Recurrente } from '@novaz/core/schema';
 	import { Banknote, CalendarSync, CircleCheck, Landmark, Pencil, Plus, Scale, Trash2, TriangleAlert, Wallet } from '@lucide/svelte';
 
@@ -25,7 +25,8 @@
 	const puntos = $derived.by(() => {
 		const reales = data.flujo.meses
 			.map((m) => ({ ym: `${data.ejercicio}-${String(m.mes).padStart(2, '0')}`, saldo: m.saldoFinal, previsto: false }))
-			.filter((p) => p.ym < mesActual);
+			// Antes del primer cuadre el saldo apuntado no es el real (datos históricos): no se dibuja
+			.filter((p) => p.ym < mesActual && (!data.primerCuadre || p.ym >= data.primerCuadre.slice(0, 7)));
 		const futuros = data.prevision.map((p) => ({ ym: p.mes, saldo: p.saldo, previsto: true }));
 		return [...reales, ...futuros].slice(-12);
 	});
@@ -43,6 +44,8 @@
 	const ruta = (ps: { saldo: number }[], desde: number) => ps.map((p, i) => `${i ? 'L' : 'M'}${x(i + desde).toFixed(1)},${y(p.saldo).toFixed(1)}`).join(' ');
 	const corte = $derived(puntos.findIndex((p) => p.previsto));
 	let sobre = $state<number | null>(null);
+	const recurrenteMes = $derived(data.prevision[1]?.recurrente ?? 0);
+	let editarHabitual = $state(false);
 
 	// ─── Recurrentes
 	let hojaRec = $state(false);
@@ -72,6 +75,17 @@
 	/>
 </section>
 
+{#if data.caja < 0 && data.movimientosEfectivo}
+	<section class="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-urgente/40 bg-urgente/10 p-4 text-sm">
+		<Banknote size={20} class="shrink-0 nivel-urgente" />
+		<p class="min-w-60 flex-1">
+			La caja (efectivo) está en <strong class="cifra">{euros(data.caja)}</strong> porque hay {data.movimientosEfectivo} {data.movimientosEfectivo === 1 ? 'movimiento apuntado' : 'movimientos apuntados'} como pagados en efectivo.
+			Si en realidad salieron del banco, pásalos y la caja vuelve a cero.
+		</p>
+		<button class="btn btn-acento h-9" onclick={() => confirm('¿Pasar todos los movimientos en efectivo al banco?') && accion('?/efectivoABanco', {})}>Pasarlos al banco</button>
+	</section>
+{/if}
+
 <!-- Previsión -->
 <section class="tarjeta mt-3 p-4 sm:p-5">
 	<div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
@@ -90,6 +104,30 @@
 		</div>
 	{:else if data.prevision.length}
 		<p class="mb-3 flex items-center gap-2 text-sm text-texto-2"><CircleCheck size={16} class="nivel-ok" /> La caja aguanta los próximos 6 meses con lo previsto.</p>
+	{/if}
+
+	<!-- De dónde sale la previsión -->
+	<div class="mb-4 grid grid-cols-3 gap-2 text-xs">
+		<div class="rounded-lg bg-superficie-2 p-2.5"><p class="text-texto-3">Hoy tienes</p><p class="cifra mt-0.5 text-base {total < 0 ? 'nivel-vencido' : ''}">{euros(total, { redondo: true })}</p></div>
+		<div class="rounded-lg bg-superficie-2 p-2.5"><p class="text-texto-3">Cada mes fijo</p><p class="cifra mt-0.5 text-base">{recurrenteMes > 0 ? '+' : ''}{euros(recurrenteMes, { redondo: true })}</p></div>
+		<button class="rounded-lg bg-superficie-2 p-2.5 text-left transition hover:bg-superficie-3" onclick={() => (editarHabitual = !editarHabitual)}>
+			<p class="flex items-center gap-1 text-texto-3">Gasto suelto/mes <Pencil size={10} /></p>
+			<p class="cifra mt-0.5 text-base">{euros(data.habitual, { redondo: true })}</p>
+			<p class="text-[0.65rem] text-texto-3">{data.habitualFijado ? 'Fijado por ti' : 'Media 3 meses'}</p>
+		</button>
+	</div>
+	{#if editarHabitual}
+		<form method="POST" action="?/habitual" use:enhance={enviar({ alTerminar: () => (editarHabitual = false) })} class="mb-4 flex flex-col gap-3 rounded-lg border border-borde p-3 text-sm">
+			<p class="text-texto-2">
+				Lo que sueles gastar al mes en cosas sueltas (sin contar lo fijo). La app calcula {euros(-data.habitualCalculado, { redondo: true })} con la media de los últimos 3 meses,
+				pero si metiste compras grandes o gastos antiguos esa media se dispara. Pon tu cifra:
+			</p>
+			<div class="flex flex-wrap items-center gap-2">
+				<input name="gastoHabitual" class="input cifra h-10 w-32" inputmode="decimal" value={data.habitualFijado ? eurosInput(-data.habitual) : ''} placeholder="50,00" />
+				<button class="btn btn-acento h-10">Usar esta cifra</button>
+				{#if data.habitualFijado}<button name="automatico" value="si" class="btn h-10">Volver a la media</button>{/if}
+			</div>
+		</form>
 	{/if}
 
 	<div class="relative">
@@ -140,7 +178,8 @@
 				</tbody>
 			</table>
 			<p class="mt-2 text-xs text-texto-3">
-				Recurrentes: lo que se repite cada mes (aportaciones, alquiler…). Habitual: la media de cobros y pagos sueltos de los últimos 3 meses ({euros(data.habitual)}/mes).
+				Recurrentes: lo que se repite cada mes (aportaciones, alquiler…). Habitual: {data.habitualFijado ? 'la cifra que has fijado' : 'la media de cobros y pagos sueltos de los últimos 3 meses'} ({euros(data.habitual)}/mes).
+				{#if data.primerCuadre}La línea real empieza en tu primer cuadre con el banco: lo anterior son datos históricos.{/if}
 			</p>
 		</div>
 	</details>
@@ -150,7 +189,10 @@
 	<!-- Cuadrar con el banco -->
 	<section class="tarjeta p-4 sm:p-5">
 		<h2 class="seccion-titulo mb-1">Cuadrar con el banco</h2>
-		<p class="mb-4 text-sm text-texto-3">Abre la app del banco (o cuenta la caja) y escribe el saldo real. Si no coincide, te ayudo a cuadrarlo.</p>
+		<p class="mb-4 text-sm text-texto-3">
+			Abre la app del banco (o cuenta la caja) y escribe el saldo real. Si no coincide, te ayudo a cuadrarlo. El saldo que escribas manda: si luego apuntas gastos
+			antiguos, el ajuste se recalcula solo y no te vuelve a descuadrar.
+		</p>
 		<form method="POST" action="?/cuadrar" use:enhance={enviar({ reset: false, alTerminar: (d) => d.diferencia === 0 && (saldoReal = '') })} class="flex flex-col gap-3">
 			<div class="grid grid-cols-2 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
 				{#each [['572', 'Banco'], ['570', 'Caja']] as [v, t] (v)}
@@ -183,6 +225,21 @@
 				</div>
 			{/if}
 		</form>
+		{#if data.cuadres.length}
+			<div class="mt-5">
+				<p class="etiqueta mb-2">Cuadres hechos</p>
+				<ul class="lista-filas text-sm">
+					{#each data.cuadres.slice(0, 6) as c (c.id)}
+						<li class="flex items-center gap-3 py-2">
+							<span class="text-texto-3">{c.pago === 'caja' ? 'Caja' : 'Banco'}</span>
+							<span class="flex-1"><span class="cifra">{euros(c.saldo ?? 0)}</span> <span class="text-xs text-texto-3">el {fechaLarga(c.fecha)}</span></span>
+							<span class="text-xs text-texto-3" title={c.concepto}>{c.importe ? `${c.tipo === 'gasto' ? '−' : '+'}${euros(c.importe)}` : 'sin ajuste'}</span>
+							<button class="btn btn-fantasma btn-icono h-8 w-8" onclick={() => confirm('¿Deshacer este cuadre?') && accion('?/borrarCuadre', { id: c.id })} aria-label="Deshacer cuadre"><Trash2 size={14} /></button>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/if}
 	</section>
 
 	<!-- Recurrentes -->

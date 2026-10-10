@@ -17,6 +17,7 @@
 		km = null,
 		pendiente = null,
 		adjuntos = [],
+		compras = [],
 		alGuardar
 	}: {
 		accion?: string;
@@ -25,6 +26,8 @@
 		km?: number | null;
 		pendiente?: Pendiente | null;
 		adjuntos?: Adjunto[];
+		/** Lo que ya está apuntado para comprar. */
+		compras?: string[];
 		alGuardar?: () => void;
 	} = $props();
 
@@ -70,6 +73,10 @@
 		<label class="campo"><span>Km</span><input name="km" class="input" inputmode="numeric" value={pendiente?.kmDetectado ?? km ?? ''} /></label>
 	</div>
 	<label class="campo"><span>Detalles</span><textarea name="detalle" class="input" rows="3" placeholder="Dónde está, qué pieza hace falta, referencias…">{pendiente?.detalle ?? ''}</textarea></label>
+	<label class="campo">
+		<span>Para comprar <span class="font-normal text-texto-3">· una cosa por línea, va a la lista de la compra</span></span>
+		<textarea name="compras" class="input text-sm" rows="2" placeholder={'Retén motor de arranque\nJunta tórica'}>{compras.join('\n')}</textarea>
+	</label>
 	<div class="campo">
 		<span>Fotos</span>
 		{#if pendiente}

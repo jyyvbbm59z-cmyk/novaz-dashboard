@@ -137,3 +137,35 @@ export function prevision(
 	}
 	return resultado;
 }
+
+// ─── Cuadre con el banco ─────────────────────────────────────────────────────
+
+export interface CuadreVivo {
+	id: number;
+	fecha: string;
+	/** '572' banco o '570' caja. */
+	cuenta: string;
+	/** Saldo real que había en la cuenta al final de ese día. */
+	saldoCent: number;
+}
+
+/**
+ * Lo que debe valer cada ajuste de cuadre (con signo: + entra dinero) para que la cuenta tenga ese día
+ * exactamente el saldo real. Lo que apuntes después con fecha anterior ya estaba en ese saldo, así que
+ * el ajuste se recalcula y el saldo de hoy no se descuadra.
+ * `asientos` no debe incluir los propios ajustes.
+ */
+export function diferenciasCuadre(asientos: Asiento[], cuadres: CuadreVivo[]): Map<number, number> {
+	const orden = [...cuadres].sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id - b.id);
+	const resultado = new Map<number, number>();
+	for (const c of orden) {
+		let libro = 0;
+		for (const a of asientos) if (a.fecha <= c.fecha) for (const p of a.apuntes) if (p.cuenta === c.cuenta) libro += p.debe - p.haber;
+		for (const previo of orden) {
+			if (previo === c) break;
+			if (previo.cuenta === c.cuenta) libro += resultado.get(previo.id)!;
+		}
+		resultado.set(c.id, c.saldoCent - libro);
+	}
+	return resultado;
+}

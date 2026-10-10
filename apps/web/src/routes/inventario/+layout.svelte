@@ -7,7 +7,6 @@
 	const SECCIONES = $derived([
 		['/inventario', 'Herramientas', herramientas],
 		['/inventario/reserva', 'Recambios y consumibles', reserva],
-		['/inventario/compras', 'Lista de la compra', null],
 		['/inventario/recuento', 'Recuento', null]
 	] as const);
 </script>

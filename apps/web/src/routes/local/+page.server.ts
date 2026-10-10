@@ -1,16 +1,18 @@
 import { ordenarTareasLocal, siguienteTareaLocal } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { PRIORIDADES, type Prioridad } from '@novaz/core/schema';
-import { desc, eq, isNotNull } from 'drizzle-orm';
+import { asc, desc, eq, isNotNull } from 'drizzle-orm';
 import { borrarMovimiento, guardarMovimiento } from '$lib/server/acciones';
 import { adjuntosDe, borrarAdjuntos, borrarAdjuntosDe } from '$lib/server/adjuntos';
 import { accion, leer } from '$lib/server/form';
+import { cerrarCompras, sincronizarCompras } from '$lib/server/inventario';
 
 export const load = async ({ locals }) => {
 	const { db, hoy } = locals;
-	const [tareas, gastos] = await Promise.all([
+	const [tareas, gastos, compras] = await Promise.all([
 		db.select().from(s.tareasLocal).orderBy(desc(s.tareasLocal.creado)),
-		db.select().from(s.movimientos).where(isNotNull(s.movimientos.tareaLocalId))
+		db.select().from(s.movimientos).where(isNotNull(s.movimientos.tareaLocalId)),
+		db.select().from(s.listaCompra).where(isNotNull(s.listaCompra.tareaLocalId)).orderBy(asc(s.listaCompra.id))
 	]);
 	const abiertas = ordenarTareasLocal(tareas.filter((t) => t.estado === 'pendiente' || t.estado === 'en_curso'), hoy);
 	const cerradas = tareas.filter((t) => t.estado === 'hecha' || t.estado === 'descartada').sort((a, b) => (b.fechaHecha ?? '').localeCompare(a.fechaHecha ?? ''));
@@ -20,6 +22,7 @@ export const load = async ({ locals }) => {
 		abiertas,
 		cerradas,
 		gastosDe,
+		compras,
 		fotos: await adjuntosDe(db, 'local', tareas.map((t) => t.id)),
 		zonas: [...new Set(tareas.map((t) => t.zona).filter((z): z is string => Boolean(z)))].sort(),
 		gastoAnio: gastos.filter((g) => g.fecha.startsWith(hoy.slice(0, 4))).reduce((t, g) => t + g.importeCent, 0)
@@ -28,7 +31,8 @@ export const load = async ({ locals }) => {
 
 export const actions = {
 	guardar: accion(async ({ request, locals }) => {
-		const f = leer(await request.formData());
+		const fd = await request.formData();
+		const f = leer(fd);
 		const id = f.idOpcional('id');
 		const prioridad = f.texto('prioridad') as Prioridad;
 		const pasos = (f.texto('pasos') ?? '')
@@ -48,9 +52,11 @@ export const actions = {
 		};
 		if (id) {
 			await locals.db.update(s.tareasLocal).set(valores).where(eq(s.tareasLocal.id, id));
+			await sincronizarCompras(locals.db, String(fd.get('compras') ?? ''), { tareaLocalId: id });
 			return { mensaje: 'Guardado', tareaId: id };
 		}
 		const [t] = await locals.db.insert(s.tareasLocal).values(valores).returning({ id: s.tareasLocal.id });
+		await sincronizarCompras(locals.db, String(fd.get('compras') ?? ''), { tareaLocalId: t.id });
 		return { mensaje: 'Apuntada', tareaId: t.id };
 	}),
 
@@ -76,9 +82,11 @@ export const actions = {
 			.update(s.tareasLocal)
 			.set({ estado: estado as 'pendiente', fechaHecha: hecha || estado === 'descartada' ? locals.hoy : null })
 			.where(eq(s.tareasLocal.id, id));
-		// Si se repite, se crea la siguiente
+		const lista = await locals.db.select({ texto: s.listaCompra.texto }).from(s.listaCompra).where(eq(s.listaCompra.tareaLocalId, id));
+		if (hecha || estado === 'descartada') await cerrarCompras(locals.db, { tareaLocalId: id });
+		// Si se repite, se crea la siguiente (con lo que haya que volver a comprar)
 		if (hecha && t.cadaMeses) {
-			await locals.db.insert(s.tareasLocal).values({
+			const [nueva] = await locals.db.insert(s.tareasLocal).values({
 				titulo: t.titulo,
 				detalle: t.detalle,
 				zona: t.zona,
@@ -86,7 +94,8 @@ export const actions = {
 				cadaMeses: t.cadaMeses,
 				fechaLimite: siguienteTareaLocal(locals.hoy, t.cadaMeses),
 				pasos: t.pasos.map((p) => ({ ...p, hecho: false }))
-			});
+			}).returning({ id: s.tareasLocal.id });
+			if (lista.length) await sincronizarCompras(locals.db, lista.map((l) => l.texto).join('\n'), { tareaLocalId: nueva.id });
 		}
 		return hecha
 			? { mensaje: t.cadaMeses ? `¡Hecha! La siguiente, dentro de ${t.cadaMeses} meses` : '¡Hecha!', momento: 'faseCompletada' }

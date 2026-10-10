@@ -92,6 +92,13 @@
       "when": 1791612801049,
       "tag": "0012_categoria_local",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1791614806459,
+      "tag": "0013_compras_cuadre",
+      "breakpoints": true
     }
   ]
 }

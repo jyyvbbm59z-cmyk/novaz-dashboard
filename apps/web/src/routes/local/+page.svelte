@@ -7,6 +7,7 @@
 	import ColaFotos from '$comp/ColaFotos.svelte';
 	import Galeria from '$comp/Galeria.svelte';
 	import Hoja from '$comp/Hoja.svelte';
+	import ComprasLigadas from '$comp/ComprasLigadas.svelte';
 	import MovimientoForm from '$comp/MovimientoForm.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import { avisar } from '$lib/avisos.svelte';
@@ -109,6 +110,7 @@
 
 				{#if data.fotos[t.id]?.length}<div class="mt-3 max-w-sm"><Galeria adjuntos={data.fotos[t.id]} columnas="grid-cols-4" /></div>{/if}
 
+				<ComprasLigadas items={data.compras.filter((c) => c.tareaLocalId === t.id)} />
 				{#if data.gastosDe[t.id]?.length}
 					<ul class="mt-3 flex flex-col gap-1 border-t border-borde pt-2 text-xs">
 						{#each data.gastosDe[t.id] as g (g.id)}
@@ -167,6 +169,10 @@
 		<label class="campo">
 			<span>Pasos (uno por línea, opcional)</span>
 			<textarea name="pasos" class="input text-sm" rows="4" placeholder={'Rascar la pintura suelta\nTratamiento antihumedad\nImprimación\nPintar'}>{(edit?.pasos ?? []).map((p) => p.texto).join('\n')}</textarea>
+		</label>
+		<label class="campo">
+			<span>Para comprar <span class="font-normal text-texto-3">· una cosa por línea, va a la lista de la compra</span></span>
+			<textarea name="compras" class="input text-sm" rows="2" placeholder={'Pintura antihumedad 4 L\nRodillo'}>{edit ? data.compras.filter((c) => c.tareaLocalId === edit!.id).map((c) => c.texto).join('\n') : ''}</textarea>
 		</label>
 		<label class="campo">
 			<span>¿Se repite? Cada… meses (opcional)</span>

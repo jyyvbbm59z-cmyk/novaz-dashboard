@@ -116,3 +116,23 @@ export async function guardarRecuento(locals: Locals, presentes: number[], falta
 	}
 	if (faltan.length) await locals.db.update(s.articulos).set({ estado: 'perdida' }).where(inArray(s.articulos.id, faltan));
 }
+
+/** Líneas «para comprar» de una avería o una tarea del local: crea las nuevas, quita las borradas y respeta lo ya comprado. */
+export async function sincronizarCompras(db: Locals['db'], texto: string, ref: { pendienteId: number; vehiculoId: number } | { tareaLocalId: number }) {
+	const lineas = [...new Set(texto.split('\n').map((l) => l.trim()).filter(Boolean))];
+	const filtro = 'pendienteId' in ref ? eq(s.listaCompra.pendienteId, ref.pendienteId) : eq(s.listaCompra.tareaLocalId, ref.tareaLocalId);
+	const existentes = await db.select().from(s.listaCompra).where(filtro);
+	const clave = (t: string) => t.toLocaleLowerCase('es');
+	const quedan = new Set(lineas.map(clave));
+	const borrar = existentes.filter((e) => !quedan.has(clave(e.texto))).map((e) => e.id);
+	if (borrar.length) await db.delete(s.listaCompra).where(inArray(s.listaCompra.id, borrar));
+	const ya = new Set(existentes.map((e) => clave(e.texto)));
+	const nuevas = lineas.filter((l) => !ya.has(clave(l)));
+	if (nuevas.length) await db.insert(s.listaCompra).values(nuevas.map((t) => ({ texto: t, ...ref })));
+}
+
+/** Al cerrar una avería o tarea, lo que no se llegó a comprar sale de la lista. */
+export async function cerrarCompras(db: Locals['db'], ref: { pendienteId: number } | { tareaLocalId: number }) {
+	const filtro = 'pendienteId' in ref ? eq(s.listaCompra.pendienteId, ref.pendienteId) : eq(s.listaCompra.tareaLocalId, ref.tareaLocalId);
+	await db.delete(s.listaCompra).where(and(filtro, eq(s.listaCompra.comprado, false)));
+}

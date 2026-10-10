@@ -42,6 +42,8 @@ export interface Ajustes {
 	tipoImpuestoSociedades: number;
 	/** Última vez que se cuadró la tesorería con el banco real. */
 	ultimoCuadre: string | null;
+	/** Gasto habitual al mes que se usa en la previsión (céntimos, positivo). null = calcularlo solo. */
+	gastoHabitualCent: number | null;
 	/** Datos que aparecen en las facturas. */
 	fiscal: { razonSocial: string; nif: string; direccion: string; email: string; telefono: string; iban: string };
 	serieFactura: string;
@@ -66,6 +68,7 @@ export const AJUSTES_POR_DEFECTO: Ajustes = {
 	pagoPorDefecto: 'banco',
 	tipoImpuestoSociedades: 25,
 	ultimoCuadre: null,
+	gastoHabitualCent: null,
 	fiscal: { razonSocial: 'Novaz', nif: '', direccion: '', email: '', telefono: '', iban: '' },
 	serieFactura: 'NVZ',
 	tarifaHoraCent: 3500,

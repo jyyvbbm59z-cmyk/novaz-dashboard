@@ -329,6 +329,8 @@ export const movimientos = sqliteTable(
 		recurrenteId: integer('recurrente_id'),
 		/** Gasto de una tarea del local (pintura, reparación de humedad…). */
 		tareaLocalId: integer('tarea_local_id'),
+		/** Ajuste de cuadre «vivo»: el saldo real de la cuenta ese día. El importe se recalcula solo. */
+		cuadreSaldoCent: integer('cuadre_saldo_cent'),
 		creado: creado()
 	},
 	(t) => [index('movimientos_fecha_idx').on(t.fecha), index('movimientos_vehiculo_idx').on(t.vehiculoId)]
@@ -508,6 +510,9 @@ export const listaCompra = sqliteTable('lista_compra', {
 	unidad: text('unidad'),
 	articuloId: integer('articulo_id').references(() => articulos.id, { onDelete: 'set null' }),
 	vehiculoId: integer('vehiculo_id').references(() => vehiculos.id, { onDelete: 'set null' }),
+	/** Para qué es: una avería por reparar o una tarea del local. */
+	pendienteId: integer('pendiente_id').references(() => pendientes.id, { onDelete: 'cascade' }),
+	tareaLocalId: integer('tarea_local_id').references(() => tareasLocal.id, { onDelete: 'cascade' }),
 	notas: text('notas'),
 	comprado: bool('comprado').notNull().default(false),
 	creado: creado()
