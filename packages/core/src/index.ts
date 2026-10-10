@@ -13,3 +13,4 @@ export * from './revision';
 export * from './facturacion';
 export * from './revisiones';
 export * from './inventario';
+export * from './combustible';

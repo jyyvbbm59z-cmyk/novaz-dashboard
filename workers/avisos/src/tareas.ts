@@ -2,6 +2,7 @@
 import {
 	cargarAlertas,
 	crearDb,
+	descargarPrecios,
 	hoy as hoyEn,
 	leerAjustes,
 	materializarRecurrentes,
@@ -35,6 +36,13 @@ export async function avisosDelDia(env: Env, ahora = new Date()) {
 	// Operaciones mensuales (aportación, alquiler…) aunque nadie abra la app
 	const creados = await materializarRecurrentes(db, hoy);
 	if (creados) console.log(`Recurrentes apuntados: ${creados}`);
+	// Precio del combustible del día (para el coste de uso de cada vehículo)
+	try {
+		const precios = await descargarPrecios(ajustes.municipioCombustible, hoy);
+		await db.insert(s.ajustes).values({ clave: 'precioCombustible', valor: precios }).onConflictDoUpdate({ target: s.ajustes.clave, set: { valor: precios } });
+	} catch (e) {
+		console.warn('Precio del combustible no disponible:', (e as Error).message);
+	}
 	if (!env.TELEGRAM_TOKEN || !ajustes.telegramChatId) return;
 	const lunes = new Date(`${hoy}T12:00:00Z`).getUTCDay() === 1;
 	await avisar(db, env, ajustes.telegramChatId, hoy, ajustes.urgenteDias, ajustes.nombreTaller, lunes && ajustes.resumenSemanal);

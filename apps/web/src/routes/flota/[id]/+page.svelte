@@ -27,6 +27,8 @@
 	const cat = $derived(data.catalogo);
 	const tipo = $derived(cat.tipos.find((t) => t.id === v.tipoId));
 	const estado = $derived(cat.estados.find((e) => e.id === v.estadoId));
+	// El coste de uso solo tiene sentido si el vehículo se usa (no en restauración ni vendido)
+	const enUso = $derived(!estado?.final && !/restaur/i.test(estado?.nombre ?? ''));
 	const contacto = $derived(cat.contactos.find((c) => c.id === v.contactoId));
 	const portada = $derived(data.adjuntos.find((a) => a.id === v.portadaId));
 	const activa = $derived(data.restauraciones.find((r) => r.estado !== 'terminada'));
@@ -128,7 +130,24 @@
 <a href="/flota" class="text-sm text-texto-3 hover:text-texto">← Flota</a>
 
 <!-- Cabecera -->
+{#snippet etiquetas()}
+	<div class="flex flex-wrap items-center justify-end gap-2 {portada ? 'absolute top-3 right-3 z-10 sm:top-4 sm:right-4' : ''}">
+		<span class="chip {portada ? 'border-white/20 bg-black/40 text-white backdrop-blur' : ''}"><Icono nombre={tipo?.icono} size={14} />{tipo?.nombre}</span>
+		<form method="POST" action="?/estado" use:enhance={enviar()}>
+			<select
+				name="estadoId"
+				class="chip cursor-pointer appearance-none pr-2.5 [field-sizing:content] {portada ? 'border-white/20 bg-black/40 text-white backdrop-blur' : ''}"
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+				style="color: {estado?.color}"
+			>
+				{#each cat.estados as e (e.id)}<option value={e.id} selected={e.id === v.estadoId} style="color: initial">● {e.nombre}</option>{/each}
+			</select>
+		</form>
+		{#if v.propietario === 'tercero'}<span class="chip {portada ? 'border-white/20 bg-black/40 text-white backdrop-blur' : ''}">De: {contacto?.nombre ?? 'tercero'}</span>{/if}
+	</div>
+{/snippet}
 <section class="tarjeta relative mt-3 overflow-hidden">
+	{#if portada}{@render etiquetas()}{/if}
 	{#if portada}
 		<div class="relative aspect-[16/9] max-h-[22rem] w-full sm:aspect-[21/9]">
 			<img src="/archivos/{portada.clave}" alt={v.alias} class="h-full w-full object-cover" />
@@ -136,20 +155,7 @@
 		</div>
 	{/if}
 	<div class="{portada ? 'absolute inset-x-0 bottom-0 text-white' : ''} flex flex-col gap-3 p-4 sm:p-6">
-		<div class="flex flex-wrap items-center gap-2">
-			<span class="chip {portada ? 'border-white/20 bg-black/40 text-white backdrop-blur' : ''}"><Icono nombre={tipo?.icono} size={14} />{tipo?.nombre}</span>
-			<form method="POST" action="?/estado" use:enhance={enviar()}>
-				<select
-					name="estadoId"
-					class="chip cursor-pointer appearance-none pr-2.5 [field-sizing:content] {portada ? 'border-white/20 bg-black/40 text-white backdrop-blur' : ''}"
-					onchange={(e) => e.currentTarget.form?.requestSubmit()}
-					style="color: {estado?.color}"
-				>
-					{#each cat.estados as e (e.id)}<option value={e.id} selected={e.id === v.estadoId} style="color: initial">● {e.nombre}</option>{/each}
-				</select>
-			</form>
-			{#if v.propietario === 'tercero'}<span class="chip {portada ? 'border-white/20 bg-black/40 text-white backdrop-blur' : ''}">De: {contacto?.nombre ?? 'tercero'}</span>{/if}
-		</div>
+		{#if !portada}{@render etiquetas()}{/if}
 		<div class="flex flex-wrap items-end justify-between gap-3">
 			<div>
 				<h1 class="text-4xl sm:text-6xl">{v.alias}</h1>
@@ -170,7 +176,7 @@
 	<div class="tarjeta p-4">
 		<p class="etiqueta">Gasto {data.hoy.slice(0, 4)}</p>
 		<p class="cifra mt-1 text-3xl">{euros(data.totales.gastoAnio, { redondo: true })}</p>
-		<p class="text-xs text-texto-3">Total {euros(data.totales.gasto, { redondo: true })}</p>
+		<p class="text-xs text-texto-3">{enUso && data.usoMes.total ? `Uso ≈ ${euros(data.usoMes.total, { redondo: true })}/mes` : `Total ${euros(data.totales.gasto, { redondo: true })}`}</p>
 	</div>
 	<a href="?pestana=papeles" class="tarjeta p-4 transition hover:border-texto-3/40">
 		<p class="etiqueta">Avisos</p>
@@ -474,6 +480,51 @@
 		</section>
 	{:else if pestana === 'gastos'}
 		{@const c = data.costes}
+		{#if enUso}
+			{@const u = data.usoMes}
+			{@const maxParte = Math.max(1, ...u.partes.map((p) => p.mensual ?? 0))}
+			{@const cent = (x: number) => (x / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+			<section class="mb-6">
+				<p class="etiqueta mb-2">Lo que te cuesta al mes</p>
+				<div class="tarjeta p-4 sm:p-5">
+					<div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+						<div>
+							<p class="cifra text-5xl">{euros(u.total, { redondo: true })}<span class="ml-1 text-xl text-texto-3">/mes</span></p>
+							<p class="mt-1 text-sm text-texto-2">
+								{euros(u.anual, { redondo: true })} al año{#if u.porKm != null}{' · '}<strong class="cifra">{cent(u.porKm)} €/km</strong>{/if}
+							</p>
+						</div>
+						{#if !u.completo}<p class="max-w-56 text-xs text-texto-3">Faltan datos: el coste real será algo mayor. Abajo ves qué falta.</p>{/if}
+					</div>
+					<ul class="mt-4 flex flex-col gap-3">
+						{#each u.partes as p (p.clave)}
+							<li class="text-sm">
+								<div class="flex items-baseline justify-between gap-3">
+									<span class="font-medium">{p.concepto}</span>
+									<span class="cifra shrink-0 {p.mensual == null ? 'text-texto-3' : ''}">{p.mensual == null ? '—' : `${euros(p.mensual, { redondo: true })}/mes`}</span>
+								</div>
+								<div class="mt-1 h-1.5 overflow-hidden rounded-full bg-superficie-3">
+									<div class="h-full rounded-full bg-acento" style="width: {((p.mensual ?? 0) / maxParte) * 100}%"></div>
+								</div>
+								<p class="mt-1 text-xs {p.mensual == null ? 'nivel-urgente' : 'text-texto-3'}">
+									{p.detalle}
+									{#if p.mensual == null && p.clave === 'combustible' && !data.vehiculo.campos.consumo}· <a href="/flota/{v.id}/editar" class="text-acento">Editar</a>{/if}
+									{#if p.mensual == null && p.clave !== 'combustible' && p.clave !== 'mantenimiento'}· <a href="?pestana=papeles" class="text-acento">Añadir en Papeles →</a>{/if}
+								</p>
+							</li>
+						{/each}
+					</ul>
+					{#if data.combustibleInfo?.precio}
+						{@const pr = data.combustibleInfo.precio}
+						<p class="mt-4 border-t border-borde pt-3 text-xs text-texto-3">
+							{data.combustibleInfo.tipo === 'diesel' ? 'Diésel' : 'Gasolina 95'} hoy en {pr.ambito === 'municipio' ? data.combustibleInfo.municipio : `la provincia (en ${data.combustibleInfo.municipio} no hay datos)`}:
+							<strong class="text-texto-2">{pr.media.toLocaleString('es-ES', { minimumFractionDigits: 3 })} €/L</strong> de media en {pr.estaciones} {pr.estaciones === 1 ? 'gasolinera' : 'gasolineras'}, la más barata a {pr.minimo.toLocaleString('es-ES', { minimumFractionDigits: 3 })} €/L.
+							Fuente: Ministerio (Geoportal de Gasolineras){data.combustibleInfo.fecha !== data.hoy ? `, dato del ${fechaLarga(data.combustibleInfo.fecha!)}` : ''}.
+						</p>
+					{/if}
+				</div>
+			</section>
+		{/if}
 		{#if c.inversion || c.valorEstimado}
 			<section class="mb-6">
 				<p class="etiqueta mb-2">Coste real</p>

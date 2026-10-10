@@ -103,6 +103,11 @@ export async function cargarAlertas(
 	const ids = vehiculos.map((v) => v.id);
 	const porId = new Map(vehiculos.map((v) => [v.id, v]));
 	const alertas: Alerta[] = [];
+	// En restauración no se circula: ni papeles ni revisiones avisan hasta que vuelva a la calle (las averías sí)
+	const estadosObra = new Set(
+		(await db.select({ id: schema.estados.id, nombre: schema.estados.nombre }).from(schema.estados)).filter((e) => /restaur/i.test(e.nombre)).map((e) => e.id)
+	);
+	const enObra = new Set(vehiculos.filter((v) => v.estadoId != null && estadosObra.has(v.estadoId)).map((v) => v.id));
 
 	// Vencimientos vigentes
 	const vencs = await db
@@ -112,6 +117,7 @@ export async function cargarAlertas(
 		.where(and(eq(schema.vencimientos.estado, 'vigente'), inArray(schema.vencimientos.vehiculoId, ids)));
 
 	for (const { v, tipo } of vencs) {
+		if (enObra.has(v.vehiculoId)) continue;
 		const veh = porId.get(v.vehiculoId)!;
 		const { dias, nivel } = estadoVencimiento(v.fechaVence, opts.hoy, tipo.avisosDias, opts.urgenteDias);
 		alertas.push({
@@ -136,6 +142,7 @@ export async function cargarAlertas(
 		const lecturas = await lecturasPorVehiculo(db, ids);
 		const ultimas = await ultimasPorPlan(db, ids);
 		for (const veh of vehiculos) {
+			if (enObra.has(veh.id)) continue;
 			const ls = lecturasValidas(lecturas.get(veh.id) ?? []);
 			const km = kmActual(ls);
 			const ritmo = ritmoKmDia(ls, opts.hoy);

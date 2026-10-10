@@ -1,4 +1,5 @@
 // Ajustes globales (tabla `ajustes`, clave → JSON). Los valores ausentes toman el defecto.
+import type { MunicipioCombustible, PreciosCombustible } from './combustible';
 
 export const EVENTOS_MOMENTO = ['tareaHecha', 'faseCompletada', 'restauracionTerminada', 'vencimientoRenovado', 'entradaCreada', 'cajaCuadrada'] as const;
 export type EventoMomento = (typeof EVENTOS_MOMENTO)[number];
@@ -44,6 +45,10 @@ export interface Ajustes {
 	ultimoCuadre: string | null;
 	/** Gasto habitual al mes que se usa en la previsión (céntimos, positivo). null = calcularlo solo. */
 	gastoHabitualCent: number | null;
+	/** Dónde se mira el precio del combustible (Geoportal de Gasolineras). */
+	municipioCombustible: MunicipioCombustible;
+	/** Último precio descargado (se actualiza cada día). */
+	precioCombustible: PreciosCombustible | null;
 	/** Datos que aparecen en las facturas. */
 	fiscal: { razonSocial: string; nif: string; direccion: string; email: string; telefono: string; iban: string };
 	serieFactura: string;
@@ -69,6 +74,8 @@ export const AJUSTES_POR_DEFECTO: Ajustes = {
 	tipoImpuestoSociedades: 25,
 	ultimoCuadre: null,
 	gastoHabitualCent: null,
+	municipioCombustible: { id: '7130', nombre: 'Moncada', provinciaId: '46' },
+	precioCombustible: null,
 	fiscal: { razonSocial: 'Novaz', nif: '', direccion: '', email: '', telefono: '', iban: '' },
 	serieFactura: 'NVZ',
 	tarifaHoraCent: 3500,

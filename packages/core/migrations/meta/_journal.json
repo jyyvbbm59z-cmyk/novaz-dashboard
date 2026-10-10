@@ -148,6 +148,13 @@
       "when": 1791624461508,
       "tag": "0020_ibiza_ivtm_2026",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1791625274225,
+      "tag": "0021_consumo_ibiza_enero_marbella",
+      "breakpoints": true
     }
   ]
 }

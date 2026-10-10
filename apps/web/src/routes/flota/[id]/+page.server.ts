@@ -5,6 +5,8 @@ import {
 	lecturasSospechosas,
 	metricasKm,
 	costesVehiculo,
+	costeUsoMensual,
+	combustibleDe,
 	planAplica,
 	plantillaSugerida,
 	plantillasPara,
@@ -30,6 +32,7 @@ import { adjuntosDe, borrarAdjuntos } from '$lib/server/adjuntos';
 import { crearFactura } from '$lib/server/facturas';
 import { aplicarPlantilla } from '$lib/server/revisiones';
 import { cargarInventario, cerrarCompras } from '$lib/server/inventario';
+import { precioCombustibleHoy } from '$lib/server/combustible';
 import { avanceRestauraciones, comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
@@ -139,6 +142,21 @@ export const load = async ({ params, locals }) => {
 		valorEstimadoCent: v.valorEstimadoCent
 	});
 	const gastos = movs.filter((x) => x.m.tipo === 'gasto');
+
+	// Coste de uso al mes: combustible con el precio de hoy + papeles anualizados + mantenimiento repartido
+	const tipoComb = combustibleDe(v.campos.combustible);
+	const precios = tipoComb ? await precioCombustibleHoy(locals) : null;
+	const precio = tipoComb && precios ? precios[tipoComb] : null;
+	const consumo = Number(v.campos.consumo) || null;
+	const usoMes = costeUsoMensual({
+		hoy,
+		kmMes: ritmo != null ? Math.round(ritmo * 30.44) : null,
+		consumo,
+		precioLitro: precio?.media ?? null,
+		vencimientos: vencs.filter((x) => x.v.estado === 'vigente').map(({ v: x, tipo }) => ({ id: x.id, tipo: tipo.nombre, importeCent: x.importeCent, fechaInicio: x.fechaInicio, fechaVence: x.fechaVence })),
+		gastos: gastos.map((x) => ({ fecha: x.m.fecha, importeCent: x.m.importeCent, categoria: x.categoria?.nombre ?? null, vencimientoId: x.m.vencimientoId }))
+	});
+	const combustibleInfo = tipoComb ? { tipo: tipoComb, precio, fecha: precios?.fecha ?? null, municipio: precios?.municipio ?? null } : null;
 	const tipoVeh = await db.select({ nombre: s.tiposVehiculo.nombre }).from(s.tiposVehiculo).where(eq(s.tiposVehiculo.id, v.tipoId)).get();
 	const plantillasDelTipo = plantillasPara(tipoVeh?.nombre);
 	return {
@@ -148,6 +166,8 @@ export const load = async ({ params, locals }) => {
 		lecturas: lecturas.map((l, i) => ({ ...l, sospechosa: malas.has(i) })),
 		metricas,
 		costes,
+		usoMes,
+		combustibleInfo,
 		inventario: (await cargarInventario(db))
 			.filter((a) => a.tipo !== 'herramienta' && (!a.vehiculoIds.length || a.vehiculoIds.includes(id)))
 			.map((a) => ({ id: a.id, nombre: a.nombre, unidad: a.unidad, cantidad: a.cantidad })),

@@ -269,9 +269,9 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 	},
 	{
 		id: 'seat-marbella',
-		nombre: 'SEAT Marbella (903 cc, mecánica Fiat 127)',
+		nombre: 'SEAT Marbella (903/899 cc, mecánica Fiat 127)',
 		descripcion:
-			'Plan para el motor 903 cc de válvulas en culata con varillas y cadena de distribución. Es un motor que pide cuidados frecuentes: el reglaje de válvulas es lo que más alarga su vida.',
+			'Plan para los motores 903 cc (carburador) y 899 cc (inyección monopunto y catalizador), de varillas y cadena de distribución. Es un motor que pide cuidados frecuentes: el reglaje de válvulas es lo que más alarga su vida.',
 		fuente:
 			'Propuesta del taller basada en la mecánica Fiat 127/Panda y en las recomendaciones conocidas del modelo (reglaje de las 8 válvulas cada 10.000 km). Sin manual oficial: ajústala con el manual de taller si lo consigues.',
 		sugerirSi: /marbella/i,
@@ -315,7 +315,7 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 					'Cambiar filtro de aire',
 					'Tapa y rotor del delco: limpiar y revisar (la humedad lo para)',
 					'Platinos y avance de encendido, si lleva encendido por contactos',
-					'Carburador: ralentí y mezcla',
+					'Alimentación: ralentí y mezcla (inyección monopunto en el 899 cc, carburador en el 903 cc)',
 					'Correa del alternador: tensión y grietas',
 					'Frenos: zapatas traseras y pastillas',
 					'Bajos: óxido en pisos, largueros y pasos de rueda'
@@ -349,7 +349,8 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 					'Cables de bujía',
 					'Aceite de la caja de cambios',
 					'Silentblocks y amortiguadores',
-					'Compresión de cilindros'
+					'Compresión de cilindros',
+					'Sonda lambda y catalizador (899 cc)'
 				],
 				incluye: ['M3'],
 				heredaDe: ['cadena', 'distribución']
