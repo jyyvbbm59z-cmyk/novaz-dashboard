@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { euros, fechaLarga, textoDias } from '@novaz/core';
-	import { ArrowRight, CircleCheck, Wrench } from '@lucide/svelte';
+	import { ArrowRight, Boxes, CircleCheck, ShoppingCart, Warehouse, Wrench } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -78,6 +78,33 @@
 			{/if}
 		</div>
 	</section>
+
+	<!-- El local, compras e inventario -->
+	{#if data.taller.localTotal || data.taller.compras || data.taller.fueraDeSitio}
+		<section class="lg:col-span-2">
+			<div class="grid grid-cols-2 gap-3 sm:grid-cols-[2fr_1fr_1fr]">
+				<a href="/local" class="tarjeta col-span-2 flex flex-col gap-2 p-4 sm:col-span-1 transition hover:border-texto-3/40">
+					<p class="etiqueta flex items-center gap-1.5"><Warehouse size={13} /> El local · {data.taller.localTotal} {data.taller.localTotal === 1 ? "pendiente" : "pendientes"}</p>
+					{#each data.taller.local as t (t.id)}
+						<p class="flex items-center gap-2 text-sm">
+							<span class="punto" style="background: {t.prioridad === 'alta' || (t.fechaLimite && t.fechaLimite < data.hoy) ? 'var(--vencido)' : t.prioridad === 'media' ? 'var(--urgente)' : 'var(--texto-3)'}"></span>
+							<span class="truncate">{t.titulo}</span>{#if t.zona}<span class="shrink-0 text-xs text-texto-3">· {t.zona}</span>{/if}
+						</p>
+					{:else}
+						<p class="text-sm text-texto-3">Nada pendiente.</p>
+					{/each}
+				</a>
+				<a href="/inventario/compras" class="tarjeta p-4 transition hover:border-texto-3/40">
+					<p class="etiqueta flex items-center gap-1.5"><ShoppingCart size={13} /> Por comprar</p>
+					<p class="cifra mt-1 text-3xl {data.taller.compras ? '' : 'text-texto-3'}">{data.taller.compras}</p>
+				</a>
+				<a href="/inventario" class="tarjeta p-4 transition hover:border-texto-3/40">
+					<p class="etiqueta flex items-center gap-1.5"><Boxes size={13} /> Sin localizar</p>
+					<p class="cifra mt-1 text-3xl {data.taller.fueraDeSitio ? 'nivel-urgente' : 'text-texto-3'}">{data.taller.fueraDeSitio}</p>
+				</a>
+			</div>
+		</section>
+	{/if}
 
 	<!-- Restauraciones -->
 	<section class="lg:col-span-2">

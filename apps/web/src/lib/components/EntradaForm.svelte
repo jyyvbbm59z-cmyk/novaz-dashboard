@@ -28,6 +28,8 @@
 		gastosExistentes = [],
 		adjuntosExistentes = [],
 		checklistInicial = null,
+		inventario = [],
+		materialesIniciales = [],
 		faseInicial = null,
 		tituloInicial = '',
 		ocultos = {},
@@ -47,6 +49,8 @@
 		gastosExistentes?: { id: number; concepto: string; importeCent: number; categoriaId: number | null; proveedor: string | null }[];
 		adjuntosExistentes?: Adjunto[];
 		checklistInicial?: TareaHecha[] | null;
+		inventario?: { id: number; nombre: string; unidad: string; cantidad: number }[];
+		materialesIniciales?: { articuloId: number; cantidad: number }[];
 		faseInicial?: number | null;
 		tituloInicial?: string;
 		ocultos?: Record<string, string | number>;
@@ -135,6 +139,16 @@
 	const totalGastos = $derived(gastos.reduce((t, g) => t + (parsearEuros(g.importe) ?? 0), 0));
 	const nuevoGasto = () => gastos.push({ id: null, concepto: '', importe: '', categoriaId: String(catDefecto) });
 	let gastosAbierto = $state((() => gastosExistentes.length > 0)());
+
+	// ─── Materiales usados del inventario
+	let materiales = $state<{ articuloId: string; cantidad: string }[]>(
+		(() => materialesIniciales.map((m) => ({ articuloId: String(m.articuloId), cantidad: String(m.cantidad).replace('.', ',') })))()
+	);
+	let materialesAbierto = $state((() => materialesIniciales.length > 0)());
+	const materialesJson = $derived(
+		JSON.stringify(materiales.map((m) => ({ articuloId: Number(m.articuloId), cantidad: Number(m.cantidad.replace(',', '.')) || 0 })).filter((m) => m.articuloId && m.cantidad > 0))
+	);
+	const unidadDe = (id: string) => inventario.find((a) => String(a.id) === id)?.unidad ?? '';
 	const claveBorrador = $derived(`borrador:entrada:${vehiculoId}`);
 
 	onMount(() => {
@@ -179,6 +193,8 @@
 		fotos = [];
 		gastos = [];
 		gastosAbierto = false;
+		materiales = [];
+		materialesAbierto = false;
 		planesSel = [];
 		planesTocados = false;
 		marcas = {};
@@ -288,6 +304,37 @@
 		<label class="campo"><span>Km</span><input name="km" class="input" inputmode="numeric" value={entrada?.km ?? km ?? ''} /></label>
 		<label class="campo"><span>Horas</span><input name="horas" class="input" inputmode="decimal" value={entrada?.horas ?? ''} placeholder="0" /></label>
 	</div>
+
+	{#if inventario.length}
+		<details class="rounded-lg border border-borde" open={materialesAbierto}>
+			<summary
+				class="cursor-pointer px-3 py-2.5 text-sm font-medium text-texto-2 select-none"
+				onclick={(e) => {
+					e.preventDefault();
+					materialesAbierto = !materialesAbierto;
+					if (materialesAbierto && !materiales.length) materiales.push({ articuloId: '', cantidad: '1' });
+				}}
+			>
+				＋ Usado del inventario{#if materiales.filter((m) => m.articuloId).length} · {materiales.filter((m) => m.articuloId).length}{/if}
+			</summary>
+			<div class="flex flex-col gap-2 px-3 pb-3">
+				<input type="hidden" name="materiales" value={materialesJson} />
+				{#each materiales as m, i (i)}
+					<div class="grid grid-cols-[1fr_4.5rem_2.5rem_auto] items-center gap-2">
+						<select bind:value={m.articuloId} class="input h-10 text-sm" aria-label="Artículo">
+							<option value="">— Elige —</option>
+							{#each inventario as a (a.id)}<option value={String(a.id)}>{a.nombre} ({a.cantidad.toLocaleString('es-ES')} {a.unidad})</option>{/each}
+						</select>
+						<input bind:value={m.cantidad} class="input h-10 text-right text-sm" inputmode="decimal" aria-label="Cantidad" />
+						<span class="text-xs text-texto-3">{unidadDe(m.articuloId)}</span>
+						<button type="button" class="btn btn-fantasma btn-icono h-10 w-9" onclick={() => materiales.splice(i, 1)} aria-label="Quitar"><X size={15} /></button>
+					</div>
+				{/each}
+				<button type="button" class="btn h-9 w-fit text-xs" onclick={() => materiales.push({ articuloId: '', cantidad: '1' })}><Plus size={14} /> Añadir</button>
+				<p class="text-xs text-texto-3">Se descuenta del inventario. Lo ya pagado no se vuelve a apuntar como gasto.</p>
+			</div>
+		</details>
+	{/if}
 
 	<details class="rounded-lg border border-borde" open={gastosAbierto}>
 		<summary

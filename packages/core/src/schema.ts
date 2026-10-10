@@ -139,6 +139,8 @@ export const vehiculos = sqliteTable(
 		notas: text('notas'),
 		campos: text('campos', { mode: 'json' }).$type<Record<string, unknown>>().notNull().default({}),
 		portadaId: integer('portada_id'),
+		/** Lo que valdría hoy (para restauraciones: comparar inversión con valor de venta). */
+		valorEstimadoCent: integer('valor_estimado_cent'),
 		creado: creado(),
 		actualizado: text('actualizado').notNull().default(sql`(datetime('now'))`)
 	},
@@ -325,6 +327,8 @@ export const movimientos = sqliteTable(
 		cuentaContable: text('cuenta_contable'),
 		/** Generado por una operación recurrente (p. ej. la aportación mensual). */
 		recurrenteId: integer('recurrente_id'),
+		/** Gasto de una tarea del local (pintura, reparación de humedad…). */
+		tareaLocalId: integer('tarea_local_id'),
 		creado: creado()
 	},
 	(t) => [index('movimientos_fecha_idx').on(t.fecha), index('movimientos_vehiculo_idx').on(t.vehiculoId)]
@@ -435,10 +439,105 @@ export const facturas = sqliteTable(
 	(t) => [uniqueIndex('facturas_numero_idx').on(t.serie, t.anio, t.numero), index('facturas_vehiculo_idx').on(t.vehiculoId)]
 );
 
+// ─── Inventario ───────────────────────────────────────────────────────────────
+
+export const TIPOS_ARTICULO = ['herramienta', 'recambio', 'consumible'] as const;
+export type TipoArticulo = (typeof TIPOS_ARTICULO)[number];
+export const ESTADOS_HERRAMIENTA = ['ok', 'reparar', 'prestada', 'perdida', 'baja'] as const;
+export type EstadoHerramienta = (typeof ESTADOS_HERRAMIENTA)[number];
+
+/** Herramientas, recambios y consumibles del taller. La cantidad sale de `stock`. */
+export const articulos = sqliteTable(
+	'articulos',
+	{
+		id: id(),
+		tipo: text('tipo', { enum: TIPOS_ARTICULO }).notNull().default('herramienta'),
+		nombre: text('nombre').notNull(),
+		marca: text('marca'),
+		referencia: text('referencia'),
+		categoria: text('categoria'),
+		ubicacion: text('ubicacion'),
+		unidad: text('unidad').notNull().default('ud'),
+		/** Por debajo de esto, a la lista de la compra. */
+		stockMinimo: real('stock_minimo'),
+		estado: text('estado', { enum: ESTADOS_HERRAMIENTA }).notNull().default('ok'),
+		prestadaA: text('prestada_a'),
+		/** Precio de compra unitario. */
+		valorCent: integer('valor_cent'),
+		fechaCompra: text('fecha_compra'),
+		proveedor: text('proveedor'),
+		numeroSerie: text('numero_serie'),
+		/** Vehículos para los que sirve (recambios específicos). */
+		vehiculoIds: text('vehiculo_ids', { mode: 'json' }).$type<number[]>().notNull().default([]),
+		notas: text('notas'),
+		portadaId: integer('portada_id'),
+		/** Última vez que se comprobó en un recuento que estaba en su sitio. */
+		ultimoRecuento: text('ultimo_recuento'),
+		creado: creado()
+	},
+	(t) => [index('articulos_tipo_idx').on(t.tipo)]
+);
+
+/** Entradas y salidas de inventario. La cantidad de un artículo = suma de sus movimientos. */
+export const stock = sqliteTable(
+	'stock',
+	{
+		id: id(),
+		articuloId: integer('articulo_id')
+			.notNull()
+			.references(() => articulos.id, { onDelete: 'cascade' }),
+		fecha: text('fecha').notNull(),
+		cantidad: real('cantidad').notNull(),
+		motivo: text('motivo', { enum: ['alta', 'compra', 'uso', 'ajuste'] }).notNull(),
+		/** Uso en una operación de un vehículo. */
+		entradaId: integer('entrada_id').references(() => entradas.id, { onDelete: 'set null' }),
+		/** Gasto de la compra. */
+		movimientoId: integer('movimiento_id').references(() => movimientos.id, { onDelete: 'set null' }),
+		tareaLocalId: integer('tarea_local_id'),
+		notas: text('notas'),
+		creado: creado()
+	},
+	(t) => [index('stock_articulo_idx').on(t.articuloId), index('stock_entrada_idx').on(t.entradaId)]
+);
+
+/** Cosas apuntadas a mano en la lista de la compra (las automáticas se calculan). */
+export const listaCompra = sqliteTable('lista_compra', {
+	id: id(),
+	texto: text('texto').notNull(),
+	cantidad: real('cantidad'),
+	unidad: text('unidad'),
+	articuloId: integer('articulo_id').references(() => articulos.id, { onDelete: 'set null' }),
+	vehiculoId: integer('vehiculo_id').references(() => vehiculos.id, { onDelete: 'set null' }),
+	notas: text('notas'),
+	comprado: bool('comprado').notNull().default(false),
+	creado: creado()
+});
+
+// ─── Local ────────────────────────────────────────────────────────────────────
+
+export const ESTADOS_TAREA_LOCAL = ['pendiente', 'en_curso', 'hecha', 'descartada'] as const;
+export type EstadoTareaLocal = (typeof ESTADOS_TAREA_LOCAL)[number];
+
+/** Tareas del propio local: pintar, humedades, extintores… */
+export const tareasLocal = sqliteTable('tareas_local', {
+	id: id(),
+	titulo: text('titulo').notNull(),
+	detalle: text('detalle'),
+	zona: text('zona'),
+	prioridad: text('prioridad', { enum: PRIORIDADES }).notNull().default('media'),
+	estado: text('estado', { enum: ESTADOS_TAREA_LOCAL }).notNull().default('pendiente'),
+	fechaLimite: text('fecha_limite'),
+	fechaHecha: text('fecha_hecha'),
+	/** Si se repite: al hacerla se crea la siguiente dentro de N meses. */
+	cadaMeses: integer('cada_meses'),
+	pasos: text('pasos', { mode: 'json' }).$type<{ texto: string; hecho: boolean }[]>().notNull().default([]),
+	creado: creado()
+});
+
 // ─── Archivos ─────────────────────────────────────────────────────────────────
 
 
-export const ENTIDADES_ADJUNTO = ['vehiculo', 'entrada', 'vencimiento', 'movimiento', 'restauracion', 'ajuste', 'pendiente'] as const;
+export const ENTIDADES_ADJUNTO = ['vehiculo', 'entrada', 'vencimiento', 'movimiento', 'restauracion', 'ajuste', 'pendiente', 'articulo', 'local'] as const;
 export type EntidadAdjunto = (typeof ENTIDADES_ADJUNTO)[number];
 
 export const adjuntos = sqliteTable(
@@ -489,3 +588,7 @@ export type Inmovilizado = typeof inmovilizado.$inferSelect;
 export type Recurrente = typeof recurrentes.$inferSelect;
 export type Pendiente = typeof pendientes.$inferSelect;
 export type Factura = typeof facturas.$inferSelect;
+export type Articulo = typeof articulos.$inferSelect;
+export type MovimientoStock = typeof stock.$inferSelect;
+export type ItemCompra = typeof listaCompra.$inferSelect;
+export type TareaLocal = typeof tareasLocal.$inferSelect;

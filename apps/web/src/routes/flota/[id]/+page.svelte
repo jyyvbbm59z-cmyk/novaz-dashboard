@@ -471,6 +471,39 @@
 			{/if}
 		</section>
 	{:else if pestana === 'gastos'}
+		{@const c = data.costes}
+		{#if c.inversion || c.valorEstimado}
+			<section class="mb-6">
+				<p class="etiqueta mb-2">Coste real</p>
+				<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+					<Cifra etiqueta="Por kilómetro" valor={c.costeKm != null ? `${(c.costeKm / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '—'} detalle={c.costeKm != null ? 'Gastos sin la compra ÷ km' : 'Faltan lecturas de km'} />
+					<Cifra etiqueta="Al mes" valor={c.costeMes != null ? euros(c.costeMes, { redondo: true }) : '—'} detalle="Media de {c.meses} {c.meses === 1 ? 'mes' : 'meses'}" />
+					<Cifra etiqueta="Gastado" valor={euros(c.operativo, { redondo: true })} detalle={c.compra ? `+ ${euros(c.compra, { redondo: true })} de compra` : 'Sin contar la compra'} />
+					{#if c.valorEstimado != null}
+						<Cifra etiqueta="Si lo vendes hoy" valor={euros(c.margen!, { redondo: true })} detalle="Valor {euros(c.valorEstimado, { redondo: true })} − invertido {euros(c.inversion, { redondo: true })}" tono={c.margen! < 0 ? 'vencido' : 'ok'} />
+					{:else}
+						<Cifra etiqueta="Tus horas" valor={euros(c.manoObra, { redondo: true })} detalle="A {euros(data.ajustes.tarifaHoraCent)}/h" tono="apagado" />
+					{/if}
+				</div>
+				{#if c.valorEstimado != null && c.manoObra}
+					<p class="mt-2 text-xs text-texto-3">Contando tus horas a {euros(data.ajustes.tarifaHoraCent)}/h ({euros(c.manoObra, { redondo: true })}), el resultado sería <strong class={c.margenConHoras! < 0 ? 'nivel-vencido' : 'nivel-ok'}>{euros(c.margenConHoras!, { redondo: true })}</strong>.</p>
+				{:else if c.valorEstimado == null}
+					<p class="mt-2 text-xs text-texto-3">Pon un <a href="/flota/{v.id}/editar" class="text-acento">valor estimado</a> y verás cuánto ganarías o perderías si lo vendes.</p>
+				{/if}
+				{#if c.porCategoria.length > 1}
+					{@const max = Math.max(...c.porCategoria.map((x) => x.total))}
+					<ul class="tarjeta mt-3 flex flex-col gap-2 p-4">
+						{#each c.porCategoria as x (x.nombre)}
+							<li class="grid grid-cols-[8rem_1fr_auto] items-center gap-3 text-sm">
+								<span class="truncate text-texto-2">{x.nombre}</span>
+								<span class="h-2 overflow-hidden rounded-full bg-superficie-3"><span class="block h-full rounded-full" style="width: {(x.total / max) * 100}%; background: {x.color}"></span></span>
+								<span class="font-mono text-xs">{euros(x.total, { redondo: true })}</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</section>
+		{/if}
 		{#if data.facturas.length}
 			<section class="mb-6">
 				<p class="etiqueta mb-2">Facturas e informes</p>
@@ -565,7 +598,13 @@
 	<FacturaForm
 		lineasIniciales={lineasDesdeEntradas(
 			elegidas,
-			data.movimientos.filter((m) => m.tipo === 'gasto' && m.entradaId != null && seleccion.includes(m.entradaId)).sort((a, b) => a.id - b.id),
+			[
+				...data.movimientos.filter((m) => m.tipo === 'gasto' && m.entradaId != null && seleccion.includes(m.entradaId)).sort((a, b) => a.id - b.id),
+				// Lo usado del inventario, a su precio de compra
+				...data.usos
+					.filter((u) => u.entradaId != null && seleccion.includes(u.entradaId))
+					.map((u) => ({ entradaId: u.entradaId, concepto: `${u.nombre} (${u.cantidad.toLocaleString('es-ES')} ${u.unidad})`, importeCent: Math.round((u.valorCent ?? 0) * u.cantidad), ivaPct: 21 }))
+			],
 			data.ajustes.tarifaHoraCent
 		)}
 		entradas={elegidas.map((e) => e.id)}
@@ -623,6 +662,8 @@
 		planes={planesVeh}
 		fases={data.fasesAbiertas}
 		entrada={entradaEdit}
+		inventario={data.inventario}
+		materialesIniciales={entradaEdit ? data.usos.filter((u) => u.entradaId === entradaEdit!.id).map((u) => ({ articuloId: u.articuloId, cantidad: u.cantidad })) : []}
 		checklistInicial={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.checklist ?? null) : null}
 		adjuntosExistentes={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.adjuntos ?? []) : []}
 		gastosExistentes={entradaEdit ? data.movimientos.filter((m) => m.entradaId === entradaEdit!.id && m.tipo === 'gasto').sort((a, b) => a.id - b.id) : []}

@@ -123,6 +123,31 @@
 	</div>
 </section>
 
+{#if res.gasto || res.compraVehiculo || v.valorEstimadoCent}
+	{@const manoObra = Math.round(res.horas * data.ajustes.tarifaHoraCent)}
+	{@const invertido = res.compraVehiculo + res.gasto}
+	<section class="tarjeta mt-3 p-4">
+		<p class="etiqueta mb-2">Lo que llevas metido</p>
+		<div class="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-texto-2">
+			{#if res.compraVehiculo}<span>Compra <strong class="cifra text-base text-texto">{euros(res.compraVehiculo, { redondo: true })}</strong></span><span class="text-texto-3">+</span>{/if}
+			<span>Obra <strong class="cifra text-base text-texto">{euros(res.gasto, { redondo: true })}</strong></span>
+			<span class="text-texto-3">=</span>
+			<strong class="cifra text-xl text-texto">{euros(invertido, { redondo: true })}</strong>
+			{#if manoObra}<span class="text-texto-3">· con tus {res.horas.toLocaleString('es-ES')} h: {euros(invertido + manoObra, { redondo: true })}</span>{/if}
+		</div>
+		{#if v.valorEstimadoCent}
+			{@const margen = v.valorEstimadoCent - invertido}
+			<p class="mt-2 text-sm">
+				Vale <strong class="cifra text-base">{euros(v.valorEstimadoCent, { redondo: true })}</strong> →
+				<strong class="cifra text-lg {margen < 0 ? 'nivel-vencido' : 'nivel-ok'}">{margen >= 0 ? '+' : ''}{euros(margen, { redondo: true })}</strong>
+				{#if manoObra}<span class="text-xs text-texto-3">({margen - manoObra >= 0 ? '+' : ''}{euros(margen - manoObra, { redondo: true })} contando tus horas)</span>{/if}
+			</p>
+		{:else}
+			<p class="mt-2 text-xs text-texto-3">Pon el <a href="/flota/{v.id}/editar" class="text-acento">valor estimado</a> del vehículo para ver si sale a cuenta.</p>
+		{/if}
+	</section>
+{/if}
+
 <div class="mt-4 grid grid-cols-3 gap-2 sm:flex">
 	<button class="btn btn-acento h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((entradaEdit = null), (faseEntrada = actual ?? null), (hEntrada = true))}><NotebookPen size={18} /><span class="text-xs sm:text-sm">Diario</span></button>
 	<SubirArchivos entidad="restauracion" entidadId={r.id} vehiculoId={v.id} camara clase="btn h-auto flex-col gap-1 py-2 text-xs sm:h-10 sm:flex-row sm:py-0 sm:text-sm" />
@@ -296,6 +321,8 @@
 		categorias={data.catalogo.categorias}
 		fases={data.fases}
 		entrada={entradaEdit}
+		inventario={data.inventario}
+		materialesIniciales={entradaEdit ? data.usos.filter((u) => u.entradaId === entradaEdit!.id).map((u) => ({ articuloId: u.articuloId, cantidad: u.cantidad })) : []}
 		adjuntosExistentes={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.adjuntos ?? []) : []}
 		gastosExistentes={entradaEdit ? data.movimientos.filter((m) => m.entradaId === entradaEdit!.id && m.tipo === 'gasto').sort((a, b) => a.id - b.id) : []}
 		claseInicial="diario"

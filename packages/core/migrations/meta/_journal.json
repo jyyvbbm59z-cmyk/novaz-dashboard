@@ -78,6 +78,20 @@
       "when": 1791579033348,
       "tag": "0010_revisiones",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1791612800462,
+      "tag": "0011_inventario_local",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1791612801049,
+      "tag": "0012_categoria_local",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,7 @@ import * as s from '@novaz/core/schema';
 import { error, redirect } from '@sveltejs/kit';
 import { and, asc, desc, eq, inArray, max, or } from 'drizzle-orm';
 import { borrarEntrada, borrarMovimiento, guardarEntrada, guardarMovimiento, marcarTarea } from '$lib/server/acciones';
+import { cargarInventario } from '$lib/server/inventario';
 import { adjuntosDe, borrarAdjuntos, borrarAdjuntosDe } from '$lib/server/adjuntos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
@@ -49,6 +50,13 @@ export const load = async ({ params, locals }) => {
 			.orderBy(asc(s.adjuntos.creado), asc(s.adjuntos.id))
 	]);
 
+	// Compra del vehículo (cuenta 600), para saber cuánto llevas metido en total
+	const comprasVeh = await db
+		.select({ importe: s.movimientos.importeCent, cuenta: s.movimientos.cuentaContable, catCuenta: s.categorias.cuentaContable })
+		.from(s.movimientos)
+		.leftJoin(s.categorias, eq(s.movimientos.categoriaId, s.categorias.id))
+		.where(and(eq(s.movimientos.vehiculoId, r.vehiculoId), eq(s.movimientos.tipo, 'gasto')));
+	const compraVehiculo = comprasVeh.filter((m) => (m.cuenta ?? m.catCuenta ?? '').startsWith('600')).reduce((t, m) => t + m.importe, 0);
 	const total = tareas.length;
 	const hechas = tareas.filter((t) => t.hecha).length;
 	const gasto = movs.filter((x) => x.m.tipo === 'gasto').reduce((a, x) => a + x.m.importeCent, 0);
@@ -64,6 +72,12 @@ export const load = async ({ params, locals }) => {
 		entradas: entradas.map((x) => ({ ...x.e, fase: x.fase, adjuntos: adjuntos.filter((a) => a.entidad === 'entrada' && a.entidadId === x.e.id) })),
 		movimientos: movs.map((x) => ({ ...x.m, categoria: x.categoria })),
 		adjuntosMov: await adjuntosDe(db, 'movimiento', movs.map((x) => x.m.id)),
+		inventario: (await cargarInventario(db))
+			.filter((a) => a.tipo !== 'herramienta' && (!a.vehiculoIds.length || a.vehiculoIds.includes(r.vehiculoId)))
+			.map((a) => ({ id: a.id, nombre: a.nombre, unidad: a.unidad, cantidad: a.cantidad })),
+		usos: entradaIds.length
+			? (await db.select({ entradaId: s.stock.entradaId, articuloId: s.stock.articuloId, cantidad: s.stock.cantidad }).from(s.stock).where(and(inArray(s.stock.entradaId, entradaIds), eq(s.stock.motivo, 'uso')))).map((u) => ({ ...u, cantidad: -u.cantidad }))
+			: [],
 		adjuntos,
 		antesDespues: fotos.length >= 2 ? { antes: fotos[0], despues: fotos[fotos.length - 1] } : null,
 		resumen: {
@@ -72,7 +86,8 @@ export const load = async ({ params, locals }) => {
 			hechas,
 			horas: entradas.reduce((a, x) => a + (x.e.horas ?? 0), 0),
 			gasto,
-			dias: r.fechaInicio ? diasEntre(r.fechaInicio, r.fechaFin ?? hoy) : null
+			dias: r.fechaInicio ? diasEntre(r.fechaInicio, r.fechaFin ?? hoy) : null,
+			compraVehiculo
 		}
 	};
 };

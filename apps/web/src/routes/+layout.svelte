@@ -6,11 +6,21 @@
 	import Buscador from '$comp/Buscador.svelte';
 	import Logo from '$comp/Logo.svelte';
 	import { configurarMomentos } from '$lib/momentos';
-	import { BookOpenText, CarFront, House, Plus, ReceiptText, Search, Settings, Users, Wrench } from '@lucide/svelte';
+	import { Boxes, BookOpenText, CarFront, FileText, House, LayoutGrid, Plus, ReceiptText, Search, Settings, ShoppingCart, Users, Warehouse, Wrench } from '@lucide/svelte';
+	import Hoja from '$comp/Hoja.svelte';
 
 	let { data, children } = $props();
 	let buscando = $state(false);
 	let altoCabecera = $state(0);
+	let menuMas = $state(false);
+	const MAS = [
+		{ href: '/local', texto: 'El local', icono: Warehouse },
+		{ href: '/inventario', texto: 'Inventario', icono: Boxes },
+		{ href: '/inventario/compras', texto: 'Lista de la compra', icono: ShoppingCart },
+		{ href: '/contabilidad/facturas', texto: 'Facturas', icono: FileText },
+		{ href: '/contactos', texto: 'Contactos', icono: Users },
+		{ href: '/ajustes', texto: 'Ajustes', icono: Settings }
+	];
 
 	$effect(() => configurarMomentos(data.ajustes));
 
@@ -41,6 +51,8 @@
 				{ href: '/', texto: 'Inicio', icono: House },
 				{ href: '/flota', texto: 'Flota', icono: CarFront },
 				{ href: '/restauraciones', texto: 'Restauraciones', icono: Wrench },
+				{ href: '/local', texto: 'El local', icono: Warehouse },
+				{ href: '/inventario', texto: 'Inventario', icono: Boxes },
 				{ href: '/contactos', texto: 'Contactos', icono: Users }
 			]
 		},
@@ -131,8 +143,7 @@
 		<a href="/" class="py-2.5"><Logo nombre={data.ajustes.nombreTaller} compacto marca={data.ajustes.logoApp} /></a>
 		<div class="-mr-2 flex items-center">
 			<button class="btn btn-fantasma btn-icono" onclick={() => (buscando = true)} aria-label="Buscar"><Search size={20} /></button>
-			<a href="/contactos" class="btn btn-fantasma btn-icono" aria-label="Contactos"><Users size={20} /></a>
-			<a href="/ajustes" class="btn btn-fantasma btn-icono" aria-label="Ajustes"><Settings size={20} /></a>
+			<button class="btn btn-fantasma btn-icono" onclick={() => (menuMas = true)} aria-label="Más secciones"><LayoutGrid size={20} /></button>
 		</div>
 	</header>
 
@@ -170,6 +181,16 @@
 		{/each}
 	</nav>
 </div>
+
+<Hoja bind:abierta={menuMas} titulo="Secciones">
+	<nav class="grid grid-cols-3 gap-2">
+		{#each MAS as n (n.href)}
+			<a href={n.href} onclick={() => (menuMas = false)} class="tarjeta flex flex-col items-center gap-2 px-2 py-4 text-center text-xs font-medium transition active:scale-95 {activo(n.href) ? 'border-acento/60' : ''}">
+				<n.icono size={22} strokeWidth={1.75} class={activo(n.href) ? 'text-acento' : 'text-texto-2'} />{n.texto}
+			</a>
+		{/each}
+	</nav>
+</Hoja>
 
 <Buscador bind:abierto={buscando} vehiculos={data.vehiculosMenu} />
 <Avisos />

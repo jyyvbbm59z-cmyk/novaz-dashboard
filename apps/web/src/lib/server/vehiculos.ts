@@ -36,6 +36,7 @@ export async function datosVehiculo(db: DB, fd: FormData) {
 		contactoId,
 		fechaAlta: f.fecha('fechaAlta'),
 		notas: f.texto('notas'),
+		valorEstimadoCent: f.euros('valorEstimado'),
 		campos: campos.valores
 	};
 }

@@ -42,6 +42,8 @@ export interface Alerta {
 	avisosDias: number[];
 	/** Cambia cuando se renueva/realiza, para no repetir avisos de un ciclo anterior. */
 	ciclo: string;
+	/** Plan de mantenimiento del que sale (solo tipo 'mantenimiento'). */
+	planId?: number;
 }
 
 /** Vehículos activos: los que no están en un estado final (vendido, entregado…). */
@@ -143,6 +145,7 @@ export async function cargarAlertas(
 				const ultima = ultimas.get(`${veh.id}:${plan.id}`) ?? null;
 				const e = estadoMantenimiento(plan, ultima, { hoy: opts.hoy, kmActual: km, ritmo, urgenteDias: opts.urgenteDias });
 				if (e.sinHistorial) continue;
+				const planId = plan.id;
 				const partes: string[] = [];
 				if (e.kmRestantes != null)
 					partes.push(e.kmRestantes < 0 ? `pasado ${(-e.kmRestantes).toLocaleString('es-ES')} km` : `quedan ${e.kmRestantes.toLocaleString('es-ES')} km`);
@@ -159,7 +162,8 @@ export async function cargarAlertas(
 					dias: e.diasRestantes,
 					kmRestantes: e.kmRestantes,
 					avisosDias: [plan.avisoDias, Math.min(7, plan.avisoDias), 1],
-					ciclo: String(ultima!.id)
+					ciclo: String(ultima!.id),
+					planId
 				});
 			}
 		}

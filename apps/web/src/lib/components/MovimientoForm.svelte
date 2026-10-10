@@ -17,6 +17,8 @@
 		inmovilizado = null,
 		pagoPorDefecto = 'banco',
 		adjuntos = [],
+		ocultos = {},
+		categoriaInicial = null,
 		alGuardar
 	}: {
 		accion?: string;
@@ -29,13 +31,15 @@
 		inmovilizado?: Inmovilizado | null;
 		pagoPorDefecto?: FormaPago;
 		adjuntos?: Adjunto[];
+		ocultos?: Record<string, string | number>;
+		categoriaInicial?: number | null;
 		alGuardar?: () => void;
 	} = $props();
 
 	// Valores iniciales (el formulario se monta de nuevo cada vez que se abre la hoja)
 	const ini = (() => {
 		const tipo: TipoMovimiento = movimiento?.tipo ?? 'gasto';
-		const cat = movimiento?.categoriaId ?? categorias.find((c) => c.tipo === tipo)?.id ?? null;
+		const cat = movimiento?.categoriaId ?? categoriaInicial ?? categorias.find((c) => c.tipo === tipo)?.id ?? null;
 		return {
 			tipo,
 			cat: cat == null ? '' : String(cat),
@@ -99,6 +103,7 @@
 <form method="POST" action={accion} use:enhance={enviar({ alTerminar: alGuardar })} class="flex flex-col gap-4">
 	{#if movimiento}<input type="hidden" name="id" value={movimiento.id} />{/if}
 	{#if vehiculoFijo}<input type="hidden" name="vehiculoId" value={vehiculoFijo} />{/if}
+	{#each Object.entries(ocultos) as [k, v] (k)}<input type="hidden" name={k} value={v} />{/each}
 	<input type="hidden" name="tipo" value={tipo} />
 
 	<div class="grid grid-cols-4 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">

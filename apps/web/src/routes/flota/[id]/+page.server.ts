@@ -4,6 +4,7 @@ import {
 	kmActual,
 	lecturasSospechosas,
 	metricasKm,
+	costesVehiculo,
 	planAplica,
 	plantillaSugerida,
 	PLANTILLAS_REVISION,
@@ -28,6 +29,7 @@ import {
 import { adjuntosDe, borrarAdjuntos } from '$lib/server/adjuntos';
 import { crearFactura } from '$lib/server/facturas';
 import { aplicarPlantilla } from '$lib/server/revisiones';
+import { cargarInventario } from '$lib/server/inventario';
 import { avanceRestauraciones, comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
@@ -120,13 +122,42 @@ export const load = async ({ params, locals }) => {
 	const avances = await avanceRestauraciones(db, restas.map((r) => r.id));
 
 	const anio = hoy.slice(0, 4);
+	const metricas = metricasKm(validas, hoy);
+	const costes = costesVehiculo({
+		movimientos: movs.map((x) => ({
+			tipo: x.m.tipo,
+			importeCent: x.m.importeCent,
+			cuenta: x.m.cuentaContable ?? x.categoria?.cuentaContable ?? null,
+			categoria: x.categoria?.nombre ?? null,
+			color: x.categoria?.color ?? null
+		})),
+		kmRecorridos: metricas.recorridos,
+		desde: v.fechaAlta ?? metricas.desde,
+		hoy,
+		horas: entradas.reduce((t, x) => t + (x.e.horas ?? 0), 0),
+		tarifaHoraCent: ajustes.tarifaHoraCent,
+		valorEstimadoCent: v.valorEstimadoCent
+	});
 	const gastos = movs.filter((x) => x.m.tipo === 'gasto');
 	return {
 		vehiculo: v,
 		km,
 		ritmo,
 		lecturas: lecturas.map((l, i) => ({ ...l, sospechosa: malas.has(i) })),
-		metricas: metricasKm(validas, hoy),
+		metricas,
+		costes,
+		inventario: (await cargarInventario(db))
+			.filter((a) => a.tipo !== 'herramienta' && (!a.vehiculoIds.length || a.vehiculoIds.includes(id)))
+			.map((a) => ({ id: a.id, nombre: a.nombre, unidad: a.unidad, cantidad: a.cantidad })),
+		usos: entradas.length
+			? (
+					await db
+						.select({ entradaId: s.stock.entradaId, articuloId: s.stock.articuloId, cantidad: s.stock.cantidad, nombre: s.articulos.nombre, unidad: s.articulos.unidad, valorCent: s.articulos.valorCent })
+						.from(s.stock)
+						.innerJoin(s.articulos, eq(s.stock.articuloId, s.articulos.id))
+						.where(and(inArray(s.stock.entradaId, entradas.map((x) => x.e.id)), eq(s.stock.motivo, 'uso')))
+				).map((u) => ({ ...u, cantidad: -u.cantidad }))
+			: [],
 		entradas: entradas.map((x) => ({
 			...x.e,
 			fase: x.fase,

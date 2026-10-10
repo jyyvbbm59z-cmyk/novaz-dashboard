@@ -7,7 +7,7 @@
 	import Placa from '$comp/Placa.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { ArrowLeft, Check, CircleAlert, Gauge, ListChecks, NotebookPen, ReceiptText } from '@lucide/svelte';
+	import { ArrowLeft, Check, CircleAlert, Gauge, ListChecks, NotebookPen, ReceiptText, Warehouse } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
@@ -52,6 +52,13 @@
 			<span class="flex-1">
 				<span class="block font-semibold">Una factura o dinero</span>
 				<span class="block text-xs text-texto-3">Luz, agua, IBI, un cobro, tu aportación… te guío paso a paso</span>
+			</span>
+		</a>
+		<a href="/local?nueva" class="tarjeta mb-6 -mt-3 flex items-center gap-4 p-4 transition hover:border-acento/50 active:scale-[0.99]">
+			<span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-superficie-3 text-texto-2"><Warehouse size={24} /></span>
+			<span class="flex-1">
+				<span class="block font-semibold">Algo del local</span>
+				<span class="block text-xs text-texto-3">Una pared que pintar, una humedad, el extintor…</span>
 			</span>
 		</a>
 		<h1 class="mb-5 text-4xl">¿O de un vehículo?</h1>

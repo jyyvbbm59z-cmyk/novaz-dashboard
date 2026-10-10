@@ -91,6 +91,24 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 		}
 	}
 
+	// Materiales usados del inventario: la lista enviada sustituye a la anterior (descuenta stock)
+	const crudoMat = f.texto('materiales');
+	if (crudoMat) {
+		let materiales: { articuloId: number; cantidad: number }[] = [];
+		try {
+			const m = JSON.parse(crudoMat);
+			if (Array.isArray(m))
+				materiales = m
+					.map((x) => ({ articuloId: Number(x?.articuloId), cantidad: Math.abs(Number(x?.cantidad) || 0) }))
+					.filter((x) => Number.isInteger(x.articuloId) && x.cantidad > 0);
+		} catch {
+			throw new ErrorFormulario('Materiales mal formados');
+		}
+		await db.delete(s.stock).where(and(eq(s.stock.entradaId, entradaId), eq(s.stock.motivo, 'uso')));
+		if (materiales.length)
+			await db.insert(s.stock).values(materiales.map((x) => ({ articuloId: x.articuloId, fecha, cantidad: -x.cantidad, motivo: 'uso' as const, entradaId })));
+	}
+
 	// Gastos: varias líneas (filtro, aceite…) con proveedor y forma de pago comunes.
 	// Al editar (`sincronizarGastos`), la lista enviada es la verdad: las líneas con id se
 	// actualizan, las que ya no vienen se borran y las nuevas se crean. Nunca se duplica.

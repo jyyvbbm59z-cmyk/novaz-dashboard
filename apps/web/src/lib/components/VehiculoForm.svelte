@@ -5,6 +5,7 @@
 	import type { Catalogos } from '$lib/server/datos';
 	import { enviar } from '$lib/enviar';
 	import type { Vehiculo } from '@novaz/core/schema';
+	import { eurosInput } from '@novaz/core';
 
 	let {
 		catalogo,
@@ -60,6 +61,7 @@
 			</select>
 		</label>
 		<label class="campo"><span>Fecha de alta</span><input type="date" name="fechaAlta" class="input" value={vehiculo?.fechaAlta ?? hoy} /></label>
+		<label class="campo"><span>Valor estimado hoy (€)</span><input name="valorEstimado" class="input" inputmode="decimal" value={eurosInput(vehiculo?.valorEstimadoCent)} placeholder="Lo que pedirías si lo vendes" /></label>
 		{#if !vehiculo}
 			<label class="campo"><span>Km actuales</span><input name="km" class="input" inputmode="numeric" placeholder="0" /></label>
 		{/if}
