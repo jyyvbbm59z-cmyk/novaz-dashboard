@@ -120,6 +120,13 @@
       "when": 1791623574597,
       "tag": "0016_ibiza_km",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1791623774129,
+      "tag": "0017_ibiza_km_2",
+      "breakpoints": true
     }
   ]
 }
