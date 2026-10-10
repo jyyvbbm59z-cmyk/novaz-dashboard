@@ -22,6 +22,8 @@
 			"bucket_name": "novaz-archivos"
 		}
 	],
+	// No borrar al desplegar las variables puestas a mano en el panel de Cloudflare
+	"keep_vars": true,
 	"vars": {
 		// Cloudflare Access: dominio del equipo (p. ej. "novaz.cloudflareaccess.com") y AUD de la aplicación
 		"ACCESS_TEAM_DOMAIN": "novaz.cloudflareaccess.com",

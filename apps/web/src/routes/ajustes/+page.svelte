@@ -90,9 +90,14 @@
 		<label class="flex items-center gap-3 text-sm"><input type="checkbox" name="resumenSemanal" checked={a.resumenSemanal} class="h-5 w-5 accent-[var(--acento)]" /> Los lunes, además, cómo van las obras</label>
 		<div class="flex flex-wrap gap-2">
 			<button class="btn btn-acento">Guardar</button>
-			<button class="btn" formaction="?/probarTelegram" disabled={!data.telegramConfigurado}><Send size={16} /> {a.parteDiario ? 'Mandarme el parte de hoy' : 'Probar'}</button>
+			<button class="btn" formaction="?/probarTelegram"><Send size={16} /> {a.parteDiario ? 'Mandarme el parte de hoy' : 'Probar'}</button>
 		</div>
-		{#if !data.telegramConfigurado}<p class="text-xs text-texto-3">El bot aún no está configurado en este entorno.</p>{/if}
+		{#if !data.telegramConfigurado}
+			<p class="rounded-lg border border-urgente/40 bg-urgente/10 p-3 text-xs text-texto-2">
+				La app no encuentra el token del bot. En Cloudflare → Workers y Pages → <strong>novaz-dashboard</strong> (y también en <strong>novaz-avisos</strong>) →
+				Configuración → Variables y secretos → añade <code>TELEGRAM_TOKEN</code> con tipo <strong>Secreto</strong> (no Texto).
+			</p>
+		{/if}
 	</form>
 
 	<!-- Contabilidad -->

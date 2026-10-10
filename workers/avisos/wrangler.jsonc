@@ -18,6 +18,8 @@
 		}
 	],
 	"r2_buckets": [{ "binding": "ARCHIVOS", "bucket_name": "novaz-archivos" }],
+	// No borrar al desplegar las variables puestas a mano en el panel de Cloudflare
+	"keep_vars": true,
 	"vars": {
 		// URL pública de la app, para los enlaces de los mensajes
 		"APP_URL": "https://novaz-dashboard.salanovacarlos.workers.dev"

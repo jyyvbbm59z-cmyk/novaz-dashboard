@@ -48,7 +48,7 @@ export const actions = {
 	probarTelegram: accion(async ({ locals, platform, url }) => {
 		const token = platform?.env.TELEGRAM_TOKEN;
 		const chat = locals.ajustes.telegramChatId;
-		if (!token) throw new ErrorFormulario('Falta el secreto TELEGRAM_TOKEN (ver README)');
+		if (!token) throw new ErrorFormulario('Falta el token del bot en Cloudflare: añade TELEGRAM_TOKEN como Secreto en novaz-dashboard');
 		if (!chat) throw new ErrorFormulario('Guarda primero el chat ID');
 		const { ajustes, hoy, db } = locals;
 		let texto = `🔧 <b>${ajustes.nombreTaller}</b>\nLos avisos llegan aquí. ¡A rodar!`;
