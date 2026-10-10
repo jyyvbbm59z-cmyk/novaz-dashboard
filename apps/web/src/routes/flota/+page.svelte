@@ -69,7 +69,7 @@
 		<a href="/flota/nuevo" class="btn btn-acento"><Plus size={18} /> Dar de alta el primero</a>
 	</div>
 {:else if vista === 'tarjetas'}
-	<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+	<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
 		{#each lista as v (v.id)}
 			{@const e = estado(v.estadoId)}
 			<a href="/flota/{v.id}" class="tarjeta group overflow-hidden transition hover:border-texto-3/40">

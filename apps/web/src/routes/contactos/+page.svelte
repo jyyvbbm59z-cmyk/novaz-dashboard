@@ -26,7 +26,7 @@
 {#if !data.catalogo.contactos.length}
 	<div class="vacio">Propietarios de vehículos de terceros, proveedores… Aquí crecerá el futuro módulo de clientes.</div>
 {:else}
-	<ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+	<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 		{#each data.catalogo.contactos as c (c.id)}
 			{@const vs = data.vehiculosTerceros.filter((v) => v.contactoId === c.id)}
 			<li id="c{c.id}" class="tarjeta group flex flex-col gap-2 p-4">

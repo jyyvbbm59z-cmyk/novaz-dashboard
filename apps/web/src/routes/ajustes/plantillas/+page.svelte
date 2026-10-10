@@ -16,7 +16,7 @@
 	<button class="btn btn-acento shrink-0" onclick={() => ((edit = null), (hoja = true))}><Plus size={18} /> Nueva</button>
 </div>
 
-<div class="grid gap-3 md:grid-cols-2">
+<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
 	{#each data.catalogo.plantillas as p (p.id)}
 		<article class="tarjeta p-4">
 			<div class="flex items-center gap-2">

@@ -140,7 +140,7 @@
 	</div>
 {:else}
 	<!-- Paso 2: datos -->
-	<div class="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[1fr_22rem]">
+	<div class="mx-auto grid max-w-5xl grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
 		<div>
 			<button class="mb-3 flex items-center gap-1.5 text-sm text-texto-3 hover:text-texto" onclick={volver}><ArrowLeft size={15} /> Elegir otra cosa</button>
 			<div class="mb-4 flex items-center gap-3">

@@ -21,7 +21,7 @@
 <!-- Resultado del ejercicio -->
 <section class="tarjeta relative overflow-hidden p-5 sm:p-7">
 	<div class="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full opacity-30 blur-3xl" style="background: {beneficio ? 'var(--acento)' : 'var(--vencido)'}"></div>
-	<div class="relative grid gap-6 lg:grid-cols-[1fr_1.3fr] lg:items-end">
+	<div class="relative grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:items-end">
 		<div>
 			<p class="etiqueta">Resultado {data.ejercicio} · a {fechaLarga(data.fechaCorte)}</p>
 			<p class="cifra mt-2 text-6xl sm:text-7xl" style="color: {beneficio ? 'var(--texto)' : 'var(--vencido)'}">{euros(data.resultado, { redondo: true })}</p>

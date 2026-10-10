@@ -17,12 +17,12 @@
 
 <svelte:head><title>Restauraciones · {data.ajustes.nombreTaller}</title></svelte:head>
 
-<div class="mb-5 flex items-end justify-between gap-4">
+<div class="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
 	<div>
 		<p class="etiqueta">{data.restauraciones.length - terminadas} en marcha · {terminadas} terminadas</p>
 		<h1 class="titulo-pagina">Restauraciones</h1>
 	</div>
-	<button class="btn btn-acento" onclick={() => (hNueva = true)}><Plus size={18} /> Nueva</button>
+	<button class="btn btn-acento shrink-0" onclick={() => (hNueva = true)}><Plus size={18} /> Nueva</button>
 </div>
 
 <div class="mb-5 flex gap-2">
@@ -36,7 +36,7 @@
 		{#if !verTerminadas}<div class="mt-4"><button class="btn btn-acento" onclick={() => (hNueva = true)}><Wrench size={16} /> Empezar una</button></div>{/if}
 	</div>
 {:else}
-	<div class="grid gap-3 md:grid-cols-2">
+	<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
 		{#each lista as r (r.id)}
 			{@const sobre = r.presupuestoCent ? r.gasto / r.presupuestoCent : null}
 			<a href="/restauraciones/{r.id}" class="tarjeta group flex overflow-hidden transition hover:border-texto-3/40">

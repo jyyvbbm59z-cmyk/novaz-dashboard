@@ -23,12 +23,12 @@
 	<h1 class="titulo-pagina">{saludo}</h1>
 </header>
 
-<div class="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
 	<!-- Lo que viene -->
 	<section>
 		<div class="mb-3 flex items-baseline justify-between">
 			<h2 class="text-2xl">Lo que viene</h2>
-			<span class="text-xs text-texto-3">{pendientes.length + data.taller.local.length ? `${pendientes.length + data.taller.localTotal} pendientes` : ''}</span>
+			<span class="text-xs text-texto-3">{pendientes.length + data.taller.localTotal ? `${pendientes.length + data.taller.localTotal} ${pendientes.length + data.taller.localTotal === 1 ? 'pendiente' : 'pendientes'}` : ''}</span>
 		</div>
 		{#if !pendientes.length && !data.taller.local.length}
 			<div class="tarjeta flex items-center gap-3 p-5 text-texto-2">

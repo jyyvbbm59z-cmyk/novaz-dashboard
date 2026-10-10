@@ -41,7 +41,7 @@
 	<button class="btn btn-acento shrink-0" onclick={() => abrir(null)}><Plus size={18} /> Nuevo tipo</button>
 </div>
 
-<ul class="grid gap-3 sm:grid-cols-2">
+<ul class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 	{#each data.catalogo.tipos as t (t.id)}
 		<li class="tarjeta flex items-start gap-3 p-4">
 			<span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-superficie-3"><Icono nombre={t.icono} size={22} /></span>

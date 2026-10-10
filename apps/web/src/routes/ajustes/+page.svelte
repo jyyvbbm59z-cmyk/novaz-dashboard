@@ -25,7 +25,7 @@
 
 <svelte:head><title>Ajustes · {a.nombreTaller}</title></svelte:head>
 
-<div class="grid gap-6 lg:grid-cols-2">
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 	<!-- Identidad -->
 	<form method="POST" action="?/general" use:enhance={enviar({ reset: false })} class="tarjeta flex flex-col gap-4 p-5">
 		<h2 class="text-2xl">Identidad</h2>
@@ -92,7 +92,7 @@
 			<h2 class="text-2xl">Contabilidad</h2>
 			<p class="text-sm text-texto-3">Cada gasto o ingreso genera su asiento. El IVA y la cuenta salen de la categoría (editable en Categorías).</p>
 		</div>
-		<div class="grid gap-3 sm:grid-cols-2">
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<label class="campo">
 				<span>Los gastos se pagan por defecto con</span>
 				<select name="pagoPorDefecto" class="input" value={a.pagoPorDefecto}>
@@ -128,7 +128,7 @@
 				<p class="text-xs text-texto-3">PNG con fondo transparente o JPG. Se ajusta solo al tamaño.</p>
 			</div>
 		</div>
-		<div class="grid gap-3 sm:grid-cols-3">
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 			<label class="campo sm:col-span-2"><span>Nombre o razón social</span><input name="razonSocial" class="input" value={a.fiscal.razonSocial} /></label>
 			<label class="campo"><span>NIF</span><input name="nif" class="input font-mono uppercase" value={a.fiscal.nif} /></label>
 			<label class="campo sm:col-span-3"><span>Dirección</span><input name="direccion" class="input" value={a.fiscal.direccion} /></label>

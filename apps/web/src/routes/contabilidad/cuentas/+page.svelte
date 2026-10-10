@@ -41,7 +41,7 @@
 	<button class="btn btn-acento h-9" onclick={() => ((edit = null), (hoja = true))}><Plus size={16} /> Cuenta</button>
 </div>
 
-<div class="grid gap-5 lg:grid-cols-2">
+<div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
 	{#each Object.entries(GRUPOS) as [g, titulo] (g)}
 		{@const delGrupo = visibles.filter((c) => c.codigo[0] === g)}
 		{#if delGrupo.length}

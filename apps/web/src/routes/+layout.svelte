@@ -108,7 +108,7 @@
 	</div>
 {/if}
 
-<div class="lg:grid lg:min-h-dvh lg:grid-cols-[15.5rem_1fr]" style="--alto-cabecera: {altoCabecera}px">
+<div class="lg:grid lg:min-h-dvh lg:grid-cols-[15.5rem_minmax(0,1fr)]" style="--alto-cabecera: {altoCabecera}px">
 	<!-- Barra lateral (escritorio) -->
 	<aside class="sticky top-0 hidden h-dvh flex-col border-r border-borde bg-superficie/50 px-3 py-5 backdrop-blur-xl lg:flex" style="view-transition-name: lateral">
 		<a href="/" class="mb-6 px-2.5"><Logo nombre={data.ajustes.nombreTaller} lema={data.ajustes.lema} marca={data.ajustes.logoApp} /></a>

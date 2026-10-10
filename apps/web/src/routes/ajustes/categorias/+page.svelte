@@ -16,7 +16,7 @@
 	<button class="btn btn-acento shrink-0" onclick={() => ((edit = null), (hoja = true))}><Plus size={18} /> Nueva</button>
 </div>
 
-<div class="grid gap-6 md:grid-cols-2">
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 	{#each ['gasto', 'ingreso'] as tipo (tipo)}
 		<section>
 			<p class="etiqueta mb-2">{tipo === 'gasto' ? 'Gastos' : 'Ingresos'}</p>

@@ -25,7 +25,7 @@
 	en los siguientes trimestres.
 </p>
 
-<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
 	{#each data.trimestres as t (t.t)}
 		{@const d = destino(t.t)}
 		<article class="tarjeta flex flex-col gap-3 p-4 {t.cerrado ? '' : 'border-dashed'}">

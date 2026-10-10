@@ -29,7 +29,7 @@
 		<div class="tarjeta p-4"><p class="etiqueta">Amortizado</p><p class="cifra mt-1 text-2xl sm:text-3xl">{euros(totales.acumulada, { redondo: true })}</p><p class="text-xs text-texto-3">{euros(totales.ejercicio, { redondo: true })} en {data.ejercicio}</p></div>
 		<div class="tarjeta p-4"><p class="etiqueta">Valor neto</p><p class="cifra mt-1 text-2xl sm:text-3xl">{euros(totales.valor - totales.acumulada, { redondo: true })}</p></div>
 	</section>
-	<div class="grid gap-3 md:grid-cols-2">
+	<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
 		{#each data.bienes as b (b.id)}
 			<article class="tarjeta flex flex-col gap-3 p-4 {b.fechaBaja ? 'opacity-60' : ''}">
 				<div class="flex items-start gap-2">

@@ -44,7 +44,7 @@
 </div>
 
 {#if vista === 'situacion'}
-	<div class="grid gap-4 lg:grid-cols-2">
+	<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
 		<section class="tarjeta overflow-hidden">
 			<table class="tabla">
 				<thead class="border-b border-borde"><tr><th class="w-full">Activo</th><th class="text-right">Importe</th></tr></thead>

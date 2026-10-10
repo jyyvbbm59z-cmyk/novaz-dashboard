@@ -44,7 +44,7 @@
 		</div>
 	</fieldset>
 
-	<div class="grid gap-4 sm:grid-cols-2">
+	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 		<label class="campo sm:col-span-2">
 			<span>Nombre / alias *</span>
 			<input name="alias" class="input" required value={vehiculo?.alias ?? ''} placeholder="SV650 negra, Golf de Paco…" />
@@ -77,7 +77,7 @@
 			{/each}
 		</div>
 		{#if propietario === 'tercero'}
-			<div class="grid gap-4 sm:grid-cols-2">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<label class="campo">
 					<span>Contacto</span>
 					<select name="contactoId" class="input" bind:value={contactoId}>
@@ -95,7 +95,7 @@
 	{#if tipo?.campos.length}
 		<fieldset class="flex flex-col gap-3">
 			<legend class="etiqueta mb-2">Datos de {tipo.nombre.toLowerCase()}</legend>
-			<div class="grid gap-4 sm:grid-cols-2">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				{#key tipo.id}<CamposPersonalizados defs={tipo.campos} valores={vehiculo?.campos ?? {}} />{/key}
 			</div>
 		</fieldset>

@@ -383,7 +383,7 @@
 		{#if !data.mantenimiento.length}
 			<div class="vacio">No hay planes de mantenimiento para este tipo de vehículo. Créalos en <a href="/ajustes/mantenimiento" class="text-acento">Ajustes</a>.</div>
 		{:else}
-			<div class="grid gap-3 sm:grid-cols-2">
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				{#each data.mantenimiento as m (m.plan.id)}
 					<article class="tarjeta flex flex-col gap-3 p-4">
 						<div class="flex items-start justify-between gap-2">
