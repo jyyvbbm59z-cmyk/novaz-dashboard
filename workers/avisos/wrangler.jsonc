@@ -20,7 +20,7 @@
 	"r2_buckets": [{ "binding": "ARCHIVOS", "bucket_name": "novaz-archivos" }],
 	"vars": {
 		// URL pública de la app, para los enlaces de los mensajes
-		"APP_URL": ""
+		"APP_URL": "https://novaz-dashboard.salanovacarlos.workers.dev"
 	},
 	"observability": { "enabled": true }
 }
