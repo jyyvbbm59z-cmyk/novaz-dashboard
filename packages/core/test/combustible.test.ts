@@ -1,28 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { combustibleDe, costeUsoMensual, descargarPrecios, precioDe } from '../src/combustible';
 
-const estacion = (goa: string, g95: string) => ({ 'Precio Gasoleo A': goa, 'Precio Gasolina 95 E5': g95 });
-
 describe('precio del combustible', () => {
-	it('media y mínimo, ignorando gasolineras sin ese carburante', () => {
-		expect(precioDe({ ListaEESSPrecio: [estacion('1,799', '1,719'), estacion('1,965', ''), estacion('', '1,859')] }, 'diesel', 'municipio')).toEqual({
-			media: 1.882,
-			minimo: 1.799,
-			estaciones: 2,
-			ambito: 'municipio'
-		});
-		expect(precioDe({ ListaEESSPrecio: [] }, 'gasolina', 'municipio')).toBeNull();
+	const estaciones = (...precios: (number | null)[]) => ({ estaciones: precios.map((precio) => ({ precio })) });
+
+	it('media y mínimo, ignorando gasolineras sin precio', () => {
+		expect(precioDe(estaciones(1.799, 1.965, null), 'municipio')).toEqual({ media: 1.882, minimo: 1.799, estaciones: 2, ambito: 'municipio' });
+		expect(precioDe(estaciones(), 'municipio')).toBeNull();
 	});
 
 	it('si en el municipio falta un carburante, lo busca en la provincia', async () => {
-		const rutas: string[] = [];
-		const falso = (async (url: string) => {
-			rutas.push(url.split('/').slice(-2).join('/'));
-			const lista = url.includes('Municipio') ? [estacion('1,800', '')] : [estacion('1,900', '1,700'), estacion('1,700', '1,500')];
-			return new Response(JSON.stringify({ ListaEESSPrecio: lista }));
+		const pedidas: string[] = [];
+		const falso = (async (_url: string, init: RequestInit) => {
+			const f = JSON.parse(String(init.body));
+			pedidas.push(`${f.idProducto}${f.idMunicipio ? '@mun' : '@prov'}`);
+			const lista = f.idMunicipio ? (f.idProducto === 4 ? estaciones(1.8) : estaciones()) : estaciones(1.7, 1.5);
+			return new Response(JSON.stringify(lista));
 		}) as typeof fetch;
 		const p = await descargarPrecios({ id: '7130', nombre: 'Moncada', provinciaId: '46' }, '2026-10-10', { fetch: falso });
-		expect(rutas).toEqual(['FiltroMunicipio/7130', 'FiltroProvincia/46']);
+		expect(pedidas.sort()).toEqual(['1@mun', '1@prov', '4@mun']);
 		expect(p.diesel).toMatchObject({ media: 1.8, ambito: 'municipio' });
 		expect(p.gasolina).toMatchObject({ media: 1.6, ambito: 'provincia' });
 	});

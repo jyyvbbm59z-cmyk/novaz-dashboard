@@ -78,10 +78,19 @@
 			<input name="telegramChatId" class="input font-mono" value={a.telegramChatId ?? ''} placeholder="123456789" />
 			<span class="text-xs text-texto-3">Escribe a tu bot y consulta el ID con @userinfobot. El token del bot va como secreto en Cloudflare.</span>
 		</label>
-		<label class="flex items-center gap-3 text-sm"><input type="checkbox" name="resumenSemanal" checked={a.resumenSemanal} class="h-5 w-5 accent-[var(--acento)]" /> Resumen semanal los lunes</label>
+		<fieldset class="flex flex-col gap-2">
+			<span class="text-sm font-medium">Qué te manda el bot</span>
+			{#each [['parte', 'Un parte cada mañana', 'Próximo trámite, lo urgente, averías, el local y la compra. Lo nuevo de cada día va marcado con 🆕.'], ['umbrales', 'Solo cuando algo vence', 'Un aviso a 30, 7 y 1 días y el día que vence. Si no pasa nada, silencio.']] as [v, t, d] (v)}
+				<label class="flex cursor-pointer items-start gap-3 rounded-lg border border-borde p-3 text-sm has-[:checked]:border-acento has-[:checked]:bg-acento/5">
+					<input type="radio" name="modoAvisos" value={v} checked={(v === 'parte') === a.parteDiario} class="mt-0.5 h-4 w-4 accent-[var(--acento)]" />
+					<span><span class="font-medium">{t}</span><span class="block text-xs text-texto-3">{d}</span></span>
+				</label>
+			{/each}
+		</fieldset>
+		<label class="flex items-center gap-3 text-sm"><input type="checkbox" name="resumenSemanal" checked={a.resumenSemanal} class="h-5 w-5 accent-[var(--acento)]" /> Los lunes, además, cómo van las obras</label>
 		<div class="flex flex-wrap gap-2">
 			<button class="btn btn-acento">Guardar</button>
-			<button class="btn" formaction="?/probarTelegram" disabled={!data.telegramConfigurado}><Send size={16} /> Probar</button>
+			<button class="btn" formaction="?/probarTelegram" disabled={!data.telegramConfigurado}><Send size={16} /> {a.parteDiario ? 'Mandarme el parte de hoy' : 'Probar'}</button>
 		</div>
 		{#if !data.telegramConfigurado}<p class="text-xs text-texto-3">El bot aún no está configurado en este entorno.</p>{/if}
 	</form>

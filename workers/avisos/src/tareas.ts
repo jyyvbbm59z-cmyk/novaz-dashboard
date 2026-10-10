@@ -3,6 +3,8 @@ import {
 	cargarAlertas,
 	crearDb,
 	descargarPrecios,
+	estadoTaller,
+	mensajeParte,
 	hoy as hoyEn,
 	leerAjustes,
 	materializarRecurrentes,
@@ -45,7 +47,37 @@ export async function avisosDelDia(env: Env, ahora = new Date()) {
 	}
 	if (!env.TELEGRAM_TOKEN || !ajustes.telegramChatId) return;
 	const lunes = new Date(`${hoy}T12:00:00Z`).getUTCDay() === 1;
-	await avisar(db, env, ajustes.telegramChatId, hoy, ajustes.urgenteDias, ajustes.nombreTaller, lunes && ajustes.resumenSemanal);
+	if (ajustes.parteDiario) await enviarParte(db, env, ajustes.telegramChatId, hoy, ajustes.urgenteDias, ajustes.nombreTaller, lunes && ajustes.resumenSemanal);
+	else await avisar(db, env, ajustes.telegramChatId, hoy, ajustes.urgenteDias, ajustes.nombreTaller, lunes && ajustes.resumenSemanal);
+}
+
+/** Alertas que cruzan hoy un umbral que aún no se había avisado (y las deja apuntadas). */
+async function umbralesNuevos(db: DB, alertas: Alerta[]) {
+	const candidatas = alertas
+		.map((a) => ({ a, umbral: umbralDe(a) }))
+		.filter((x): x is { a: Alerta; umbral: string } => x.umbral != null)
+		.map((x) => ({ ...x, clave: `${x.a.clave}|${x.a.ciclo}|${x.umbral}` }));
+	const ya = candidatas.length
+		? new Set((await db.select().from(s.avisosEnviados).where(inArray(s.avisosEnviados.clave, candidatas.map((c) => c.clave)))).map((f) => f.clave))
+		: new Set<string>();
+	return candidatas.filter((c) => !ya.has(c.clave));
+}
+
+/** El parte de cada mañana: próximo trámite, lo urgente, lo próximo, averías, el local y la compra. */
+export async function datosParte(db: DB, hoy: string, urgenteDias: number, taller: string, app: string | undefined, conObras: boolean) {
+	const alertas = await cargarAlertas(db, { hoy, urgenteDias, incluirOk: true });
+	const nuevas = await umbralesNuevos(db, alertas);
+	const t = await estadoTaller(db, hoy, alertas);
+	return {
+		datos: { taller, hoy, app, alertas, nuevas: new Set(nuevas.map((n) => n.a.clave)), local: t.local, compras: t.compras, fueraDeSitio: t.fueraDeSitio, obras: conObras ? t.obras : undefined },
+		nuevas
+	};
+}
+
+async function enviarParte(db: DB, env: Env, chatId: string, hoy: string, urgenteDias: number, taller: string, conObras: boolean) {
+	const { datos, nuevas } = await datosParte(db, hoy, urgenteDias, taller, env.APP_URL, conObras);
+	await telegram(env, chatId, mensajeParte(datos));
+	if (nuevas.length) await db.insert(s.avisosEnviados).values(nuevas.map((n) => ({ clave: n.clave }))).onConflictDoNothing();
 }
 
 /** Umbral que "toca" avisar para una alerta (o null). */
@@ -62,17 +94,7 @@ export function umbralDe(a: Alerta): string | null {
 
 async function avisar(db: DB, env: Env, chatId: string, hoy: string, urgenteDias: number, taller: string, resumen: boolean) {
 	const alertas = await cargarAlertas(db, { hoy, urgenteDias });
-	const candidatas = alertas
-		.map((a) => ({ a, umbral: umbralDe(a) }))
-		.filter((x): x is { a: Alerta; umbral: string } => x.umbral != null)
-		.map((x) => ({ ...x, clave: `${x.a.clave}|${x.a.ciclo}|${x.umbral}` }));
-
-	const ya = candidatas.length
-		? new Set(
-				(await db.select().from(s.avisosEnviados).where(inArray(s.avisosEnviados.clave, candidatas.map((c) => c.clave)))).map((f) => f.clave)
-			)
-		: new Set<string>();
-	const nuevas = candidatas.filter((c) => !ya.has(c.clave));
+	const nuevas = await umbralesNuevos(db, alertas);
 
 	if (nuevas.length) {
 		await telegram(env, chatId, mensajeAvisos(nuevas.map((n) => n.a), taller, env.APP_URL));

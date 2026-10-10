@@ -34,6 +34,8 @@ export interface Ajustes {
 	zonaHoraria: string;
 	urgenteDias: number;
 	telegramChatId: string | null;
+	/** Cada mañana, un parte con todo lo pendiente (si no, solo avisos al cruzar un umbral). */
+	parteDiario: boolean;
 	resumenSemanal: boolean;
 	momentosActivos: boolean;
 	momentos: Record<EventoMomento, Momento>;
@@ -68,6 +70,7 @@ export const AJUSTES_POR_DEFECTO: Ajustes = {
 	zonaHoraria: 'Europe/Madrid',
 	urgenteDias: 7,
 	telegramChatId: null,
+	parteDiario: true,
 	resumenSemanal: true,
 	momentosActivos: true,
 	pagoPorDefecto: 'banco',

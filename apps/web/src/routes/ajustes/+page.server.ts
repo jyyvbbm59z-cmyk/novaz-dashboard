@@ -1,4 +1,4 @@
-import { EFECTOS, EVENTOS_MOMENTO, SONIDOS, type Momento } from '@novaz/core';
+import { cargarAlertas, EFECTOS, estadoTaller, EVENTOS_MOMENTO, mensajeParte, SONIDOS, type Momento } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 import { enviarTelegram } from '$lib/server/telegram';
@@ -39,18 +39,28 @@ export const actions = {
 			urgenteDias: Math.max(0, f.entero('urgenteDias') ?? 7),
 			zonaHoraria: zona,
 			telegramChatId: f.texto('telegramChatId'),
+			parteDiario: f.texto('modoAvisos') !== 'umbrales',
 			resumenSemanal: f.bool('resumenSemanal')
 		});
 		return { mensaje: 'Guardado' };
 	}),
 
-	probarTelegram: accion(async ({ locals, platform }) => {
+	probarTelegram: accion(async ({ locals, platform, url }) => {
 		const token = platform?.env.TELEGRAM_TOKEN;
 		const chat = locals.ajustes.telegramChatId;
 		if (!token) throw new ErrorFormulario('Falta el secreto TELEGRAM_TOKEN (ver README)');
 		if (!chat) throw new ErrorFormulario('Guarda primero el chat ID');
+		const { ajustes, hoy, db } = locals;
+		let texto = `🔧 <b>${ajustes.nombreTaller}</b>\nLos avisos llegan aquí. ¡A rodar!`;
+		if (ajustes.parteDiario) {
+			// El parte de hoy tal cual llegará cada mañana (sin marcar nada como avisado)
+			const alertas = await cargarAlertas(db, { hoy, urgenteDias: ajustes.urgenteDias, incluirOk: true });
+			const t = await estadoTaller(db, hoy, alertas);
+			const lunes = new Date(`${hoy}T12:00:00Z`).getUTCDay() === 1;
+			texto = mensajeParte({ taller: ajustes.nombreTaller, hoy, app: url.origin, alertas, nuevas: new Set(), local: t.local, compras: t.compras, fueraDeSitio: t.fueraDeSitio, obras: lunes && ajustes.resumenSemanal ? t.obras : undefined });
+		}
 		try {
-			await enviarTelegram(token, chat, `🔧 <b>${locals.ajustes.nombreTaller}</b>\nLos avisos llegan aquí. ¡A rodar!`);
+			await enviarTelegram(token, chat, texto);
 		} catch (e) {
 			throw new ErrorFormulario(`Telegram: ${(e as Error).message}`);
 		}

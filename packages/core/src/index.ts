@@ -14,3 +14,5 @@ export * from './facturacion';
 export * from './revisiones';
 export * from './inventario';
 export * from './combustible';
+export * from './taller';
+export * from './parte';

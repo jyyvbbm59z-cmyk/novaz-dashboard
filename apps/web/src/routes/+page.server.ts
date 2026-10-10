@@ -1,8 +1,7 @@
 import * as s from '@novaz/core/schema';
 import { and, desc, eq, gte, inArray, like, sql } from 'drizzle-orm';
 import { avanceRestauraciones } from '$lib/server/datos';
-import { cargarInventario } from '$lib/server/inventario';
-import { listaCompraAutomatica, ordenarTareasLocal } from '@novaz/core';
+import { estadoTaller } from '@novaz/core';
 
 export const load = async ({ locals, parent }) => {
 	const { db, hoy } = locals;
@@ -45,24 +44,8 @@ export const load = async ({ locals, parent }) => {
 
 	// El local, la lista de la compra y las herramientas fuera de su sitio
 	const { alertas } = await parent();
-	const [tareas, planes, inventario, manual] = await Promise.all([
-		db.select().from(s.tareasLocal).where(inArray(s.tareasLocal.estado, ['pendiente', 'en_curso'])),
-		db.select({ id: s.planesMantenimiento.id, codigo: s.planesMantenimiento.codigo, nombre: s.planesMantenimiento.nombre, tareas: s.planesMantenimiento.tareas }).from(s.planesMantenimiento),
-		cargarInventario(db),
-		db.select({ id: s.listaCompra.id }).from(s.listaCompra).where(eq(s.listaCompra.comprado, false))
-	]);
-	const revisiones = alertas
-		.filter((a) => a.tipo === 'mantenimiento' && a.planId != null)
-		.map((a) => {
-			const p = planes.find((x) => x.id === a.planId)!;
-			return { vehiculoId: a.vehiculoId, vehiculo: a.vehiculo, codigo: p.codigo, nombre: p.nombre, tareas: p.tareas, nivel: a.nivel, dias: a.dias };
-		});
-	const taller = {
-		local: ordenarTareasLocal(tareas, hoy).slice(0, 3),
-		localTotal: tareas.length,
-		compras: listaCompraAutomatica(inventario, revisiones).length + manual.length,
-		fueraDeSitio: inventario.filter((a) => a.tipo === 'herramienta' && (a.estado === 'perdida' || a.estado === 'prestada')).length
-	};
+	const t = await estadoTaller(db, hoy, alertas);
+	const taller = { local: t.local.slice(0, 3), localTotal: t.local.length, compras: t.compras, fueraDeSitio: t.fueraDeSitio };
 	return {
 		taller,
 		restauraciones: restas.map((x) => {

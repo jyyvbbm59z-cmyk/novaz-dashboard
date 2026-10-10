@@ -27,19 +27,22 @@ export interface PreciosCombustible {
 	gasolina: PrecioCarburante | null;
 }
 
-export const URL_CARBURANTES = 'https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres';
+/**
+ * Buscador del Geoportal de Gasolineras (Ministerio). El servicio REST «clásico» (sedeaplicaciones.minetur.gob.es)
+ * solo acepta un cifrado TLS antiguo que los Workers de Cloudflare no hablan; este da los mismos datos con TLS 1.3.
+ */
+export const URL_GEOPORTAL = 'https://geoportalgasolineras.es/geoportal/rest/busquedaEstaciones';
 
-const CAMPO: Record<Combustible, string> = { diesel: 'Precio Gasoleo A', gasolina: 'Precio Gasolina 95 E5' };
+/** Código de producto del Geoportal: 1 = gasolina 95 E5, 4 = gasóleo A. */
+const PRODUCTO: Record<Combustible, number> = { gasolina: 1, diesel: 4 };
 
-/** «1,799» → 1.799; vacío → null. */
-const numero = (t: unknown) => {
-	const n = Number(String(t ?? '').replace(',', '.'));
-	return t && Number.isFinite(n) && n > 0 ? n : null;
-};
+interface RespuestaGeoportal {
+	estaciones?: { precio?: number | null }[];
+}
 
-/** Media y mínimo de un carburante en la respuesta del Geoportal. */
-export function precioDe(respuesta: { ListaEESSPrecio?: Record<string, unknown>[] }, tipo: Combustible, ambito: PrecioCarburante['ambito']): PrecioCarburante | null {
-	const precios = (respuesta.ListaEESSPrecio ?? []).map((e) => numero(e[CAMPO[tipo]])).filter((n): n is number => n != null);
+/** Media y mínimo de los precios de una búsqueda del Geoportal. */
+export function precioDe(respuesta: RespuestaGeoportal, ambito: PrecioCarburante['ambito']): PrecioCarburante | null {
+	const precios = (respuesta.estaciones ?? []).map((e) => e.precio).filter((n): n is number => typeof n === 'number' && n > 0);
 	if (!precios.length) return null;
 	const media = precios.reduce((t, p) => t + p, 0) / precios.length;
 	return { media: Math.round(media * 1000) / 1000, minimo: Math.min(...precios), estaciones: precios.length, ambito };
@@ -48,19 +51,19 @@ export function precioDe(respuesta: { ListaEESSPrecio?: Record<string, unknown>[
 /** Descarga los precios del municipio (y de la provincia si en el municipio falta algún carburante). */
 export async function descargarPrecios(m: MunicipioCombustible, hoy: string, opciones: { fetch?: typeof fetch; timeoutMs?: number } = {}): Promise<PreciosCombustible> {
 	const f = opciones.fetch ?? fetch;
-	const pedir = async (ruta: string) => {
-		const r = await f(`${URL_CARBURANTES}/${ruta}`, { signal: AbortSignal.timeout(opciones.timeoutMs ?? 8000), headers: { accept: 'application/json' } });
+	const buscar = async (tipo: Combustible, enMunicipio: boolean) => {
+		const filtro = { tipoEstacion: 'EESS', idProvincia: m.provinciaId, idProducto: PRODUCTO[tipo], ...(enMunicipio ? { idMunicipio: m.id } : {}) };
+		const r = await f(URL_GEOPORTAL, {
+			method: 'POST',
+			signal: AbortSignal.timeout(opciones.timeoutMs ?? 8000),
+			headers: { 'content-type': 'application/json', accept: 'application/json' },
+			body: JSON.stringify(filtro)
+		});
 		if (!r.ok) throw new Error(`Geoportal: HTTP ${r.status}`);
-		return (await r.json()) as { ListaEESSPrecio?: Record<string, unknown>[] };
+		return precioDe((await r.json()) as RespuestaGeoportal, enMunicipio ? 'municipio' : 'provincia');
 	};
-	const mun = await pedir(`FiltroMunicipio/${m.id}`);
-	let diesel = precioDe(mun, 'diesel', 'municipio');
-	let gasolina = precioDe(mun, 'gasolina', 'municipio');
-	if (!diesel || !gasolina) {
-		const prov = await pedir(`FiltroProvincia/${m.provinciaId}`);
-		diesel ??= precioDe(prov, 'diesel', 'provincia');
-		gasolina ??= precioDe(prov, 'gasolina', 'provincia');
-	}
+	const precio = async (tipo: Combustible) => (await buscar(tipo, true)) ?? (await buscar(tipo, false));
+	const [diesel, gasolina] = await Promise.all([precio('diesel'), precio('gasolina')]);
 	return { fecha: hoy, municipio: m.nombre, diesel, gasolina };
 }
 
