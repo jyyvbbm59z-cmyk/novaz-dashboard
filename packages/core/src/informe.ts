@@ -170,24 +170,26 @@ export function mensajeInforme(d: DatosInforme): string {
 	if (mant.length)
 		bloques.push(`<b>Mantenimiento</b>\n${mant.map((a) => `${esc(a.vehiculo)} · ${esc(a.titulo)}: ${esc(a.detalle)} [${NIVEL[a.nivel]}]${nuevo(a)}`).join('\n')}`);
 
-	// Taller
-	const taller: string[] = [];
-	if (averias.length) taller.push(`Averías abiertas (${averias.length}): ${averias.map((a) => `${esc(a.titulo)} (${esc(a.vehiculo)}${a.nivel === 'urgente' ? ', urgente' : ''})`).join('; ')}.`);
+	// Averías, el local y la compra: una cosa por línea
+	if (averias.length)
+		bloques.push(`<b>Averías abiertas</b> (${averias.length})\n${averias.map((a) => `- ${esc(a.titulo)} — ${esc(a.vehiculo)}${a.nivel === 'urgente' ? ' <i>(urgente)</i>' : ''}`).join('\n')}`);
 	if (d.local.length) {
-		const top = d.local.slice(0, 3).map((t) => `${esc(t.titulo)}${t.fechaLimite ? ` (${t.fechaLimite < d.hoy ? 'vencida' : `antes del ${ddmm(t.fechaLimite)}`})` : ''}`);
-		taller.push(`El local: ${d.local.length} ${d.local.length === 1 ? 'tarea abierta' : 'tareas abiertas'}${localVencidas ? `, ${localVencidas} fuera de plazo` : ''}. ${top.join('; ')}${d.local.length > 3 ? '…' : '.'}`);
+		const max = 10;
+		const lineas = d.local.slice(0, max).map((t) => {
+			const plazo = t.fechaLimite ? (t.fechaLimite < d.hoy ? ' <i>(fuera de plazo)</i>' : ` — antes del ${ddmm(t.fechaLimite)}`) : '';
+			return `- ${esc(t.titulo)}${t.zona ? ` · ${esc(t.zona)}` : ''}${plazo}${t.prioridad === 'alta' ? ' <i>(urgente)</i>' : ''}`;
+		});
+		if (d.local.length > max) lineas.push(`- …y ${d.local.length - max} más`);
+		bloques.push(`<b>El local</b> (${d.local.length}${localVencidas ? `, ${localVencidas} fuera de plazo` : ''})\n${lineas.join('\n')}`);
 	}
-	if (d.fueraDeSitio) taller.push(`Herramientas sin localizar o prestadas: ${d.fueraDeSitio}.`);
-	if (d.obras?.length) taller.push(`Obras: ${d.obras.map((o) => `${esc(o.nombre)} ${Math.round(o.avance * 100)} %`).join('; ')}.`);
-	if (taller.length) bloques.push(`<b>Taller</b>\n${taller.join('\n')}`);
-
-	// Lista de la compra, entera (hasta 15 líneas)
 	if (d.listaCompra.length) {
 		const max = 15;
-		const lineas = d.listaCompra.slice(0, max).map((c) => `• ${esc(c.texto)} — <i>${esc(c.para)}</i>`);
-		if (d.listaCompra.length > max) lineas.push(`…y ${d.listaCompra.length - max} más`);
+		const lineas = d.listaCompra.slice(0, max).map((c) => `- ${esc(c.texto)} — <i>${esc(c.para)}</i>`);
+		if (d.listaCompra.length > max) lineas.push(`- …y ${d.listaCompra.length - max} más`);
 		bloques.push(`<b>Lista de la compra</b> (${d.listaCompra.length})\n${lineas.join('\n')}`);
 	}
+	if (d.obras?.length) bloques.push(`<b>Obras en marcha</b>\n${d.obras.map((o) => `- ${esc(o.nombre)} — ${Math.round(o.avance * 100)} %`).join('\n')}`);
+	if (d.fueraDeSitio) bloques.push(`<i>Herramientas sin localizar o prestadas: ${d.fueraDeSitio}.</i>`);
 
 	// Finanzas
 	if (d.finanzas) {

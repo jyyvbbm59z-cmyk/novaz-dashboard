@@ -77,9 +77,9 @@ describe('informe diario', () => {
 		expect(m).toContain('Próximo trámite: ITV de SV650 &lt;negra&gt;, 22/10/26 (12 días)');
 		expect(m).toContain('<pre>22/10  ITV       SV650 &lt;n.  12 d</pre>'); // el seguro (166 días) queda fuera de los 90
 		expect(m).toContain('Ibiza · C2 · Aceite y filtro: tocaba hace 3 días [VENCIDO] <i>(nuevo)</i>');
-		expect(m).toContain('Averías abiertas (1): Fuga en el motor de arranque (SV650 &lt;negra&gt;, urgente).');
-		expect(m).toContain('El local: 1 tarea abierta, 1 fuera de plazo. Reparar humedad (vencida).');
-		expect(m).toContain('<b>Lista de la compra</b> (2)\n• Filtro de aceite — <i>Ibiza · C2</i>');
+		expect(m).toContain('<b>Averías abiertas</b> (1)\n- Fuga en el motor de arranque — SV650 &lt;negra&gt; <i>(urgente)</i>');
+		expect(m).toContain('<b>El local</b> (1, 1 fuera de plazo)\n- Reparar humedad · Pared del fondo <i>(fuera de plazo)</i> <i>(urgente)</i>');
+		expect(m).toContain('<b>Lista de la compra</b> (2)\n- Filtro de aceite — <i>Ibiza · C2</i>\n- Pintura antihumedad × 4 L — <i>local: Reparar humedad</i>');
 		expect(m).toContain('Tesorería');
 		expect(m).toMatch(/Ibiza +92\s€\/mes  0,17 €\/km/);
 		expect(m).toContain('Km sin actualizar: Bandit (última lectura 01/08/26)');
