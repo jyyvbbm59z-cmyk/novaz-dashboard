@@ -3,13 +3,14 @@ import {
 	cargarAlertas,
 	crearDb,
 	descargarPrecios,
-	estadoTaller,
-	mensajeParte,
+	datosInforme,
+	mensajeInforme,
 	hoy as hoyEn,
 	leerAjustes,
 	materializarRecurrentes,
 	umbralAlcanzado,
 	volcado,
+	type Ajustes,
 	type Alerta,
 	type DB
 } from '@novaz/core';
@@ -39,16 +40,29 @@ export async function avisosDelDia(env: Env, ahora = new Date()) {
 	const creados = await materializarRecurrentes(db, hoy);
 	if (creados) console.log(`Recurrentes apuntados: ${creados}`);
 	// Precio del combustible del día (para el coste de uso de cada vehículo)
+	let precios = ajustes.precioCombustible;
 	try {
-		const precios = await descargarPrecios(ajustes.municipioCombustible, hoy);
+		precios = await descargarPrecios(ajustes.municipioCombustible, hoy);
 		await db.insert(s.ajustes).values({ clave: 'precioCombustible', valor: precios }).onConflictDoUpdate({ target: s.ajustes.clave, set: { valor: precios } });
 	} catch (e) {
 		console.warn('Precio del combustible no disponible:', (e as Error).message);
 	}
 	if (!env.TELEGRAM_TOKEN || !ajustes.telegramChatId) return;
 	const lunes = new Date(`${hoy}T12:00:00Z`).getUTCDay() === 1;
-	if (ajustes.parteDiario) await enviarParte(db, env, ajustes.telegramChatId, hoy, ajustes.urgenteDias, ajustes.nombreTaller, lunes && ajustes.resumenSemanal);
+	if (ajustes.parteDiario) await enviarInforme(db, env, ajustes.telegramChatId, hoy, { ...ajustes, precioCombustible: precios }, lunes && ajustes.resumenSemanal);
 	else await avisar(db, env, ajustes.telegramChatId, hoy, ajustes.urgenteDias, ajustes.nombreTaller, lunes && ajustes.resumenSemanal);
+}
+
+/** Umbral que "toca" avisar para una alerta (o null). */
+export function umbralDe(a: Alerta): string | null {
+	// Lo que tú mismo apuntas como pendiente no se "avisa" cada día: sale en el resumen semanal
+	if (a.tipo === 'pendiente') return null;
+	if (a.tipo === 'vencimiento' && a.dias != null) {
+		const u = umbralAlcanzado(a.dias, a.avisosDias);
+		return u == null ? null : String(u);
+	}
+	// Mantenimiento: avisos por nivel (pronto → urgente → vencido)
+	return a.nivel === 'ok' ? null : a.nivel;
 }
 
 /** Alertas que cruzan hoy un umbral que aún no se había avisado (y las deja apuntadas). */
@@ -63,33 +77,13 @@ async function umbralesNuevos(db: DB, alertas: Alerta[]) {
 	return candidatas.filter((c) => !ya.has(c.clave));
 }
 
-/** El parte de cada mañana: próximo trámite, lo urgente, lo próximo, averías, el local y la compra. */
-export async function datosParte(db: DB, hoy: string, urgenteDias: number, taller: string, app: string | undefined, conObras: boolean) {
-	const alertas = await cargarAlertas(db, { hoy, urgenteDias, incluirOk: true });
+/** El informe de cada mañana: vencimientos, mantenimiento, taller, finanzas y coste de la flota. */
+async function enviarInforme(db: DB, env: Env, chatId: string, hoy: string, ajustes: Ajustes, conObras: boolean) {
+	const alertas = await cargarAlertas(db, { hoy, urgenteDias: ajustes.urgenteDias, incluirOk: true });
 	const nuevas = await umbralesNuevos(db, alertas);
-	const t = await estadoTaller(db, hoy, alertas);
-	return {
-		datos: { taller, hoy, app, alertas, nuevas: new Set(nuevas.map((n) => n.a.clave)), local: t.local, compras: t.compras, fueraDeSitio: t.fueraDeSitio, obras: conObras ? t.obras : undefined },
-		nuevas
-	};
-}
-
-async function enviarParte(db: DB, env: Env, chatId: string, hoy: string, urgenteDias: number, taller: string, conObras: boolean) {
-	const { datos, nuevas } = await datosParte(db, hoy, urgenteDias, taller, env.APP_URL, conObras);
-	await telegram(env, chatId, mensajeParte(datos));
+	const datos = await datosInforme(db, { hoy, ajustes, precios: ajustes.precioCombustible, nuevas: new Set(nuevas.map((n) => n.a.clave)), app: env.APP_URL, conObras, alertas });
+	await telegram(env, chatId, mensajeInforme(datos));
 	if (nuevas.length) await db.insert(s.avisosEnviados).values(nuevas.map((n) => ({ clave: n.clave }))).onConflictDoNothing();
-}
-
-/** Umbral que "toca" avisar para una alerta (o null). */
-export function umbralDe(a: Alerta): string | null {
-	// Lo que tú mismo apuntas como pendiente no se "avisa" cada día: sale en el resumen semanal
-	if (a.tipo === 'pendiente') return null;
-	if (a.tipo === 'vencimiento' && a.dias != null) {
-		const u = umbralAlcanzado(a.dias, a.avisosDias);
-		return u == null ? null : String(u);
-	}
-	// Mantenimiento: avisos por nivel (pronto → urgente → vencido)
-	return a.nivel === 'ok' ? null : a.nivel;
 }
 
 async function avisar(db: DB, env: Env, chatId: string, hoy: string, urgenteDias: number, taller: string, resumen: boolean) {

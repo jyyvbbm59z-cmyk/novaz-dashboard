@@ -1,4 +1,5 @@
-import { cargarAlertas, EFECTOS, estadoTaller, EVENTOS_MOMENTO, mensajeParte, SONIDOS, type Momento } from '@novaz/core';
+import { datosInforme, EFECTOS, EVENTOS_MOMENTO, mensajeInforme, SONIDOS, type Momento } from '@novaz/core';
+import { precioCombustibleHoy } from '$lib/server/combustible';
 import * as s from '@novaz/core/schema';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 import { enviarTelegram } from '$lib/server/telegram';
@@ -53,11 +54,10 @@ export const actions = {
 		const { ajustes, hoy, db } = locals;
 		let texto = `🔧 <b>${ajustes.nombreTaller}</b>\nLos avisos llegan aquí. ¡A rodar!`;
 		if (ajustes.parteDiario) {
-			// El parte de hoy tal cual llegará cada mañana (sin marcar nada como avisado)
-			const alertas = await cargarAlertas(db, { hoy, urgenteDias: ajustes.urgenteDias, incluirOk: true });
-			const t = await estadoTaller(db, hoy, alertas);
+			// El informe de hoy tal cual llegará cada mañana (sin marcar nada como avisado)
 			const lunes = new Date(`${hoy}T12:00:00Z`).getUTCDay() === 1;
-			texto = mensajeParte({ taller: ajustes.nombreTaller, hoy, app: url.origin, alertas, nuevas: new Set(), local: t.local, compras: t.compras, fueraDeSitio: t.fueraDeSitio, obras: lunes && ajustes.resumenSemanal ? t.obras : undefined });
+			const precios = await precioCombustibleHoy(locals);
+			texto = mensajeInforme(await datosInforme(db, { hoy, ajustes, precios, nuevas: new Set(), app: url.origin, conObras: lunes && ajustes.resumenSemanal }));
 		}
 		try {
 			await enviarTelegram(token, chat, texto);

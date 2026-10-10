@@ -80,7 +80,7 @@
 		</label>
 		<fieldset class="flex flex-col gap-2">
 			<span class="text-sm font-medium">Qué te manda el bot</span>
-			{#each [['parte', 'Un parte cada mañana', 'Próximo trámite, lo urgente, averías, el local y la compra. Lo nuevo de cada día va marcado con 🆕.'], ['umbrales', 'Solo cuando algo vence', 'Un aviso a 30, 7 y 1 días y el día que vence. Si no pasa nada, silencio.']] as [v, t, d] (v)}
+			{#each [['parte', 'Un informe cada mañana', 'Vencimientos, mantenimiento, taller, finanzas y coste de la flota. Lo que entra en aviso ese día va marcado.'], ['umbrales', 'Solo cuando algo vence', 'Un aviso a 30, 7 y 1 días y el día que vence. Si no pasa nada, silencio.']] as [v, t, d] (v)}
 				<label class="flex cursor-pointer items-start gap-3 rounded-lg border border-borde p-3 text-sm has-[:checked]:border-acento has-[:checked]:bg-acento/5">
 					<input type="radio" name="modoAvisos" value={v} checked={(v === 'parte') === a.parteDiario} class="mt-0.5 h-4 w-4 accent-[var(--acento)]" />
 					<span><span class="font-medium">{t}</span><span class="block text-xs text-texto-3">{d}</span></span>
@@ -90,7 +90,7 @@
 		<label class="flex items-center gap-3 text-sm"><input type="checkbox" name="resumenSemanal" checked={a.resumenSemanal} class="h-5 w-5 accent-[var(--acento)]" /> Los lunes, además, cómo van las obras</label>
 		<div class="flex flex-wrap gap-2">
 			<button class="btn btn-acento">Guardar</button>
-			<button class="btn" formaction="?/probarTelegram"><Send size={16} /> {a.parteDiario ? 'Mandarme el parte de hoy' : 'Probar'}</button>
+			<button class="btn" formaction="?/probarTelegram"><Send size={16} /> {a.parteDiario ? 'Enviarme el informe de hoy' : 'Probar'}</button>
 		</div>
 		{#if !data.telegramConfigurado}
 			<p class="rounded-lg border border-urgente/40 bg-urgente/10 p-3 text-xs text-texto-2">
