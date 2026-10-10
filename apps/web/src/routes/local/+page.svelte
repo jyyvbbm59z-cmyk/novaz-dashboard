@@ -85,7 +85,7 @@
 							<span style="color: {PRIORIDAD[t.prioridad].c}">{PRIORIDAD[t.prioridad].t}</span>
 							{#if t.zona} · {t.zona}{/if}
 							{#if t.fechaLimite} · <span class={vencida ? 'nivel-vencido' : ''}>{vencida ? 'venció' : 'antes del'} {fechaLarga(t.fechaLimite)} ({textoDias(diasEntre(data.hoy, t.fechaLimite))})</span>{/if}
-							{#if t.cadaMeses} · <CalendarSync size={11} class="inline" /> cada {t.cadaMeses} meses{/if}
+							{#if t.cadaMeses} · <CalendarSync size={11} class="inline" /> {t.cadaMeses === 1 ? "cada mes" : `cada ${t.cadaMeses} meses`}{/if}
 						</p>
 					</div>
 					<button class="btn btn-fantasma btn-icono h-8 w-8" onclick={() => ((edit = t), (hTarea = true))} aria-label="Editar"><Pencil size={14} /></button>

@@ -99,6 +99,13 @@
       "when": 1791614806459,
       "tag": "0013_compras_cuadre",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1791621819633,
+      "tag": "0014_flota_seat",
+      "breakpoints": true
     }
   ]
 }

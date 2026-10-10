@@ -7,7 +7,7 @@ import {
 	costesVehiculo,
 	planAplica,
 	plantillaSugerida,
-	PLANTILLAS_REVISION,
+	plantillasPara,
 	tienePlanesPropios,
 	ritmoKmDia,
 	tipoVencimientoAplica
@@ -139,6 +139,8 @@ export const load = async ({ params, locals }) => {
 		valorEstimadoCent: v.valorEstimadoCent
 	});
 	const gastos = movs.filter((x) => x.m.tipo === 'gasto');
+	const tipoVeh = await db.select({ nombre: s.tiposVehiculo.nombre }).from(s.tiposVehiculo).where(eq(s.tiposVehiculo.id, v.tipoId)).get();
+	const plantillasDelTipo = plantillasPara(tipoVeh?.nombre);
 	return {
 		vehiculo: v,
 		km,
@@ -183,8 +185,8 @@ export const load = async ({ params, locals }) => {
 		}),
 		fasesAbiertas: fasesAbiertas.filter((f) => abiertas.some((r) => r.id === f.restauracionId)),
 		porReparar,
-		plantillaSugerida: propios ? null : (plantillaSugerida(v)?.id ?? null),
-		plantillas: propios ? [] : PLANTILLAS_REVISION.map((p) => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion, fuente: p.fuente, niveles: p.niveles.map((n) => ({ codigo: n.codigo, nombre: n.nombre, cadaDias: n.cadaDias, cadaMeses: n.cadaMeses, cadaKm: n.cadaKm, tareas: n.tareas, notas: n.notas ?? null })) })),
+		plantillaSugerida: propios ? null : (plantillasDelTipo.find((p) => p.id === plantillaSugerida(v)?.id)?.id ?? null),
+		plantillas: propios ? [] : plantillasDelTipo.map((p) => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion, fuente: p.fuente, niveles: p.niveles.map((n) => ({ codigo: n.codigo, nombre: n.nombre, cadaDias: n.cadaDias, cadaMeses: n.cadaMeses, cadaKm: n.cadaKm, tareas: n.tareas, notas: n.notas ?? null })) })),
 		adjuntosPend: await adjuntosDe(db, 'pendiente', porReparar.map((p) => p.id)),
 		comprasPend: porReparar.length
 			? await db.select().from(s.listaCompra).where(inArray(s.listaCompra.pendienteId, porReparar.map((p) => p.id))).orderBy(asc(s.listaCompra.id))

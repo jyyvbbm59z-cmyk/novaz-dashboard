@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { estadoMantenimiento, planAplica, tienePlanesPropios } from '../src/alertas';
-import { expandirIncluidos, plantillaSugerida, PLANTILLAS_REVISION, textoPeriodicidad } from '../src/revisiones';
+import { expandirIncluidos, plantillaSugerida, plantillasPara, PLANTILLAS_REVISION, textoPeriodicidad } from '../src/revisiones';
 
 describe('revisiones por niveles', () => {
 	it('la I3 incluye la I2 y esta la I1', () => {
@@ -52,5 +52,22 @@ describe('revisiones por niveles', () => {
 		expect(textoPeriodicidad({ cadaMeses: 6, cadaKm: 6000 })).toBe('cada 6 meses o 6000 km');
 		expect(textoPeriodicidad({ cadaMeses: 24, cadaKm: null })).toBe('cada 2 años');
 		expect(textoPeriodicidad({ cadaMeses: null, cadaKm: 800 })).toBe('cada 800 km');
+	});
+});
+
+describe('plantillas de coche', () => {
+	it('sugiere la del Ibiza TDI y la del Marbella, y no mezcla tipos', () => {
+		expect(plantillaSugerida({ marca: 'SEAT', modelo: 'Ibiza 1.4 TDI 105 CV', alias: 'Ibiza' })?.id).toBe('seat-ibiza-14tdi');
+		expect(plantillaSugerida({ marca: 'SEAT', modelo: 'Marbella', alias: 'Marbella' })?.id).toBe('seat-marbella');
+		expect(plantillasPara('Coche').every((p) => p.tipo === 'coche')).toBe(true);
+		expect(plantillasPara('Moto').map((p) => p.id)).toContain('suzuki-gsf600');
+		expect(plantillasPara('Barca a pedales').length).toBe(PLANTILLAS_REVISION.length);
+	});
+
+	it('los niveles incluidos existen dentro de cada plantilla', () => {
+		for (const p of PLANTILLAS_REVISION) {
+			const codigos = new Set(p.niveles.map((n) => n.codigo));
+			for (const n of p.niveles) for (const i of n.incluye) expect(codigos.has(i), `${p.id} ${n.codigo} → ${i}`).toBe(true);
+		}
 	});
 });
