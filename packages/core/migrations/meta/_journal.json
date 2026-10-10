@@ -162,6 +162,13 @@
       "when": 1791625693861,
       "tag": "0022_ibiza_seguro_itv",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1791626370669,
+      "tag": "0023_consumos_reales",
+      "breakpoints": true
     }
   ]
 }

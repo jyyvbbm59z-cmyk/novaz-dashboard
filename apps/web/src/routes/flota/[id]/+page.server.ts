@@ -144,7 +144,9 @@ export const load = async ({ params, locals }) => {
 	const gastos = movs.filter((x) => x.m.tipo === 'gasto');
 
 	// Coste de uso al mes: combustible con el precio de hoy + papeles anualizados + mantenimiento repartido
-	const tipoComb = combustibleDe(v.campos.combustible);
+	const tipoVeh = await db.select({ nombre: s.tiposVehiculo.nombre }).from(s.tiposVehiculo).where(eq(s.tiposVehiculo.id, v.tipoId)).get();
+	// Las motos no tienen campo «Combustible»: si no se dice otra cosa, gasolina
+	const tipoComb = combustibleDe(v.campos.combustible) ?? (/moto/i.test(tipoVeh?.nombre ?? '') ? 'gasolina' : null);
 	const precios = tipoComb ? await precioCombustibleHoy(locals) : null;
 	const precio = tipoComb && precios ? precios[tipoComb] : null;
 	const consumo = Number(v.campos.consumo) || null;
@@ -157,7 +159,6 @@ export const load = async ({ params, locals }) => {
 		gastos: gastos.map((x) => ({ fecha: x.m.fecha, importeCent: x.m.importeCent, categoria: x.categoria?.nombre ?? null, vencimientoId: x.m.vencimientoId }))
 	});
 	const combustibleInfo = tipoComb ? { tipo: tipoComb, precio, fecha: precios?.fecha ?? null, municipio: precios?.municipio ?? null } : null;
-	const tipoVeh = await db.select({ nombre: s.tiposVehiculo.nombre }).from(s.tiposVehiculo).where(eq(s.tiposVehiculo.id, v.tipoId)).get();
 	const plantillasDelTipo = plantillasPara(tipoVeh?.nombre);
 	return {
 		vehiculo: v,
