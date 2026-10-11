@@ -492,6 +492,27 @@ export const muebles = sqliteTable('muebles', {
 	notas: text('notas'),
 	creado: creado()
 });
+export const TIPOS_CONTENEDOR = ['cubo', 'maletin', 'caja', 'bandeja', 'bolsa', 'otro'] as const;
+export type TipoContenedor = (typeof TIPOS_CONTENEDOR)[number];
+
+/** Un cubo, maletín o caja dentro de una balda: un sitio más pequeño con su letra (A, B, C… de izquierda a derecha). */
+export const contenedores = sqliteTable(
+	'contenedores',
+	{
+		id: id(),
+		muebleId: integer('mueble_id')
+			.notNull()
+			.references(() => muebles.id, { onDelete: 'cascade' }),
+		nivel: integer('nivel'),
+		letra: text('letra').notNull(),
+		nombre: text('nombre').notNull(),
+		tipo: text('tipo', { enum: TIPOS_CONTENEDOR }).notNull().default('cubo'),
+		notas: text('notas'),
+		creado: creado()
+	},
+	(t) => [uniqueIndex('contenedores_sitio_idx').on(t.muebleId, t.nivel, t.letra)]
+);
+export type Contenedor = typeof contenedores.$inferSelect;
 export type Zona = typeof zonas.$inferSelect;
 export type Mueble = typeof muebles.$inferSelect;
 
@@ -510,6 +531,8 @@ export const articulos = sqliteTable(
 		muebleId: integer('mueble_id').references(() => muebles.id, { onDelete: 'set null' }),
 		/** Balda, cajón o fila dentro del mueble: se numeran siempre de arriba a abajo (1 = la de arriba). */
 		nivel: integer('nivel'),
+		/** Cubo, maletín o caja de esa balda donde está guardado. */
+		contenedorId: integer('contenedor_id').references(() => contenedores.id, { onDelete: 'set null' }),
 		unidad: text('unidad').notNull().default('ud'),
 		/** Por debajo de esto, a la lista de la compra. */
 		stockMinimo: real('stock_minimo'),

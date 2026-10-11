@@ -28,7 +28,7 @@
 		vehiculos?: { id: number; alias: string }[];
 		hoy: string;
 		/** Sitio de partida para un artículo nuevo (al añadirlo desde un mueble). */
-		sitio?: { muebleId: number | null; nivel: number | null; zonaId: number | null } | null;
+		sitio?: { muebleId: number | null; nivel: number | null; zonaId: number | null; contenedorId?: number | null } | null;
 		alGuardar?: () => void;
 	} = $props();
 
@@ -36,10 +36,13 @@
 	let estado = $state((() => articulo?.estado ?? 'ok')());
 	let fotos = $state<File[]>([]);
 	// El plano del local (zonas y muebles) viene de la carga del inventario
-	const plano = $derived(page.data.plano as { zonas: import('@novaz/core/schema').Zona[]; muebles: import('@novaz/core/schema').Mueble[] } | undefined);
+	const plano = $derived(
+		page.data.plano as { zonas: import('@novaz/core/schema').Zona[]; muebles: import('@novaz/core/schema').Mueble[]; contenedores: import('@novaz/core/schema').Contenedor[] } | undefined
+	);
 	let muebleId = $state((() => articulo?.muebleId ?? sitio?.muebleId ?? null)());
 	let nivel = $state((() => articulo?.nivel ?? sitio?.nivel ?? null)());
 	let zonaId = $state((() => articulo?.zonaId ?? sitio?.zonaId ?? null)());
+	let contenedorId = $state((() => articulo?.contenedorId ?? sitio?.contenedorId ?? null)());
 	const ESTADOS = [
 		['ok', 'Bien'],
 		['reparar', 'A reparar'],
@@ -83,7 +86,7 @@
 
 	<div class="campo">
 		<span>Dónde está</span>
-		{#if plano}<SelectorSitio zonas={plano.zonas} muebles={plano.muebles} bind:muebleId bind:nivel bind:zonaId />{/if}
+		{#if plano}<SelectorSitio zonas={plano.zonas} muebles={plano.muebles} contenedores={plano.contenedores ?? []} bind:muebleId bind:nivel bind:zonaId bind:contenedorId />{/if}
 		<input name="ubicacion" class="input" list="ubic-inv" value={articulo?.ubicacion ?? ''} placeholder={plano ? 'Detalle: caja roja, hueco de la izquierda…' : 'Panel A, cajón 2…'} />
 		<datalist id="ubic-inv">{#each ubicaciones as u (u)}<option value={u}></option>{/each}</datalist>
 	</div>

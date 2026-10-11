@@ -1,4 +1,4 @@
-import { codigoUbicacion, MUEBLES } from '@novaz/core';
+import { codigoUbicacion, CONTENEDORES, MUEBLES, ordenLetra } from '@novaz/core';
 import { encode } from 'uqr';
 
 /** QR en un trazo SVG (un módulo = 1 unidad). */
@@ -32,7 +32,11 @@ export const load = async ({ parent, url }) => {
 						codigo: codigoUbicacion(zona, m, i + 1)!,
 						nombre: `${MUEBLES[m.tipo].nivel} ${i + 1}`,
 						qr: qr(`${href}?nivel=${i + 1}`)
-					}))
+					})),
+					contenedores: plano.contenedores
+						.filter((c) => c.muebleId === m.id)
+						.sort((a, b) => (a.nivel ?? 0) - (b.nivel ?? 0) || ordenLetra(a.letra, b.letra))
+						.map((c) => ({ id: c.id, codigo: codigoUbicacion(zona, m, c.nivel, c)!, nombre: `${CONTENEDORES[c.tipo]} ${c.letra}${c.nombre ? ` · ${c.nombre}` : ''}`, qr: qr(`${href}?cont=${c.id}`) }))
 				};
 			})
 			.sort((a, b) => a.codigo.localeCompare(b.codigo, 'es'))

@@ -1,6 +1,6 @@
 // Dónde está cada cosa en el local: plano a escala, zonas, muebles con baldas/cajones y códigos de ubicación
 // al estilo de un almacén aeronáutico: «D·E2·3» = zona D, estantería E2, balda 3.
-import type { TipoMueble } from './schema';
+import type { TipoContenedor, TipoMueble } from './schema';
 
 // ─── El plano del local (metros) ─────────────────────────────────────────────
 // Origen: esquina interior izquierda, a la altura de la esquina derecha de la fachada. X hacia la derecha, Y hacia el fondo.
@@ -108,33 +108,61 @@ export function zonaEnPunto<Z extends Rect & { id: number }>(x: number, y: numbe
 
 // ─── Códigos y descripción ───────────────────────────────────────────────────
 
-type ZonaMin = { id: number; codigo: string; nombre: string };
-type MuebleMin = { id: number; codigo: string; nombre: string; tipo: TipoMueble; zonaId: number | null };
-
-export function codigoUbicacion(zona: { codigo: string } | null | undefined, mueble: { codigo: string } | null | undefined, nivel?: number | null): string | null {
+export function codigoUbicacion(
+	zona: { codigo: string } | null | undefined,
+	mueble: { codigo: string } | null | undefined,
+	nivel?: number | null,
+	contenedor?: { letra: string } | null
+): string | null {
 	if (!zona && !mueble) return null;
-	return [zona?.codigo, mueble?.codigo, mueble && nivel ? String(nivel) : null].filter(Boolean).join('·');
+	return [zona?.codigo, mueble?.codigo, mueble && nivel ? String(nivel) : null, mueble && contenedor ? contenedor.letra : null].filter(Boolean).join('·');
 }
 
+// ─── Contenedores (cubos, maletines, cajas dentro de una balda) ──────────────
+
+export const CONTENEDORES: Record<TipoContenedor, string> = { cubo: 'Cubo', maletin: 'Maletín', caja: 'Caja', bandeja: 'Bandeja', bolsa: 'Bolsa', otro: 'Contenedor' };
+
+/** La siguiente letra libre en una balda (A, B… Z, luego AA, AB…). */
+export function siguienteLetra(usadas: string[]): string {
+	const nombre = (i: number): string => (i < 26 ? String.fromCharCode(65 + i) : nombre(Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26)));
+	for (let i = 0; ; i++) if (!usadas.includes(nombre(i))) return nombre(i);
+}
+
+/** Orden de las letras en la balda (A, B, … Z, AA…): de izquierda a derecha. */
+export const ordenLetra = (a: string, b: string) => a.length - b.length || a.localeCompare(b);
+
+type ZonaMin = { id: number; codigo: string; nombre: string };
+type MuebleMin = { id: number; codigo: string; nombre: string; tipo: TipoMueble; zonaId: number | null };
+type ContenedorMin = { id: number; letra: string; nombre: string; tipo: TipoContenedor };
+
 export interface UbicacionDescrita {
-	/** «D·E2·3», o null si no está ubicado en el plano. */
+	/** «D·E2·3», «D·E2·3·B», o null si no está ubicado en el plano. */
 	codigo: string | null;
-	/** «Herramientas · Estantería E2 · balda 3». */
+	/** «Herramientas · Estantería E2 · balda 3 · Cubo B (electricidad)». */
 	texto: string | null;
 	zonaId: number | null;
 	muebleId: number | null;
+	contenedorId: number | null;
 }
 
 export function describirUbicacion(
-	a: { zonaId: number | null; muebleId: number | null; nivel: number | null; ubicacion?: string | null },
+	a: { zonaId: number | null; muebleId: number | null; nivel: number | null; contenedorId?: number | null; ubicacion?: string | null },
 	zonas: ZonaMin[],
-	muebles: MuebleMin[]
+	muebles: MuebleMin[],
+	contenedores: ContenedorMin[] = []
 ): UbicacionDescrita {
 	const mueble = a.muebleId ? muebles.find((m) => m.id === a.muebleId) : undefined;
 	const zona = zonas.find((z) => z.id === (mueble ? mueble.zonaId : a.zonaId));
-	const codigo = codigoUbicacion(zona, mueble, a.nivel);
-	const partes = [zona?.nombre, mueble ? `${mueble.nombre} ${mueble.codigo}` : null, mueble && a.nivel ? `${MUEBLES[mueble.tipo].nivel} ${a.nivel}` : null, a.ubicacion].filter(Boolean);
-	return { codigo, texto: partes.length ? partes.join(' · ') : null, zonaId: zona?.id ?? null, muebleId: mueble?.id ?? null };
+	const cont = mueble && a.contenedorId ? contenedores.find((c) => c.id === a.contenedorId) : undefined;
+	const codigo = codigoUbicacion(zona, mueble, a.nivel, cont);
+	const partes = [
+		zona?.nombre,
+		mueble ? `${mueble.nombre} ${mueble.codigo}` : null,
+		mueble && a.nivel ? `${MUEBLES[mueble.tipo].nivel} ${a.nivel}` : null,
+		cont ? `${CONTENEDORES[cont.tipo]} ${cont.letra}${cont.nombre && cont.nombre !== CONTENEDORES[cont.tipo] ? ` (${cont.nombre})` : ''}` : null,
+		a.ubicacion
+	].filter(Boolean);
+	return { codigo, texto: partes.length ? partes.join(' · ') : null, zonaId: zona?.id ?? null, muebleId: mueble?.id ?? null, contenedorId: cont?.id ?? null };
 }
 
 const sinTildes = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();

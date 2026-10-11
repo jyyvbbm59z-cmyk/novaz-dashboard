@@ -271,7 +271,7 @@ export async function responderConsulta(locals: Locals, i: Extract<Intencion, { 
 		if (!hallados.length) return `No tengo nada parecido a «${esc(i.buscar)}» en el inventario.`;
 		return hallados
 			.map((a) => {
-				const d = describirUbicacion(a, plano.zonas, plano.muebles);
+				const d = describirUbicacion(a, plano.zonas, plano.muebles, plano.contenedores);
 				const estado = a.estado === 'prestada' ? ` · <b>prestada${a.prestadaA ? ` a ${esc(a.prestadaA)}` : ''}</b>` : a.estado === 'perdida' ? ' · <b>no la encuentras</b>' : '';
 				const donde = d.codigo ? `<b>${d.codigo}</b> — ${esc(d.texto ?? '')}` : a.ubicacion ? `${esc(a.ubicacion)} <i>(sin sitio en el plano)</i>` : '<i>sin ubicar</i>';
 				const enlace = d.zonaId ? ` · <a href="${app}/inventario/plano?ver=${a.id}">ver dónde</a>` : '';

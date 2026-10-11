@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buscarArticulos, codigoUbicacion, describirUbicacion, siguienteCodigoMueble, zonaEnPunto, ZONAS_INICIALES } from '../src/ubicaciones';
+import { buscarArticulos, codigoUbicacion, describirUbicacion, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES } from '../src/ubicaciones';
 
 const zonas = ZONAS_INICIALES.map((z, i) => ({ ...z, id: i + 1 }));
 
@@ -30,5 +30,19 @@ describe('ubicaciones', () => {
 		expect(buscarArticulos('la dinamométrica', arts)[0].nombre).toContain('dinamométrica');
 		expect(buscarArticulos('llave de 13', arts)[0].nombre).toBe('Llave de vaso 13');
 		expect(buscarArticulos('llaves', arts).length).toBe(3);
+	});
+});
+
+describe('contenedores', () => {
+	it('letras y códigos con contenedor', () => {
+		expect(siguienteLetra([])).toBe('A');
+		expect(siguienteLetra(['A', 'C'])).toBe('B');
+		expect(siguienteLetra('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''))).toBe('AA');
+		expect(codigoUbicacion({ codigo: 'E' }, { codigo: 'E1' }, 2, { letra: 'B' })).toBe('E·E1·2·B');
+		const muebles = [{ id: 7, codigo: 'E1', nombre: 'Estantería', tipo: 'estanteria' as const, zonaId: 5 }];
+		const conts = [{ id: 3, letra: 'B', nombre: 'Electricidad', tipo: 'cubo' as const }];
+		const d = describirUbicacion({ zonaId: 5, muebleId: 7, nivel: 2, contenedorId: 3 }, zonas, muebles, conts);
+		expect(d.codigo).toBe('E·E1·2·B');
+		expect(d.texto).toBe('Almacén · Estantería E1 · balda 2 · Cubo B (Electricidad)');
 	});
 });

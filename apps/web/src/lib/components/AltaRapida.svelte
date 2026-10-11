@@ -1,3 +1,14 @@
+<script lang="ts" module>
+	/** Un sitio del mueble donde guardar: una balda o un contenedor de una balda. */
+	export interface Destino {
+		clave: string;
+		codigo: string;
+		etiqueta: string;
+		nivel: number | null;
+		contenedorId: number | null;
+	}
+</script>
+
 <script lang="ts">
 	// Alta rápida de una balda: foto (la IA hace la lista) o lista escrita → revisar → guardar → siguiente balda.
 	import { avisar } from '$lib/avisos.svelte';
@@ -8,7 +19,7 @@
 	import type { TipoArticulo } from '@novaz/core/schema';
 	import { ArrowRight, Camera, Images, ListPlus, LoaderCircle, Plus, Trash2 } from '@lucide/svelte';
 
-	type Existente = { id: number; nombre: string; marca: string | null; muebleId: number | null; nivel: number | null; sitio: { codigo: string | null } };
+	type Existente = { id: number; nombre: string; marca: string | null; muebleId: number | null; nivel: number | null; contenedorId: number | null; sitio: { codigo: string | null } };
 	interface Fila extends ObjetoDetectado {
 		clave: number;
 		si: boolean;
@@ -19,22 +30,19 @@
 	let {
 		modo,
 		muebleId,
-		nivel = $bindable(),
-		niveles,
-		codigo,
-		nombreNivel,
+		destinos,
+		indice = $bindable(0),
 		articulos,
 		alTerminar
 	}: {
 		modo: 'foto' | 'lista';
 		muebleId: number;
-		nivel: number | null;
-		niveles: number;
-		codigo: (n: number | null) => string;
-		nombreNivel: (n: number) => string;
+		destinos: Destino[];
+		indice: number;
 		articulos: Existente[];
 		alTerminar?: () => void;
 	} = $props();
+	const destino = $derived(destinos[indice] ?? destinos[0]);
 
 	let filas = $state<Fila[]>([]);
 	let leyendo = $state(false);
@@ -48,7 +56,7 @@
 	function anadir(objs: ObjetoDetectado[]) {
 		for (const o of objs) {
 			const ex = articuloExistente(o, articulos);
-			const aqui = ex && ex.muebleId === muebleId && (ex.nivel ?? null) === nivel;
+			const aqui = ex && ex.muebleId === muebleId && (ex.nivel ?? null) === destino.nivel && (ex.contenedorId ?? null) === destino.contenedorId;
 			filas.push({ ...o, clave: n++, si: !aqui, moverId: ex?.id ?? null, nota: ex ? (aqui ? 'Ya está aquí' : `Ya lo tienes${ex.sitio.codigo ? ` en ${ex.sitio.codigo}` : ''}: se mueve aquí`) : null });
 		}
 	}
@@ -82,21 +90,22 @@
 	}
 
 	const elegidas = $derived(filas.filter((f) => f.si && f.nombre.trim()));
-	const siguiente = $derived(nivel != null && nivel < niveles ? nivel + 1 : null);
+	const siguiente = $derived(indice + 1 < destinos.length ? destinos[indice + 1] : null);
 
 	async function guardar(pasar: boolean) {
 		if (!elegidas.length) return;
 		guardando = true;
 		const r = await accion('/inventario/plano?/alta', {
 			muebleId,
-			...(nivel ? { nivel } : {}),
+			...(destino.nivel ? { nivel: destino.nivel } : {}),
+			...(destino.contenedorId ? { contenedorId: destino.contenedorId } : {}),
 			objetos: JSON.stringify(elegidas.map(({ nombre, marca, cantidad, tipo, categoria, moverId }) => ({ nombre, marca, cantidad, tipo, categoria, moverId })))
 		});
 		guardando = false;
 		if (!r) return;
 		filas = [];
 		fotos = 0;
-		if (pasar && siguiente) nivel = siguiente;
+		if (pasar && siguiente) indice += 1;
 		else alTerminar?.();
 	}
 	const TIPOS: [TipoArticulo, string][] = [
@@ -107,11 +116,11 @@
 </script>
 
 <div class="flex flex-col gap-3">
-	<!-- Dónde: la balda (se puede cambiar) -->
-	{#if niveles > 1}
+	<!-- Dónde: la balda o el contenedor (se puede cambiar) -->
+	{#if destinos.length > 1}
 		<div class="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" style="scrollbar-width:none">
-			{#each Array.from({ length: niveles }, (_, i) => i + 1) as k (k)}
-				<button type="button" class="chip h-8 shrink-0 px-3 font-mono {nivel === k ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => (nivel = k)}>{codigo(k)}</button>
+			{#each destinos as d, k (d.clave)}
+				<button type="button" class="chip h-8 shrink-0 px-3 font-mono {indice === k ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => (indice = k)}>{d.codigo}</button>
 			{/each}
 		</div>
 	{/if}
@@ -122,7 +131,7 @@
 				<p class="flex h-20 items-center justify-center gap-2 text-sm text-texto-2"><LoaderCircle size={18} class="animate-spin" /> Mirando la foto…</p>
 			{:else}
 				<p class="mb-2 text-xs text-texto-3">
-					{fotos ? 'Si no salía todo, haz otra foto: se añade a la lista.' : `Foto de ${nivel ? `${nombreNivel(nivel).toLowerCase()} (${codigo(nivel)})` : 'todo el mueble'}, de frente y con luz. La IA hace la lista; tú la repasas.`}
+					{fotos ? 'Si no salía todo, haz otra foto: se añade a la lista.' : `Foto de ${destino.etiqueta} (${destino.codigo}), de frente y con luz${destino.contenedorId ? ': vacía el contenido sobre la mesa o hazla desde arriba' : ''}. La IA hace la lista; tú la repasas.`}
 				</p>
 				<div class="grid grid-cols-2 gap-2">
 					<button type="button" class="btn h-14 text-base btn-acento" onclick={() => camara?.click()}><Camera size={20} /> {fotos ? 'Otra foto' : 'Hacer foto'}</button>
@@ -171,10 +180,10 @@
 		<div class="flex flex-col gap-2">
 			{#if siguiente}
 				<button class="btn btn-acento h-12" disabled={!elegidas.length || guardando} onclick={() => guardar(true)}>
-					Guardar {elegidas.length} y pasar a {codigo(siguiente)} <ArrowRight size={16} />
+					Guardar {elegidas.length} y pasar a {siguiente.codigo} <ArrowRight size={16} />
 				</button>
 			{/if}
-			<button class="btn {siguiente ? '' : 'btn-acento'} h-11" disabled={!elegidas.length || guardando} onclick={() => guardar(false)}>Guardar {elegidas.length} en {codigo(nivel)}{siguiente ? ' y terminar' : ''}</button>
+			<button class="btn {siguiente ? '' : 'btn-acento'} h-11" disabled={!elegidas.length || guardando} onclick={() => guardar(false)}>Guardar {elegidas.length} en {destino.codigo}{siguiente ? ' y terminar' : ''}</button>
 		</div>
 	{/if}
 </div>

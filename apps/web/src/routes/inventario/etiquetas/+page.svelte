@@ -13,10 +13,10 @@
 
 <div class="mb-4 flex flex-wrap items-center gap-3">
 	<p class="min-w-0 flex-1 text-sm text-texto-2">
-		{data.etiquetas.length ? `Una etiqueta grande por mueble${conNiveles ? ' y una pequeña por balda o cajón' : ''}. El QR abre la ficha con lo que hay dentro.` : 'Aún no hay muebles en el plano.'}
+		{data.etiquetas.length ? `Una etiqueta grande por mueble${conNiveles ? ' y una pequeña por balda, cajón y contenedor' : ''}. El QR abre la ficha con lo que hay dentro.` : 'Aún no hay muebles en el plano.'}
 		{#if data.solo}<a href="/inventario/etiquetas" class="text-acento">Ver todas</a>{/if}
 	</p>
-	<label class="flex items-center gap-2 text-sm"><input type="checkbox" bind:checked={conNiveles} class="h-4 w-4 accent-[var(--acento)]" /> Baldas y cajones</label>
+	<label class="flex items-center gap-2 text-sm"><input type="checkbox" bind:checked={conNiveles} class="h-4 w-4 accent-[var(--acento)]" /> Baldas, cajones y contenedores</label>
 	<button class="btn btn-acento h-10" onclick={() => print()} disabled={!data.etiquetas.length}><Printer size={16} /> Imprimir</button>
 </div>
 
@@ -43,6 +43,16 @@
 							<p class="zona">{n.nombre}</p>
 						</div>
 						{@render codigoQr(n.qr, 'qr-peq')}
+					</div>
+				{/each}
+				{#each e.contenedores as c (c.id)}
+					<div class="etiqueta-peq" style="--zona: {e.color}">
+						<div class="banda"></div>
+						<div class="texto">
+							<p class="codigo">{c.codigo}</p>
+							<p class="zona">{c.nombre}</p>
+						</div>
+						{@render codigoQr(c.qr, 'qr-peq')}
 					</div>
 				{/each}
 			{/if}

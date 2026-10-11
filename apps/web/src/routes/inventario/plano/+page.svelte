@@ -22,9 +22,11 @@
 	const localizado = $derived(data.articulos.find((a) => a.id === verId) ?? null);
 	const contenido = $derived.by(() => {
 		const c: Record<number, string[]> = {};
-		if (localizado?.muebleId) for (const a of data.articulos) if (a.muebleId === localizado.muebleId) (c[a.nivel ?? 0] ??= []).push(a.nombre);
+		if (localizado?.muebleId) for (const a of data.articulos) if (a.muebleId === localizado.muebleId && !a.contenedorId) (c[a.nivel ?? 0] ??= []).push(a.nombre);
 		return c;
 	});
+	const contenedoresDe = $derived(localizado?.muebleId ? data.plano.contenedores.filter((c) => c.muebleId === localizado.muebleId) : []);
+	const cuentaContenedor = $derived(data.articulos.reduce<Record<number, number>>((c, a) => (a.contenedorId ? { ...c, [a.contenedorId]: (c[a.contenedorId] ?? 0) + 1 } : c), {}));
 	let escenario = $state<HTMLElement>();
 	async function localizar(id: number) {
 		verId = id;
@@ -95,7 +97,7 @@
 <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
 	<section bind:this={escenario} class="tarjeta overflow-hidden p-2 {editando ? 'border-acento/50' : ''} scroll-mt-20 lg:scroll-mt-4">
 		{#if localizado && !editando}
-			<Localizador articulo={localizado} zonas={data.plano.zonas} muebles={data.plano.muebles} {contenido} alCerrar={() => (verId = null)} />
+			<Localizador articulo={localizado} zonas={data.plano.zonas} muebles={data.plano.muebles} {contenido} contenedores={contenedoresDe} {cuentaContenedor} alCerrar={() => (verId = null)} />
 		{:else}
 			{#if editando}<p class="px-2 pt-1 pb-2 text-xs text-texto-2">Toca un hueco para poner un mueble ahí · arrástralos para moverlos · tócalos para editarlos</p>{/if}
 			<PlanoLocal

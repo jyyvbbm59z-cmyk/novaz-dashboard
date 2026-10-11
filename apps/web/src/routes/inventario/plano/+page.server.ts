@@ -1,5 +1,5 @@
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
-import { altaEnSitio, borrarMueble, guardarMueble, guardarZona, moverMueble, ubicarArticulos } from '$lib/server/ubicaciones';
+import { altaEnSitio, borrarContenedor, borrarMueble, guardarContenedor, guardarMueble, guardarZona, moverMueble, ubicarArticulos } from '$lib/server/ubicaciones';
 
 export const actions = {
 	mueble: accion(async ({ request, locals }) => {
@@ -27,7 +27,7 @@ export const actions = {
 	ubicar: accion(async ({ request, locals }) => {
 		const f = leer(await request.formData());
 		const ids = (f.texto('ids') ?? '').split(',').map(Number).filter(Number.isInteger);
-		await ubicarArticulos(locals, ids, { muebleId: f.idOpcional('muebleId'), nivel: f.entero('nivel'), zonaId: f.idOpcional('zonaId') });
+		await ubicarArticulos(locals, ids, { muebleId: f.idOpcional('muebleId'), nivel: f.entero('nivel'), zonaId: f.idOpcional('zonaId'), contenedorId: f.idOpcional('contenedorId') });
 		return { mensaje: ids.length === 1 ? 'Ubicado' : `${ids.length} ubicados` };
 	}),
 	/** Alta rápida: lo que hay en una balda (foto o lista) de una vez. */
@@ -49,7 +49,17 @@ export const actions = {
 			throw new ErrorFormulario('Lista mal formada');
 		}
 		if (!objetos.length) throw new ErrorFormulario('No hay nada que guardar');
-		const r = await altaEnSitio(locals, objetos, { muebleId: f.idOpcional('muebleId'), nivel: f.entero('nivel'), zonaId: f.idOpcional('zonaId') });
+		const r = await altaEnSitio(locals, objetos, { muebleId: f.idOpcional('muebleId'), nivel: f.entero('nivel'), zonaId: f.idOpcional('zonaId'), contenedorId: f.idOpcional('contenedorId') });
 		return { mensaje: [r.creados ? `${r.creados} ${r.creados === 1 ? 'nuevo' : 'nuevos'}` : '', r.movidos ? `${r.movidos} ${r.movidos === 1 ? 'movido' : 'movidos'}` : ''].filter(Boolean).join(' y ') + ' en su sitio', ...r };
+	}),
+	contenedor: accion(async ({ request, locals }) => {
+		const fd = await request.formData();
+		const nuevo = !leer(fd).idOpcional('id');
+		const contenedorId = await guardarContenedor(locals, fd);
+		return { mensaje: nuevo ? 'Contenedor añadido' : 'Contenedor guardado', contenedorId };
+	}),
+	borrarContenedor: accion(async ({ request, locals }) => {
+		await borrarContenedor(locals, leer(await request.formData()).id('id'));
+		return { mensaje: 'Contenedor quitado. Lo que tenía se queda suelto en la balda' };
 	})
 };

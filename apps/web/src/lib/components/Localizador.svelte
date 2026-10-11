@@ -3,8 +3,8 @@
 	// el plano entero con el mueble señalado → una luz sale de la persiana y recorre el camino mientras la cámara la sigue
 	// y se acerca → el mueble se despliega desde su sitio en el plano → una luz cae flotando hasta la balda y se posa
 	// (con física de muelle) → el nombre aparece letra a letra.
-	import { cajaCamara, codigoUbicacion, huella, MUEBLES, PLANO_LOCAL as P, VISTA_PLANO, type Camara } from '@novaz/core';
-	import type { Mueble, Zona } from '@novaz/core/schema';
+	import { cajaCamara, codigoUbicacion, CONTENEDORES, huella, MUEBLES, PLANO_LOCAL as P, VISTA_PLANO, type Camara } from '@novaz/core';
+	import type { Contenedor, Mueble, Zona } from '@novaz/core/schema';
 	import { ArrowRight, RotateCcw, X } from '@lucide/svelte';
 	import { prefersReducedMotion, Spring } from 'svelte/motion';
 	import { fade } from 'svelte/transition';
@@ -17,9 +17,14 @@
 		zonas,
 		muebles,
 		contenido,
+		contenedores = [],
+		cuentaContenedor = {},
 		alCerrar
 	}: {
-		articulo: { id: number; nombre: string; muebleId: number | null; nivel: number | null; zonaId: number | null; ubicacion: string | null };
+		articulo: { id: number; nombre: string; muebleId: number | null; nivel: number | null; zonaId: number | null; contenedorId: number | null; ubicacion: string | null };
+		/** Contenedores del mueble (cubos, maletines…). */
+		contenedores?: Contenedor[];
+		cuentaContenedor?: Record<number, number>;
 		zonas: Zona[];
 		muebles: Mueble[];
 		/** Lo que hay en cada nivel del mueble (para dibujarlo). */
@@ -34,6 +39,7 @@
 	const zona = $derived(zonas.find((z) => z.id === (mueble ? mueble.zonaId : articulo.zonaId)) ?? null);
 	const destino = $derived(mueble ? huella(mueble) : zona);
 	const nivel = $derived(mueble && articulo.nivel && articulo.nivel <= mueble.niveles ? articulo.nivel : null);
+	const contenedor = $derived(contenedores.find((c) => c.id === articulo.contenedorId) ?? null);
 
 	// ─── El camino: de la persiana al mueble, con las esquinas redondeadas ─────
 	const yF = (x: number) => P.fachada.izq.y + ((P.fachada.der.y - P.fachada.izq.y) * x) / P.ancho;
@@ -210,7 +216,8 @@
 		[
 			zona && { k: 'mirar' as Fase, t: `Zona ${zona.codigo} · ${zona.nombre}` },
 			mueble && { k: 'llegada' as Fase, t: `${mueble.nombre} ${mueble.codigo}` },
-			mueble && nivel && { k: 'balda' as Fase, t: `${MUEBLES[mueble.tipo].nivel} ${nivel}` }
+			mueble && nivel && { k: 'balda' as Fase, t: `${MUEBLES[mueble.tipo].nivel} ${nivel}` },
+			contenedor && { k: 'balda' as Fase, t: `${CONTENEDORES[contenedor.tipo]} ${contenedor.letra}${contenedor.nombre ? ` · ${contenedor.nombre}` : ''}` }
 		].filter(Boolean) as { k: Fase; t: string }[]
 	);
 	const orden: Fase[] = ['mirar', 'viaje', 'llegada', 'dentro', 'balda'];
@@ -222,7 +229,7 @@
 	<!-- Lo que se busca y el código -->
 	<div class="flex items-center gap-3 px-1">
 		<span class="rounded-lg px-2.5 py-1 font-mono text-lg font-extrabold text-white transition-opacity duration-700 {fase === final ? 'opacity-100' : 'opacity-40'}" style="background: {zona?.color ?? 'var(--texto-3)'}">
-			{codigoUbicacion(zona, mueble, articulo.nivel) ?? '¿?'}
+			{codigoUbicacion(zona, mueble, articulo.nivel, contenedor) ?? '¿?'}
 		</span>
 		<p class="min-w-0 flex-1 truncate text-sm font-semibold">{articulo.nombre}</p>
 		<button class="btn btn-fantasma btn-icono h-8 w-8" onclick={animar} aria-label="Repetir" title="Repetir"><RotateCcw size={15} /></button>
@@ -250,6 +257,9 @@
 				<FrenteMueble
 					{mueble}
 					{contenido}
+					{contenedores}
+					{cuentaContenedor}
+					contenedorResaltado={fase === 'balda' ? (contenedor?.id ?? null) : null}
 					resaltar={fase === 'balda' ? nivel : null}
 					foco={verFoco ? foco.current : null}
 					destacado={fase === 'balda' ? articulo.nombre : null}
@@ -263,7 +273,7 @@
 
 	<!-- Migas: se encienden según llega -->
 	<ol class="flex flex-wrap items-center gap-1.5 px-1 text-xs">
-		{#each pasos as p, i (p.k)}
+		{#each pasos as p, i (`${p.k}${i}`)}
 			{#if i}<ArrowRight size={12} class="text-texto-3" />{/if}
 			<li class="chip h-7 px-2.5 transition-all duration-700 {llegado(p.k) ? 'border-acento/60 bg-acento/10 font-semibold text-texto' : 'text-texto-3 opacity-50'}">{p.t}</li>
 		{:else}

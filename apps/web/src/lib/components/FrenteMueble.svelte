@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Un mueble visto de frente con sus baldas, cajones o filas, y lo que hay en cada una.
 	// Puede encender una balda (la de lo que buscas) y poner encima el nombre.
-	import { MUEBLES } from '@novaz/core';
+	import { CONTENEDORES, MUEBLES, ordenLetra } from '@novaz/core';
 	import type { Mueble } from '@novaz/core/schema';
 
 	let {
@@ -9,6 +9,10 @@
 		contenido = {},
 		resaltar = null,
 		foco = null,
+		contenedores = [],
+		cuentaContenedor = {},
+		contenedorResaltado = null,
+		alTocarContenedor,
 		destacado = null,
 		color = 'var(--texto-3)',
 		alTocarNivel,
@@ -18,6 +22,11 @@
 		/** Nombres de lo que hay en cada nivel (0 = sin nivel concreto). */
 		contenido?: Record<number, string[]>;
 		resaltar?: number | null;
+		/** Cubos, maletines o cajas de cada balda (se dibujan de izquierda a derecha por su letra). */
+		contenedores?: { id: number; nivel: number | null; letra: string; nombre: string; tipo: string }[];
+		cuentaContenedor?: Record<number, number>;
+		contenedorResaltado?: number | null;
+		alTocarContenedor?: (id: number) => void;
 		/** Luz que flota entre niveles (número con decimales: 2,4 = entre la 2 y la 3). */
 		foco?: number | null;
 		/** Nombre de lo que se busca (se escribe en la balda resaltada). */
@@ -99,26 +108,63 @@
 
 	<!-- Niveles -->
 	{#each huecos as h (h.nivel)}
+		{@const cs = contenedores.filter((c) => c.nivel === h.nivel).sort((a, b) => ordenLetra(a.letra, b.letra))}
+		{@const contOn = cs.find((c) => c.id === contenedorResaltado)}
 		{@const on = resaltar === h.nivel}
 		{@const cosas = contenido[h.nivel] ?? []}
-		{@const tam = Math.min(fs, h.h * 0.32)}
+		{@const tam = Math.min(fs, h.h * (cs.length ? 0.22 : 0.32))}
+		{@const yTexto = cs.length ? h.y + h.h * 0.2 : h.y + (cajon ? h.h * 0.66 : h.h / 2)}
 		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 		<g class="hueco {alTocarNivel ? 'cursor-pointer' : ''} {on ? 'encendido' : ''} {foco != null && Math.abs(foco - h.nivel) < 0.5 ? 'escaneando' : ''}" onclick={() => alTocarNivel?.(h.nivel)} style="--zona: {color}">
 			<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class={cajon ? 'cajon' : 'balda-fondo'} />
 			{#if !cajon && mueble.tipo !== 'panel'}<rect x={h.x - g} y={h.y + h.h - 0.005} width={h.w + g * 2} height={g} class="tablero" />{/if}
-			{#if cajon}<rect x={h.x + h.w / 2 - Math.min(0.12, h.w / 4)} y={h.y + Math.min(0.05, h.h * 0.2)} width={Math.min(0.24, h.w / 2)} height="0.02" rx="0.01" class="tirador" />{/if}
-			<text x={h.x + 0.04} y={h.y + tam * 1.15 + (cajon ? Math.min(0.05, h.h * 0.2) : 0.01)} class="num" font-size={tam * 0.85}>{h.nivel}</text>
+			{#if cajon && !cs.length}<rect x={h.x + h.w / 2 - Math.min(0.12, h.w / 4)} y={h.y + Math.min(0.05, h.h * 0.2)} width={Math.min(0.24, h.w / 2)} height="0.02" rx="0.01" class="tirador" />{/if}
+			<text x={h.x + 0.04} y={h.y + tam * 1.15 + (cajon && !cs.length ? Math.min(0.05, h.h * 0.2) : 0.01)} class="num" font-size={tam * 0.85}>{h.nivel}</text>
 			{#if on && destacado}
-				{@const td = Math.min(tam * 1.05, (h.w - 0.1) / Math.max(destacado.length * 0.5, 6))}
-				<text x={h.x + h.w / 2} y={h.y + (cajon ? h.h * 0.66 : h.h / 2) + td * 0.4} text-anchor="middle" class="destacado" font-size={td}>{#each [...recortar(destacado, h.w - 0.1, td)] as letra, i (i)}<tspan class="letra" style="animation-delay: {0.12 + i * 0.035}s">{letra}</tspan>{/each}</text>
+				{@const ancho = h.w - 0.3}
+				{@const td = Math.min(tam * 1.05, ancho / Math.max(destacado.length * 0.57, 6))}
+				<text x={h.x + h.w / 2 + 0.03} y={yTexto + td * 0.4} text-anchor="middle" class="destacado" font-size={td}>{#each [...recortar(destacado, ancho, td)] as letra, i (i)}<tspan class="letra" style="animation-delay: {0.12 + i * 0.035}s">{letra}</tspan>{/each}</text>
+			{:else if cosas.length > 2 && !cs.length}
+				<!-- Muchas cosas sueltas: cuántas y las primeras -->
+				<text x={h.x + h.w / 2} y={yTexto - tam * 0.25} text-anchor="middle" class="cuantas" font-size={tam * 0.95}>{cosas.length} cosas</text>
+				<text x={h.x + h.w / 2} y={yTexto + tam * 0.85} text-anchor="middle" class="cosas" font-size={tam * 0.62}>{recortar(cosas.slice(0, 3).join(' · ') + '…', h.w - 0.14, tam * 0.62)}</text>
 			{:else if cosas.length}
-				<text x={h.x + h.w / 2} y={h.y + (cajon ? h.h * 0.66 : h.h / 2) + tam * 0.4} text-anchor="middle" class="cosas" font-size={tam * 0.8}>{recortar(cosas.slice(0, 2).join(' · ') + (cosas.length > 2 ? ` +${cosas.length - 2}` : ''), h.w - 0.1, tam * 0.8)}</text>
+				<text x={h.x + h.w / 2} y={yTexto + tam * 0.4} text-anchor="middle" class="cosas" font-size={tam * 0.8}>{recortar((cs.length ? `Suelto (${cosas.length}): ` : '') + cosas.slice(0, 2).join(' · ') + (cosas.length > 2 && !cs.length ? ` +${cosas.length - 2}` : ''), h.w - 0.1, tam * 0.8)}</text>
 			{/if}
-			{#if on}
+
+			<!-- Contenedores de la balda, de izquierda a derecha -->
+			{#if cs.length}
+				{@const gap = Math.min(0.02, h.w * 0.012)}
+				{@const y0 = h.y + h.h * 0.36}
+				{@const hb = h.h * 0.56}
+				{@const bw = (h.w - 0.06 - gap * (cs.length - 1)) / cs.length}
+				{#each cs as c, k (c.id)}
+					{@const bx = h.x + 0.03 + k * (bw + gap)}
+					{@const fl = Math.min(bw * 0.5, hb * 0.38)}
+					<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+					<g class="contenedor {contOn?.id === c.id ? 'cont-on' : ''} {alTocarContenedor ? 'cursor-pointer' : ''}" onclick={(e) => { if (alTocarContenedor) { e.stopPropagation(); alTocarContenedor(c.id); } }}>
+						<rect x={bx} y={y0 + (c.tipo === 'maletin' ? hb * 0.12 : 0)} width={bw} height={hb - (c.tipo === 'maletin' ? hb * 0.12 : 0)} rx={c.tipo === 'cubo' || c.tipo === 'bolsa' ? 0.025 : 0.01} class="caja" />
+						{#if c.tipo === 'maletin'}<rect x={bx + bw * 0.3} y={y0} width={bw * 0.4} height={hb * 0.12} rx="0.01" fill="none" class="asa" />{/if}
+						<text x={bx + bw / 2} y={y0 + hb * 0.56 + fl * 0.35} text-anchor="middle" class="letra-caja" font-size={fl}>{c.letra}</text>
+						{#if bw > 0.22 && c.nombre}
+							{@const fn = Math.min(fl * 0.42, 0.042)}
+							<text x={bx + bw / 2} y={y0 + hb * 0.9} text-anchor="middle" class="cuenta-caja" font-size={fn}>{recortar(`${c.nombre}${cuentaContenedor[c.id] ? ` · ${cuentaContenedor[c.id]}` : ''}`, bw - 0.03, fn)}</text>
+						{:else if bw > 0.07 && cuentaContenedor[c.id]}
+							<text x={bx + bw / 2} y={y0 + hb * 0.9} text-anchor="middle" class="cuenta-caja" font-size={Math.min(fl * 0.45, 0.04)}>{cuentaContenedor[c.id]}</text>
+						{/if}
+						{#if contOn?.id === c.id}
+							<rect x={bx} y={y0} width={bw} height={hb} rx="0.02" class="aro" />
+							<rect x={bx} y={y0} width={bw} height={hb} rx="0.02" class="destello" />
+						{/if}
+						<title>{CONTENEDORES[c.tipo as keyof typeof CONTENEDORES] ?? 'Contenedor'} {c.letra}{c.nombre ? ` · ${c.nombre}` : ''}{cuentaContenedor[c.id] ? ` (${cuentaContenedor[c.id]})` : ''}</title>
+					</g>
+				{/each}
+			{/if}
+			{#if on && !contOn}
 				<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class="aro" />
 				<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class="destello" />
 			{/if}
-			<title>{nombreNivel(h.nivel)}{cosas.length ? `: ${cosas.join(', ')}` : ' (vacío)'}</title>
+			<title>{nombreNivel(h.nivel)}{cosas.length ? `: ${cosas.join(', ')}` : ''}{cs.length ? ` · ${cs.length} contenedores` : ''}</title>
 		</g>
 	{/each}
 	<!-- La luz que busca: flota entre baldas -->
@@ -162,6 +208,10 @@
 	}
 	.cosas {
 		fill: var(--texto-2);
+	}
+	.cuantas {
+		fill: var(--texto);
+		font-weight: 700;
 	}
 	.destacado {
 		fill: var(--texto);
@@ -218,6 +268,32 @@
 		100% {
 			transform: scale(1);
 		}
+	}
+	.caja {
+		fill: color-mix(in oklab, var(--zona) 30%, var(--superficie-3));
+		stroke: color-mix(in oklab, var(--zona) 60%, var(--texto-3));
+		stroke-width: 0.008;
+	}
+	.asa {
+		stroke: color-mix(in oklab, var(--zona) 60%, var(--texto-3));
+		stroke-width: 0.012;
+	}
+	.letra-caja {
+		fill: var(--texto);
+		font-family: var(--font-mono);
+		font-weight: 800;
+		pointer-events: none;
+	}
+	.cuenta-caja {
+		fill: var(--texto-2);
+		pointer-events: none;
+	}
+	.contenedor:hover .caja {
+		fill: color-mix(in oklab, var(--zona) 45%, var(--superficie-3));
+	}
+	.cont-on .caja {
+		fill: color-mix(in oklab, var(--acento) 45%, var(--superficie-3));
+		stroke: var(--acento);
 	}
 	.escaneando .num {
 		fill: var(--acento);

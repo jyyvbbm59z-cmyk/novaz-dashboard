@@ -8,7 +8,7 @@ import { describirUbicacion } from '@novaz/core';
 export const load = async ({ locals }) => {
 	const [inventario, plano] = await Promise.all([cargarInventario(locals.db), cargarPlano(locals.db)]);
 	// Cada artículo con su sitio descrito: código «D·E2·3» y texto
-	const articulos = inventario.map((a) => ({ ...a, sitio: describirUbicacion(a, plano.zonas, plano.muebles) }));
+	const articulos = inventario.map((a) => ({ ...a, sitio: describirUbicacion(a, plano.zonas, plano.muebles, plano.contenedores) }));
 	const movs = await locals.db
 		.select({ m: s.stock, vehiculo: s.vehiculos.alias, entrada: s.entradas.titulo })
 		.from(s.stock)
