@@ -56,6 +56,9 @@ class Bot {
 		private app: string
 	) {}
 
+	/** Si la IA falla se dice (para no quedarse con un «no te entiendo» sin saber por qué). */
+	private falloIa: string | null = null;
+
 	private tg = <T = unknown>(metodo: string, cuerpo: Record<string, unknown>) => llamarTelegram<T>(this.env, metodo, cuerpo);
 
 	private enviar(chat: number, texto: string, teclado?: Boton[][]) {
@@ -101,6 +104,7 @@ class Bot {
 			if (i.tipo !== 'desconocido') return i;
 		} catch (e) {
 			console.error('Bot IA:', (e as Error).message);
+			this.falloIa = (e as Error).message;
 		}
 		return reglas;
 	}
@@ -112,7 +116,10 @@ class Bot {
 		if (i.tipo === 'ayuda') return this.enviar(chat, TEXTO_AYUDA);
 		if (i.tipo === 'consulta') return this.enviar(chat, prefijo + (await responderConsulta(this.locals, i, this.app)));
 		if (i.tipo === 'desconocido')
-			return this.enviar(chat, `${prefijo}No sé qué apuntar con eso. Prueba con algo como <i>«Repostaje Ibiza 40 L 72 € 117.200 km»</i> o <i>«Comprar lija de 400»</i>.\n/ayuda para ver todo lo que entiendo.`);
+			return this.enviar(
+				chat,
+				`${prefijo}No sé qué apuntar con eso. Prueba con algo como <i>«La Bandit tiene los espejos oxidados»</i>, <i>«Repostaje Ibiza 40 L 72 € 117.200 km»</i> o <i>«Comprar lija de 400»</i>.\n/ayuda para ver todo lo que entiendo.${this.falloIa ? `\n\n<i>(La IA no ha respondido: ${this.falloIa.replace(/</g, '&lt;').slice(0, 200)})</i>` : ''}`
+			);
 		return this.proponer(chat, { i, voz: voz ?? null }, vehiculos);
 	}
 

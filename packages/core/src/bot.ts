@@ -108,7 +108,42 @@ export function interpretarReglas(texto: string, vehiculos: VehiculoBot[]): Inte
 		const e = numeroES(euros[1])!;
 		return { tipo: 'gasto', vehiculoId: veh, importeCent: Math.round(e * 100), concepto: mayus(resto(/^\/gasto\b/i).replace(euros[0], '').trim()) || 'Gasto', proveedor: null, categoria: null, local: /\blocal\b/i.test(t) };
 	}
+	return frasesNaturales(t, veh, vehiculos);
+}
+
+// Frases habituales sin comando: «La Bandit tiene los espejos oxidados», «Comprar lija de 400», «Hay que pintar la pared»
+const ORDEN_AVERIA = /^(?:apunta(?:r|me)?|anota(?:r|me)?|nueva|hay\s+una|otra)?\s*(?:la\s+|una\s+)?aver[ií]a\s*(?:de(?:l|\s+la)?\s+)?[:,-]?\s*/i;
+const ORDEN_MEJORA = /^(?:apunta(?:r|me)?|anota(?:r|me)?|nueva|otra)?\s*(?:la\s+|una\s+)?mejora\s*(?:para\s+(?:el|la)\s+)?[:,-]?\s*/i;
+const SINTOMA = /\b(oxidad[oa]s?|rot[oa]s?|roza|pierde|perdida|fuga|gotea|no\s+(arranca|funciona|va|carga|enciende|frena)|ruido|holgura|gastad[oa]s?|pinchad[oa]|fundid[oa]s?|agrietad[oa]|rajad[oa]|suelt[oa]|vibra|tiembla|humea|calienta|falla|se\s+cala|chirr[ií]a|desgastad[oa]s?)\b/i;
+const HECHO = /\b(he\s+cambiado|cambiad[oa]s?|cambi[eé]|he\s+hecho|hecho\s+el|hice\s+el|he\s+puesto|puesto|sustituid[oa]s?|purgad[oa]s?|engrasad[oa]|tensad[oa])\b/i;
+
+function frasesNaturales(t: string, veh: number | null, vehiculos: VehiculoBot[]): Intencion {
+	if (ORDEN_AVERIA.test(t) && /aver[ií]a/i.test(t)) return { tipo: 'averia', vehiculoId: veh, titulo: tituloLimpio(t.replace(ORDEN_AVERIA, ''), veh, vehiculos), urgente: /urgente/i.test(t) };
+	if (ORDEN_MEJORA.test(t) && /mejora/i.test(t)) return { tipo: 'mejora', vehiculoId: veh, titulo: tituloLimpio(t.replace(ORDEN_MEJORA, ''), veh, vehiculos), urgente: false };
+	const compra = t.match(/^(?:hay\s+que\s+comprar|tengo\s+que\s+comprar|comprar|compra|falta|faltan|necesito)\s+(.+)$/i);
+	if (compra) return { tipo: 'compra', items: compra[1].split(/\s*[,;\n]\s*|\s+y\s+/).filter(Boolean).map(mayus), vehiculoId: veh };
+	if (veh && SINTOMA.test(t)) return { tipo: 'averia', vehiculoId: veh, titulo: tituloLimpio(t, veh, vehiculos), urgente: /urgente/i.test(t) };
+	if (veh && HECHO.test(t)) return { tipo: 'mantenimiento', vehiculoId: veh, titulo: tituloLimpio(t, veh, vehiculos), km: null, revisiones: [], importeCent: null };
+	const tarea = t.match(/^(?:hay\s+que|tengo\s+que|toca|pendiente:?)\s+(.+)$/i);
+	if (tarea && !veh) return { tipo: 'tarea_local', titulo: mayus(tarea[1].replace(/[.!]+$/, '')), zona: null, reforma: /\b(reforma|obra|instalar|tabique|alicatar|solar)\b/i.test(t) };
 	return { tipo: 'desconocido', texto: t };
+}
+
+/** «La Bandit tiene los espejos oxidados» → «Espejos oxidados». */
+export function tituloLimpio(texto: string, vehiculoId: number | null, vehiculos: VehiculoBot[]) {
+	const v = vehiculos.find((x) => x.id === vehiculoId);
+	let s = texto.trim();
+	if (v) {
+		const nombres = [v.alias, v.modelo?.split(' ')[0], v.marca, v.matricula].filter((x): x is string => Boolean(x)).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+		for (const n of nombres) s = s.replace(new RegExp(`\\b(?:a\\s+|en\\s+)?(?:el|la|del|al)?\\s*${n}\\b`, 'gi'), ' ');
+	}
+	s = s
+		.replace(/^\s*(?:que\s+)?(?:tiene|le\s+pasa\s+que|est[aá]\s+con|le\s+falla|va\s+con|le|:|,|-)\s+/i, '')
+		.replace(/^\s*(?:los|las|el|la|un|una|unos|unas)\s+/i, '')
+		.replace(/\s+/g, ' ')
+		.replace(/[.!]+$/, '')
+		.trim();
+	return mayus(s || texto.trim());
 }
 
 /** Quita el nombre del vehículo del título: «/averia bandit retén» → «Retén». */
@@ -180,11 +215,41 @@ const kms = (v: unknown) => {
 };
 const mayus = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
+const ACCIONES: Record<string, string> = {
+	averia: 'averia',
+	averias: 'averia',
+	reparacion: 'reparacion',
+	reparar: 'reparacion',
+	mantenimiento: 'mantenimiento',
+	mejora: 'mejora',
+	tarea: 'tarea_local',
+	tarea_local: 'tarea_local',
+	tarea_del_local: 'tarea_local',
+	local: 'tarea_local',
+	compra: 'compra',
+	compras: 'compra',
+	lista_compra: 'compra',
+	repostaje: 'repostaje',
+	repostar: 'repostaje',
+	kilometros: 'km',
+	km: 'km',
+	gasto: 'gasto',
+	consulta: 'consulta',
+	pregunta: 'consulta',
+	ayuda: 'ayuda'
+};
+
 /** Lo que devuelve la IA → una intención fiable (lo dudoso se descarta). */
 export function normalizarIntencion(raw: unknown, vehiculos: VehiculoBot[], texto: string): Intencion {
 	const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
 	const vehiculoId = buscarVehiculo(str(o.vehiculo), vehiculos) ?? buscarVehiculo(texto, vehiculos);
-	switch (o.accion) {
+	// La IA a veces escribe «avería», «Reparación» o «tarea local»: se normaliza
+	const accion = (ACCIONES[sinTildes(String(o.accion ?? '')).trim().replace(/[\s-]+/g, '_')] ?? sinTildes(String(o.accion ?? '')).trim()) as string;
+	// El título puede venir en otro campo (o no venir): se saca del propio mensaje
+	const tituloIa = str(o.titulo) ?? str(o.descripcion) ?? str(o.concepto) ?? null;
+	o.accion = accion;
+	o.titulo = tituloIa ?? (['averia', 'mejora', 'mantenimiento', 'reparacion', 'tarea_local'].includes(accion) ? tituloLimpio(texto.replace(ORDEN_AVERIA, '').replace(ORDEN_MEJORA, ''), vehiculoId, vehiculos) : null);
+	switch (accion) {
 		case 'repostaje':
 			return { tipo: 'repostaje', vehiculoId, litros: (() => { const l = numeroES(o.litros); return l && l > 0 && l < 300 ? l : null; })(), importeCent: cent(o.importe), km: kms(o.km), gasolinera: str(o.gasolinera, 60), lleno: o.lleno !== false };
 		case 'km': {
@@ -199,7 +264,7 @@ export function normalizarIntencion(raw: unknown, vehiculos: VehiculoBot[], text
 		case 'mantenimiento':
 		case 'reparacion':
 			return {
-				tipo: o.accion,
+				tipo: accion,
 				vehiculoId,
 				titulo: mayus(str(o.titulo) ?? (o.accion === 'mantenimiento' ? 'Mantenimiento' : 'Reparación')),
 				km: kms(o.km),
@@ -209,7 +274,7 @@ export function normalizarIntencion(raw: unknown, vehiculos: VehiculoBot[], text
 		case 'averia':
 		case 'mejora': {
 			const titulo = str(o.titulo);
-			return titulo ? { tipo: o.accion, vehiculoId, titulo: mayus(titulo), urgente: o.urgente === true } : { tipo: 'desconocido', texto };
+			return titulo ? { tipo: accion, vehiculoId, titulo: mayus(titulo), urgente: o.urgente === true } : { tipo: 'desconocido', texto };
 		}
 		case 'tarea_local': {
 			const titulo = str(o.titulo);

@@ -70,3 +70,20 @@ describe('dónde está', () => {
 		expect(normalizarIntencion({ accion: 'consulta', tema: 'donde', buscar: 'llave de 13' }, V, 'x')).toMatchObject({ tema: 'donde', buscar: 'llave de 13' });
 	});
 });
+
+describe('frases normales', () => {
+	it('averías dichas como se dicen', () => {
+		expect(interpretarReglas('La bandit tiene los espejos oxidados', V)).toEqual({ tipo: 'averia', vehiculoId: 1, titulo: 'Espejos oxidados', urgente: false });
+		expect(interpretarReglas('Apunta la avería: bandit tiene los retrovisores oxidados', V)).toEqual({ tipo: 'averia', vehiculoId: 1, titulo: 'Retrovisores oxidados', urgente: false });
+		expect(interpretarReglas('El Ibiza pierde aceite por el cárter', V)).toMatchObject({ tipo: 'averia', vehiculoId: 5, titulo: 'Pierde aceite por el cárter' });
+	});
+	it('compras, tareas y mantenimiento', () => {
+		expect(interpretarReglas('Comprar lija de 400 y cinta de carrocero', V)).toMatchObject({ tipo: 'compra', items: ['Lija de 400', 'Cinta de carrocero'] });
+		expect(interpretarReglas('Hay que pintar la pared del fondo', V)).toMatchObject({ tipo: 'tarea_local', titulo: 'Pintar la pared del fondo' });
+		expect(interpretarReglas('Al Ibiza le he cambiado el aceite', V)).toMatchObject({ tipo: 'mantenimiento', vehiculoId: 5 });
+	});
+	it('la IA con tildes o sin título', () => {
+		expect(normalizarIntencion({ accion: 'avería', vehiculo: 'Bandit' }, V, 'La bandit tiene los espejos oxidados')).toEqual({ tipo: 'averia', vehiculoId: 1, titulo: 'Espejos oxidados', urgente: false });
+		expect(normalizarIntencion({ accion: 'Tarea local', descripcion: 'Pintar la pared' }, V, 'x')).toMatchObject({ tipo: 'tarea_local', titulo: 'Pintar la pared' });
+	});
+});
