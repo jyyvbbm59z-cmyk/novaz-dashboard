@@ -650,3 +650,24 @@ export type MovimientoStock = typeof stock.$inferSelect;
 export type ItemCompra = typeof listaCompra.$inferSelect;
 export type TareaLocal = typeof tareasLocal.$inferSelect;
 export type Repostaje = typeof repostajes.$inferSelect;
+
+// ─── Bot de Telegram ──────────────────────────────────────────────────────────
+
+/** Lo que el bot creó en la app, para poder deshacerlo. */
+export interface HechoBot {
+	t: 'repostaje' | 'movimiento' | 'entrada' | 'pendiente' | 'tarea_local' | 'compra' | 'km';
+	id: number;
+}
+
+export const ESTADOS_BOT = ['esperando', 'hecha', 'deshecha', 'cancelada'] as const;
+export type EstadoBot = (typeof ESTADOS_BOT)[number];
+
+/** Cada mensaje que el bot convierte en acción (o que espera a que elijas el vehículo). */
+export const botAcciones = sqliteTable('bot_acciones', {
+	id: id(),
+	/** Lo que entendió (la intención y extras: foto del ticket, notas…). */
+	orden: text('orden', { mode: 'json' }).$type<Record<string, unknown>>().notNull(),
+	hecho: text('hecho', { mode: 'json' }).$type<HechoBot[]>().notNull().default([]),
+	estado: text('estado', { enum: ESTADOS_BOT }).notNull().default('esperando'),
+	creado: creado()
+});

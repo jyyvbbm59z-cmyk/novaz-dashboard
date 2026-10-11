@@ -2,6 +2,7 @@ import { dev } from '$app/environment';
 import { crearDb, hoy, leerAjustes, materializarRecurrentes } from '@novaz/core';
 import { error, type Handle } from '@sveltejs/kit';
 import { audSinVerificar, verificarAccess } from '$lib/server/auth';
+import { secretoWebhook } from '$lib/server/telegram';
 
 const HEX = /^#[0-9a-f]{3,8}$/i;
 
@@ -12,7 +13,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const env = event.platform?.env;
 	if (!env?.DB) error(500, 'Falta el binding DB de D1');
 
-	if (dev || env.PERMITIR_SIN_ACCESS === 'si') {
+	if (event.url.pathname === '/api/telegram' && event.request.method === 'POST') {
+		// El webhook del bot no pasa por Access: se identifica con el secreto que le dimos a Telegram al conectarlo
+		const recibido = event.request.headers.get('x-telegram-bot-api-secret-token');
+		if (!env.TELEGRAM_TOKEN || !recibido || recibido !== (await secretoWebhook(env.TELEGRAM_TOKEN))) return new Response('No autorizado', { status: 401 });
+		event.locals.usuario = 'telegram';
+	} else if (dev || env.PERMITIR_SIN_ACCESS === 'si') {
 		event.locals.usuario = 'local';
 	} else if (env.ACCESS_TEAM_DOMAIN && env.ACCESS_AUD) {
 		const email = await verificarAccess(event.request, env.ACCESS_TEAM_DOMAIN, env.ACCESS_AUD);

@@ -121,6 +121,17 @@ La app verifica la firma del token de Access en cada petición. Aunque alguien l
 5. En `workers/avisos/wrangler.jsonc` pon `APP_URL` (p. ej. `https://panel.novaz.es`) para que los
    mensajes lleven enlaces.
 
+**Bot en las dos direcciones** (escribirle, notas de voz, fotos de tickets, /hoy, /agenda, /compras):
+
+1. En Zero Trust → Access → Aplicaciones, crea una aplicación *self-hosted* para
+   `<tu-dominio>/api/telegram` con una política **Bypass** para «Everyone». Telegram no puede pasar
+   por Access; la app lo autentica con el secreto del webhook (derivado del token) y solo atiende
+   al chat ID de Ajustes.
+2. En **Ajustes → Avisos**, pulsa **Conectar el bot**. Si Telegram no consigue entregar los
+   mensajes, ahí mismo se ve el error.
+
+Todo lo que entiende lo enseña antes con **✓ Apuntar / ✗ Cancelar**, y lo apuntado se puede deshacer.
+
 Cada mañana se avisa al cruzar cada umbral (por defecto 30, 7 y 1 días antes, y al vencer),
 sin repetir. Los lunes llega un resumen semanal.
 

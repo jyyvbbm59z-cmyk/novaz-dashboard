@@ -225,6 +225,13 @@
       "when": 1791718505729,
       "tag": "0031_uso",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1791732235013,
+      "tag": "0032_bot_acciones",
+      "breakpoints": true
     }
   ]
 }

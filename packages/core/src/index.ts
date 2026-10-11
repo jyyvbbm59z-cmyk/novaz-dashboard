@@ -20,3 +20,4 @@ export * from './ticket';
 export * from './agenda';
 export * from './mejoras';
 export * from './uso';
+export * from './bot';

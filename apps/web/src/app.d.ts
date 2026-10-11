@@ -16,8 +16,10 @@ declare global {
 				AI?: Ai;
 				ACCESS_TEAM_DOMAIN?: string;
 				ACCESS_AUD?: string;
-				/** Secreto: token del bot de Telegram (para el botón de prueba). */
+				/** Secreto: token del bot de Telegram (informe de prueba y bot en las dos direcciones). */
 				TELEGRAM_TOKEN?: string;
+				/** Solo para pruebas: otra URL para la API de Telegram (un simulador). */
+				TELEGRAM_API?: string;
 				/** Solo para pruebas: 'si' permite servir sin Cloudflare Access. */
 				PERMITIR_SIN_ACCESS?: string;
 			};

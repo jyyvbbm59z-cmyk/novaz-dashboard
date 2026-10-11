@@ -5,7 +5,8 @@
 	import { accion, enviar } from '$lib/enviar';
 	import { probarMomento } from '$lib/momentos';
 	import { EFECTOS, ETIQUETAS_EVENTO, EVENTOS_MOMENTO, eurosInput, SONIDOS, type Efecto, type Sonido } from '@novaz/core';
-	import { Download, Play, Send } from '@lucide/svelte';
+	import { page } from '$app/state';
+	import { Bot, Download, Play, Send } from '@lucide/svelte';
 
 	let { data } = $props();
 	const a = $derived(data.ajustes);
@@ -92,6 +93,31 @@
 			<button class="btn btn-acento">Guardar</button>
 			<button class="btn" formaction="?/probarTelegram"><Send size={16} /> {a.parteDiario ? 'Enviarme el informe de hoy' : 'Probar'}</button>
 		</div>
+		{#if data.bot}
+			<div class="flex flex-col gap-2 rounded-lg border border-borde p-3 text-sm">
+				<div class="flex flex-wrap items-center justify-between gap-2">
+					<span>
+						<span class="font-medium">Bot en las dos direcciones</span>
+						<span class="block text-xs text-texto-3">Escríbele, mándale notas de voz o fotos de tickets: te dice lo que ha entendido y lo apunta cuando le das OK.</span>
+					</span>
+					{#if data.bot.conectado && !data.bot.error}
+						<span class="chip shrink-0 nivel-ok">Conectado</span>
+					{:else}
+						<button class="btn h-9 shrink-0 text-sm" formaction="?/conectarBot"><Bot size={16} /> {data.bot.conectado ? 'Reconectar' : 'Conectar el bot'}</button>
+					{/if}
+				</div>
+				{#if data.bot.otraUrl}<p class="text-xs text-texto-3">Ahora mismo está conectado a otra dirección ({data.bot.otraUrl}).</p>{/if}
+				{#if data.bot.error}
+					<p class="rounded-md bg-urgente/10 p-2 text-xs text-texto-2">
+						Telegram no consigue entregar los mensajes: <span class="font-mono">{data.bot.error}</span>.
+						{#if /30[12]|40[13]/.test(data.bot.error)}
+							Cloudflare Access le está cerrando la puerta: en Zero Trust → Access → Aplicaciones, añade una aplicación para
+							<span class="font-mono">{page.url.host}/api/telegram</span> con una política <strong>Bypass</strong> para «Everyone». La app comprueba el secreto de Telegram y tu chat ID.
+						{/if}
+					</p>
+				{/if}
+			</div>
+		{/if}
 		{#if !data.telegramConfigurado}
 			<p class="rounded-lg border border-urgente/40 bg-urgente/10 p-3 text-xs text-texto-2">
 				La app no encuentra el token del bot. En Cloudflare → Workers y Pages → <strong>novaz-dashboard</strong> (y también en <strong>novaz-avisos</strong>) →

@@ -2,7 +2,7 @@ import { datosInforme, EFECTOS, EVENTOS_MOMENTO, mensajeInforme, SONIDOS, type M
 import { precioCombustibleHoy } from '$lib/server/combustible';
 import * as s from '@novaz/core/schema';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
-import { enviarTelegram } from '$lib/server/telegram';
+import { enviarTelegram, llamarTelegram, secretoWebhook } from '$lib/server/telegram';
 
 async function guardar(db: App.Locals['db'], valores: Record<string, unknown>) {
 	for (const [clave, valor] of Object.entries(valores)) {
@@ -10,7 +10,22 @@ async function guardar(db: App.Locals['db'], valores: Record<string, unknown>) {
 	}
 }
 
-export const load = async ({ platform }) => ({ telegramConfigurado: Boolean(platform?.env.TELEGRAM_TOKEN) });
+/** Estado del webhook (bot en las dos direcciones): si está conectado a esta app y el último error que vio Telegram. */
+async function estadoBot(env: App.Platform['env'] | undefined, origen: string) {
+	if (!env?.TELEGRAM_TOKEN) return null;
+	try {
+		const info = await Promise.race([
+			llamarTelegram<{ url?: string; last_error_message?: string; last_error_date?: number; pending_update_count?: number }>(env, 'getWebhookInfo'),
+			new Promise<never>((_, no) => setTimeout(() => no(new Error('Telegram no responde')), 3000))
+		]);
+		const reciente = info.last_error_date && Date.now() / 1000 - info.last_error_date < 86400;
+		return { conectado: info.url === `${origen}/api/telegram`, otraUrl: info.url && info.url !== `${origen}/api/telegram` ? info.url : null, error: reciente ? (info.last_error_message ?? null) : null, pendientes: info.pending_update_count ?? 0 };
+	} catch (e) {
+		return { conectado: false, otraUrl: null, error: (e as Error).message, pendientes: 0 };
+	}
+}
+
+export const load = async ({ platform, url }) => ({ telegramConfigurado: Boolean(platform?.env.TELEGRAM_TOKEN), bot: await estadoBot(platform?.env, url.origin) });
 
 export const actions = {
 	general: accion(async ({ request, locals }) => {
@@ -65,6 +80,32 @@ export const actions = {
 			throw new ErrorFormulario(`Telegram: ${(e as Error).message}`);
 		}
 		return { mensaje: 'Mensaje enviado. Mira Telegram' };
+	}),
+
+	/** Conecta el bot en las dos direcciones: Telegram manda tus mensajes a /api/telegram con un secreto. */
+	conectarBot: accion(async ({ platform, url, locals }) => {
+		const env = platform?.env;
+		if (!env?.TELEGRAM_TOKEN) throw new ErrorFormulario('Falta el token del bot en Cloudflare: añade TELEGRAM_TOKEN como Secreto en novaz-dashboard');
+		if (!locals.ajustes.telegramChatId) throw new ErrorFormulario('Guarda primero el chat ID: el bot solo te hará caso a ti');
+		try {
+			await llamarTelegram(env, 'setWebhook', {
+				url: `${url.origin}/api/telegram`,
+				secret_token: await secretoWebhook(env.TELEGRAM_TOKEN),
+				allowed_updates: ['message', 'callback_query'],
+				drop_pending_updates: true
+			});
+			await llamarTelegram(env, 'setMyCommands', {
+				commands: [
+					{ command: 'hoy', description: 'El informe de hoy' },
+					{ command: 'agenda', description: 'Lo que viene en 30 días' },
+					{ command: 'compras', description: 'La lista de la compra' },
+					{ command: 'ayuda', description: 'Qué puedo apuntar' }
+				]
+			});
+		} catch (e) {
+			throw new ErrorFormulario(`Telegram: ${(e as Error).message}`);
+		}
+		return { mensaje: 'Bot conectado. Escríbele algo en Telegram' };
 	}),
 
 	contabilidad: accion(async ({ request, locals }) => {

@@ -27,7 +27,7 @@ export async function estadoTaller(db: DB, hoy: string, alertas: Alerta[]) {
 	const [pends, tareasCompra] = await Promise.all([
 		manual.some((m) => m.pendienteId)
 			? db
-					.select({ id: s.pendientes.id, titulo: s.pendientes.titulo, vehiculo: s.vehiculos.alias })
+					.select({ id: s.pendientes.id, titulo: s.pendientes.titulo, tipo: s.pendientes.tipo, vehiculo: s.vehiculos.alias })
 					.from(s.pendientes)
 					.innerJoin(s.vehiculos, eq(s.pendientes.vehiculoId, s.vehiculos.id))
 					.where(inArray(s.pendientes.id, manual.flatMap((m) => (m.pendienteId ? [m.pendienteId] : []))))
@@ -42,7 +42,7 @@ export async function estadoTaller(db: DB, hoy: string, alertas: Alerta[]) {
 		...manual.map((m) => {
 			const p = m.pendienteId ? pends.find((x) => x.id === m.pendienteId) : null;
 			const t = m.tareaLocalId ? tareasCompra.find((x) => x.id === m.tareaLocalId) : null;
-			return { texto: `${m.texto}${cantidad(m.cantidad, m.unidad)}`, para: p ? `avería: ${p.titulo} (${p.vehiculo})` : t ? `local: ${t.titulo}` : 'apuntado a mano' };
+			return { texto: `${m.texto}${cantidad(m.cantidad, m.unidad)}`, para: p ? `${p.tipo === 'mejora' ? 'mejora' : 'avería'}: ${p.titulo} (${p.vehiculo})` : t ? `local: ${t.titulo}` : 'apuntado a mano' };
 		})
 	];
 
