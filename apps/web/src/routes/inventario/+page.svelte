@@ -14,16 +14,16 @@
 		herramientas.filter(
 			(a) =>
 				(!filtroEstado || a.estado === filtroEstado) &&
-				(!busqueda || `${a.nombre} ${a.marca ?? ''} ${a.referencia ?? ''} ${a.categoria ?? ''} ${a.ubicacion ?? ''} ${a.numeroSerie ?? ''}`.toLowerCase().includes(busqueda.toLowerCase()))
+				(!busqueda || `${a.nombre} ${a.marca ?? ''} ${a.referencia ?? ''} ${a.categoria ?? ''} ${a.ubicacion ?? ''} ${a.sitio.codigo ?? ''} ${a.sitio.texto ?? ''} ${a.numeroSerie ?? ''}`.toLowerCase().includes(busqueda.toLowerCase()))
 		)
 	);
 	const grupos = $derived.by(() => {
 		const m = new Map<string, typeof visibles>();
 		for (const a of visibles) {
-			const k = (agrupar === 'ubicacion' ? a.ubicacion : a.categoria) ?? (agrupar === 'ubicacion' ? 'Sin ubicación' : 'Sin categoría');
+			const k = agrupar === 'ubicacion' ? (a.sitio.codigo ? `${a.sitio.codigo.split('·').slice(0, 2).join('·')}|${a.sitio.texto?.split(' · ').slice(0, a.sitio.muebleId ? 2 : 1).join(' · ')}` : '~|Sin ubicar en el plano') : (a.categoria ?? 'Sin categoría');
 			m.set(k, [...(m.get(k) ?? []), a]);
 		}
-		return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'));
+		return [...m.entries()].sort((a, b) => Number(a[0].startsWith('~')) - Number(b[0].startsWith('~')) || a[0].localeCompare(b[0], 'es'));
 	});
 	const activas = $derived(herramientas.filter((a) => a.estado !== 'baja'));
 	const valor = $derived(activas.reduce((t, a) => t + (a.valorCent ?? 0) * Math.max(a.cantidad, 0), 0));
@@ -83,7 +83,7 @@
 	<div class="flex flex-col gap-5">
 		{#each grupos as [grupo, lista] (grupo)}
 			<section>
-				<p class="etiqueta mb-2">{agrupar === 'ubicacion' ? '📍 ' : ''}{grupo} · {lista.length}</p>
+				<p class="etiqueta mb-2">{agrupar === 'ubicacion' ? `📍 ${grupo.split('|')[0] === '~' ? '' : `${grupo.split('|')[0]} · `}${grupo.split('|')[1]}` : grupo} · {lista.length}</p>
 				<ul class="tarjeta lista-filas">
 					{#each lista as a (a.id)}
 						<li>
@@ -93,8 +93,9 @@
 								</span>
 								<span class="min-w-0 flex-1">
 									<span class="block truncate text-sm font-medium">{a.nombre}{a.cantidad > 1 ? ` ×${a.cantidad}` : ''}</span>
-									<span class="block truncate text-xs text-texto-3">{[a.marca, agrupar === 'ubicacion' ? a.categoria : a.ubicacion].filter(Boolean).join(' · ')}</span>
+									<span class="block truncate text-xs text-texto-3">{[a.marca, agrupar === 'ubicacion' ? a.categoria : a.sitio.texto, a.ubicacion && agrupar === 'ubicacion' ? a.ubicacion : null].filter(Boolean).join(' · ')}</span>
 								</span>
+								{#if a.sitio.codigo}<span class="shrink-0 font-mono text-xs font-semibold text-texto-2">{a.sitio.codigo}</span>{/if}
 								{#if a.estado !== 'ok'}<span class="chip h-6 text-[0.68rem]" style="color: {ESTADO[a.estado].c}"><span class="punto" style="background: {ESTADO[a.estado].c}"></span>{a.estado === 'prestada' && a.prestadaA ? a.prestadaA : ESTADO[a.estado].t}</span>{/if}
 							</button>
 						</li>

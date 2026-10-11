@@ -169,7 +169,7 @@
 			<label class="campo">
 				<span>Zona</span>
 				<input name="zona" class="input" list="zonas" value={edit?.zona ?? ''} placeholder="Pared del fondo, baño…" />
-				<datalist id="zonas">{#each data.zonas as z (z)}<option value={z}></option>{/each}</datalist>
+				<datalist id="zonas">{#each [...new Set([...data.zonasPlano, ...data.zonas])] as z (z)}<option value={z}></option>{/each}</datalist>
 			</label>
 			<label class="campo"><span>Antes del</span><input type="date" name="fechaLimite" class="input" value={edit?.fechaLimite ?? ''} /></label>
 		</div>

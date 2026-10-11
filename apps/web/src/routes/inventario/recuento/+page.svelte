@@ -6,11 +6,22 @@
 
 	let { data } = $props();
 	const herramientas = $derived(data.articulos.filter((a) => a.tipo === 'herramienta' && a.estado !== 'baja'));
+	// Recorrido mueble a mueble («D·E2»); lo que no está en el plano, por su texto
+	const grupoDe = (a: (typeof herramientas)[number]) => (a.sitio.codigo ? a.sitio.codigo.split('·').slice(0, 2).join('·') : `~${a.ubicacion ?? 'Sin ubicar'}`);
+	const titulo = (k: string, a: (typeof herramientas)[number]) => {
+		if (k.startsWith('~')) return k.slice(1);
+		const m = data.plano.muebles.find((x) => x.id === a.sitio.muebleId);
+		const z = data.plano.zonas.find((x) => x.id === a.sitio.zonaId);
+		return `${k} · ${m ? m.nombre : (z?.nombre ?? '')}`;
+	};
 	let marcas = $state<Record<number, 'esta' | 'falta'>>({});
 	const grupos = $derived.by(() => {
 		const m = new Map<string, typeof herramientas>();
-		for (const a of herramientas) m.set(a.ubicacion ?? 'Sin ubicación', [...(m.get(a.ubicacion ?? 'Sin ubicación') ?? []), a]);
-		return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'));
+		for (const a of herramientas) {
+			const k = grupoDe(a);
+			m.set(k, [...(m.get(k) ?? []), a]);
+		}
+		return [...m.entries()].sort((a, b) => Number(a[0].startsWith('~')) - Number(b[0].startsWith('~')) || a[0].localeCompare(b[0], 'es'));
 	});
 	const hechas = $derived(Object.keys(marcas).length);
 	const presentes = $derived(Object.entries(marcas).filter(([, v]) => v === 'esta').map(([k]) => k).join(','));
@@ -33,7 +44,7 @@
 		{#each grupos as [ubic, lista] (ubic)}
 			<section>
 				<div class="mb-2 flex items-center justify-between gap-2">
-					<p class="etiqueta">📍 {ubic} · {lista.length}</p>
+					<p class="etiqueta">📍 {titulo(ubic, lista[0])} · {lista.length}</p>
 					<button class="text-xs font-semibold text-acento" onclick={() => marcarGrupo(lista)}>Todo está aquí</button>
 				</div>
 				<ul class="tarjeta lista-filas">

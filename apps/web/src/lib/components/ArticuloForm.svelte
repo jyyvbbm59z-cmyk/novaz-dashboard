@@ -2,7 +2,9 @@
 	// Alta / edición de un artículo del inventario (herramienta, recambio o consumible).
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { page } from '$app/state';
 	import ColaFotos from '$comp/ColaFotos.svelte';
+	import SelectorSitio from '$comp/SelectorSitio.svelte';
 	import { avisar } from '$lib/avisos.svelte';
 	import { enviar } from '$lib/enviar';
 	import { subirArchivo } from '$lib/imagenes';
@@ -16,6 +18,7 @@
 		ubicaciones = [],
 		vehiculos = [],
 		hoy,
+		sitio = null,
 		alGuardar
 	}: {
 		articulo?: Articulo | null;
@@ -24,12 +27,19 @@
 		ubicaciones?: string[];
 		vehiculos?: { id: number; alias: string }[];
 		hoy: string;
+		/** Sitio de partida para un artículo nuevo (al añadirlo desde un mueble). */
+		sitio?: { muebleId: number | null; nivel: number | null; zonaId: number | null } | null;
 		alGuardar?: () => void;
 	} = $props();
 
 	let tipo = $state<TipoArticulo>((() => articulo?.tipo ?? tipoInicial)());
 	let estado = $state((() => articulo?.estado ?? 'ok')());
 	let fotos = $state<File[]>([]);
+	// El plano del local (zonas y muebles) viene de la carga del inventario
+	const plano = $derived(page.data.plano as { zonas: import('@novaz/core/schema').Zona[]; muebles: import('@novaz/core/schema').Mueble[] } | undefined);
+	let muebleId = $state((() => articulo?.muebleId ?? sitio?.muebleId ?? null)());
+	let nivel = $state((() => articulo?.nivel ?? sitio?.nivel ?? null)());
+	let zonaId = $state((() => articulo?.zonaId ?? sitio?.zonaId ?? null)());
 	const ESTADOS = [
 		['ok', 'Bien'],
 		['reparar', 'A reparar'],
@@ -64,16 +74,18 @@
 	<div class="grid grid-cols-2 gap-3">
 		<label class="campo"><span>Marca</span><input name="marca" class="input" value={articulo?.marca ?? ''} /></label>
 		<label class="campo"><span>{tipo === 'herramienta' ? 'Modelo' : 'Referencia'}</span><input name="referencia" class="input font-mono" value={articulo?.referencia ?? ''} /></label>
-		<label class="campo">
+		<label class="campo col-span-2">
 			<span>Categoría</span>
 			<input name="categoria" class="input" list="cat-inv" value={articulo?.categoria ?? ''} placeholder={tipo === 'herramienta' ? 'Llaves, Eléctrica, Medición…' : 'Filtros, Aceites…'} />
 			<datalist id="cat-inv">{#each categorias as c (c)}<option value={c}></option>{/each}</datalist>
 		</label>
-		<label class="campo">
-			<span>Dónde está</span>
-			<input name="ubicacion" class="input" list="ubic-inv" value={articulo?.ubicacion ?? ''} placeholder="Panel A, cajón 2…" />
-			<datalist id="ubic-inv">{#each ubicaciones as u (u)}<option value={u}></option>{/each}</datalist>
-		</label>
+	</div>
+
+	<div class="campo">
+		<span>Dónde está</span>
+		{#if plano}<SelectorSitio zonas={plano.zonas} muebles={plano.muebles} bind:muebleId bind:nivel bind:zonaId />{/if}
+		<input name="ubicacion" class="input" list="ubic-inv" value={articulo?.ubicacion ?? ''} placeholder={plano ? 'Detalle: caja roja, hueco de la izquierda…' : 'Panel A, cajón 2…'} />
+		<datalist id="ubic-inv">{#each ubicaciones as u (u)}<option value={u}></option>{/each}</datalist>
 	</div>
 
 	{#if tipo === 'herramienta'}

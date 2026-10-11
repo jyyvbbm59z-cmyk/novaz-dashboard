@@ -4,6 +4,7 @@ import { ESTADOS_HERRAMIENTA, TIPOS_ARTICULO, type EstadoHerramienta, type TipoA
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { guardarMovimiento } from './acciones';
 import { ErrorFormulario, leer } from './form';
+import { sitioDeFormulario } from './ubicaciones';
 
 type Locals = App.Locals;
 
@@ -47,7 +48,8 @@ export async function guardarArticulo(locals: Locals, fd: FormData) {
 		proveedor: f.texto('proveedor'),
 		numeroSerie: f.texto('numeroSerie'),
 		vehiculoIds: f.lista('vehiculoIds').map(Number).filter(Number.isInteger),
-		notas: f.texto('notas')
+		notas: f.texto('notas'),
+		...(fd.has('muebleId') || fd.has('zonaId') ? await sitioDeFormulario(locals.db, fd) : {})
 	};
 	if (id) {
 		await locals.db.update(s.articulos).set(valores).where(eq(s.articulos.id, id));

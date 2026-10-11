@@ -62,3 +62,11 @@ describe('confirmación', () => {
 		expect(faltanDatos({ tipo: 'repostaje', vehiculoId: 1, litros: null, importeCent: 5000, km: null, gasolinera: null, lleno: true })).toEqual(['los litros']);
 	});
 });
+
+describe('dónde está', () => {
+	it('entiende la pregunta', () => {
+		expect(interpretarReglas('¿Dónde está la llave dinamométrica?', V)).toEqual({ tipo: 'consulta', vehiculoId: null, tema: 'donde', buscar: 'llave dinamométrica' });
+		expect(interpretarReglas('/donde polímetro', V)).toMatchObject({ tema: 'donde', buscar: 'polímetro' });
+		expect(normalizarIntencion({ accion: 'consulta', tema: 'donde', buscar: 'llave de 13' }, V, 'x')).toMatchObject({ tema: 'donde', buscar: 'llave de 13' });
+	});
+});

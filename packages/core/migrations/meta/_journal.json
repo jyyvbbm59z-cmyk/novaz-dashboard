@@ -232,6 +232,13 @@
       "when": 1791732235013,
       "tag": "0032_bot_acciones",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1791732889557,
+      "tag": "0033_inventario_zonas",
+      "breakpoints": true
     }
   ]
 }

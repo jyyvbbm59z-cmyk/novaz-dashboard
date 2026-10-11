@@ -452,6 +452,49 @@ export const ESTADOS_HERRAMIENTA = ['ok', 'reparar', 'prestada', 'perdida', 'baj
 export type EstadoHerramienta = (typeof ESTADOS_HERRAMIENTA)[number];
 
 /** Herramientas, recambios y consumibles del taller. La cantidad sale de `stock`. */
+// ─── El local: zonas del plano y muebles (dónde está cada cosa) ───────────────
+
+/** Una zona del local dibujada en el plano (metros, con el origen en la esquina interior izquierda de la fachada). */
+export const zonas = sqliteTable('zonas', {
+	id: id(),
+	/** Letra que la identifica en los códigos de ubicación («D·E2·3»). */
+	codigo: text('codigo').notNull().unique(),
+	nombre: text('nombre').notNull(),
+	color: text('color').notNull().default('#7c8aa0'),
+	x: real('x').notNull(),
+	y: real('y').notNull(),
+	ancho: real('ancho').notNull(),
+	alto: real('alto').notNull(),
+	notas: text('notas'),
+	orden: integer('orden').notNull().default(0),
+	creado: creado()
+});
+
+export const TIPOS_MUEBLE = ['estanteria', 'armario', 'cajonera', 'panel', 'banco', 'carro', 'equipo', 'otro'] as const;
+export type TipoMueble = (typeof TIPOS_MUEBLE)[number];
+
+/** Un mueble colocado en el plano (estantería, cajonera, panel…) con sus baldas o cajones. */
+export const muebles = sqliteTable('muebles', {
+	id: id(),
+	zonaId: integer('zona_id').references(() => zonas.id, { onDelete: 'set null' }),
+	/** Único en todo el local: E1, C2, P1… */
+	codigo: text('codigo').notNull().unique(),
+	nombre: text('nombre').notNull(),
+	tipo: text('tipo', { enum: TIPOS_MUEBLE }).notNull().default('estanteria'),
+	x: real('x').notNull(),
+	y: real('y').notNull(),
+	ancho: real('ancho').notNull(),
+	fondo: real('fondo').notNull(),
+	/** Girado 90° en el plano. */
+	girado: bool('girado').notNull().default(false),
+	/** Baldas, cajones o filas (0 = sin niveles: un equipo, un hueco en el suelo). */
+	niveles: integer('niveles').notNull().default(1),
+	notas: text('notas'),
+	creado: creado()
+});
+export type Zona = typeof zonas.$inferSelect;
+export type Mueble = typeof muebles.$inferSelect;
+
 export const articulos = sqliteTable(
 	'articulos',
 	{
@@ -461,7 +504,12 @@ export const articulos = sqliteTable(
 		marca: text('marca'),
 		referencia: text('referencia'),
 		categoria: text('categoria'),
+		/** Detalle libre de dónde está (caja roja, hueco de la izquierda…); el sitio va en zona/mueble/nivel. */
 		ubicacion: text('ubicacion'),
+		zonaId: integer('zona_id').references(() => zonas.id, { onDelete: 'set null' }),
+		muebleId: integer('mueble_id').references(() => muebles.id, { onDelete: 'set null' }),
+		/** Balda o cajón dentro del mueble (1 = la balda de abajo / el cajón de arriba). */
+		nivel: integer('nivel'),
 		unidad: text('unidad').notNull().default('ud'),
 		/** Por debajo de esto, a la lista de la compra. */
 		stockMinimo: real('stock_minimo'),

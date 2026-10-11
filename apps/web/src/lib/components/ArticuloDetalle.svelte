@@ -5,7 +5,7 @@
 	import Galeria from '$comp/Galeria.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { euros, fechaLarga } from '@novaz/core';
+	import { euros, fechaLarga, type UbicacionDescrita } from '@novaz/core';
 	import type { Adjunto } from '@novaz/core/schema';
 	import { Minus, Pencil, Plus, Scale, Trash2 } from '@lucide/svelte';
 	import type { ArticuloInventario } from '$lib/server/inventario';
@@ -20,7 +20,7 @@
 		hoy,
 		alCerrar
 	}: {
-		articulo: ArticuloInventario;
+		articulo: ArticuloInventario & { sitio?: UbicacionDescrita };
 		fotos?: Adjunto[];
 		historial?: { id: number; fecha: string; cantidad: number; motivo: string; notas: string | null; detalle: string | null }[];
 		categorias?: string[];
@@ -52,7 +52,11 @@
 			<div class="min-w-0 flex-1">
 				<p class="text-xs text-texto-3">{[articulo.marca, articulo.referencia].filter(Boolean).join(' · ') || (herramienta ? 'Herramienta' : articulo.tipo === 'recambio' ? 'Recambio' : 'Consumible')}</p>
 				<p class="mt-1 flex flex-wrap gap-1.5">
-					{#if articulo.ubicacion}<span class="chip">📍 {articulo.ubicacion}</span>{/if}
+					{#if articulo.sitio?.muebleId}
+						<a href="/inventario/mueble/{articulo.sitio.muebleId}" class="chip max-w-full whitespace-normal hover:border-acento"><span class="font-mono font-bold">{articulo.sitio.codigo}</span> {articulo.sitio.texto}</a>
+					{:else if articulo.sitio?.texto}
+						<span class="chip max-w-full whitespace-normal">📍 {articulo.sitio.codigo ? `${articulo.sitio.codigo} · ` : ''}{articulo.sitio.texto}</span>
+					{:else if articulo.ubicacion}<span class="chip">📍 {articulo.ubicacion} <span class="text-texto-3">· sin ubicar en el plano</span></span>{/if}
 					{#if articulo.categoria}<span class="chip">{articulo.categoria}</span>{/if}
 					{#if herramienta}<span class="chip {articulo.estado === 'ok' ? 'nivel-ok' : articulo.estado === 'perdida' ? 'nivel-vencido' : 'nivel-urgente'}">{ESTADO[articulo.estado]}{articulo.prestadaA ? `: ${articulo.prestadaA}` : ''}</span>{/if}
 				</p>

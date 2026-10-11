@@ -52,7 +52,7 @@
 					</span>
 					<span class="min-w-0 flex-1">
 						<span class="block truncate text-sm font-medium">{a.nombre}</span>
-						<span class="block truncate text-xs text-texto-3">{[a.tipo === 'recambio' ? 'Recambio' : 'Consumible', a.ubicacion, a.vehiculoIds.length ? `para ${vehiculosDe(a.vehiculoIds)}` : null].filter(Boolean).join(' · ')}</span>
+						<span class="block truncate text-xs text-texto-3">{[a.tipo === 'recambio' ? 'Recambio' : 'Consumible', a.sitio.codigo ?? a.ubicacion, a.vehiculoIds.length ? `para ${vehiculosDe(a.vehiculoIds)}` : null].filter(Boolean).join(' · ')}</span>
 						{#if a.stockMinimo}
 							<span class="mt-1 block h-1 w-24 overflow-hidden rounded-full bg-superficie-3"><span class="block h-full rounded-full" style="width: {Math.min((a.cantidad / (a.stockMinimo * 2)) * 100, 100)}%; background: {bajo ? 'var(--urgente)' : 'var(--ok)'}"></span></span>
 						{/if}

@@ -9,7 +9,7 @@ export interface VehiculoBot {
 	matricula: string | null;
 }
 
-export type TemaConsulta = 'general' | 'vehiculo' | 'gasto' | 'compras' | 'agenda';
+export type TemaConsulta = 'general' | 'vehiculo' | 'gasto' | 'compras' | 'agenda' | 'donde';
 
 export type Intencion =
 	| { tipo: 'repostaje'; vehiculoId: number | null; litros: number | null; importeCent: number | null; km: number | null; gasolinera: string | null; lleno: boolean }
@@ -19,7 +19,7 @@ export type Intencion =
 	| { tipo: 'averia' | 'mejora'; vehiculoId: number | null; titulo: string; urgente: boolean }
 	| { tipo: 'tarea_local'; titulo: string; zona: string | null; reforma: boolean }
 	| { tipo: 'compra'; items: string[]; vehiculoId: number | null }
-	| { tipo: 'consulta'; vehiculoId: number | null; tema: TemaConsulta }
+	| { tipo: 'consulta'; vehiculoId: number | null; tema: TemaConsulta; buscar?: string | null }
 	| { tipo: 'ayuda' }
 	| { tipo: 'desconocido'; texto: string };
 
@@ -69,6 +69,8 @@ export function interpretarReglas(texto: string, vehiculos: VehiculoBot[]): Inte
 	const veh = buscarVehiculo(t, vehiculos);
 	const resto = (cmd: RegExp) => t.replace(cmd, '').trim();
 	if (AYUDA.test(t)) return { tipo: 'ayuda' };
+	const donde = t.match(/^(?:\/donde\b|¿?\s*d[oó]nde\s+(?:est[aá]n?|tengo|guardo|guard[eé]|dej[eé]|va|van|hay)(?=[\s?]|$))\s*(.*?)\??$/i);
+	if (donde) return { tipo: 'consulta', vehiculoId: null, tema: 'donde', buscar: donde[1].replace(/^(el|la|los|las|un|una|mi|mis)\s+/i, '').trim() || null };
 	if (/^\/(hoy|informe)\b/i.test(t)) return { tipo: 'consulta', vehiculoId: null, tema: 'general' };
 	if (/^\/agenda\b/i.test(t)) return { tipo: 'consulta', vehiculoId: null, tema: 'agenda' };
 	if (/^\/compras\b/i.test(t)) return { tipo: 'consulta', vehiculoId: null, tema: 'compras' };
@@ -134,7 +136,7 @@ Acciones posibles (campo "accion"):
 - mejora: quiere hacerle una mejora (algo nuevo, no una avería). Campos: vehiculo, titulo.
 - tarea_local: algo que hacer en el local/taller (pintar, arreglar, ordenar…). Campos: titulo, zona, reforma (true si es una obra que mejora el local).
 - compra: hay que comprar cosas. Campos: items (lista; si dice precio ponlo al final: "Lija de 400 · 6 €"), vehiculo si es para uno.
-- consulta: pregunta algo. Campos: tema (general = cómo va todo / qué hay pendiente; vehiculo = qué le toca a un vehículo; gasto = cuánto ha gastado; compras = qué hay que comprar; agenda = qué viene), vehiculo si pregunta por uno.
+- consulta: pregunta algo. Campos: tema (general = cómo va todo / qué hay pendiente; vehiculo = qué le toca a un vehículo; gasto = cuánto ha gastado; compras = qué hay que comprar; agenda = qué viene; donde = dónde está guardada una herramienta o cosa del taller), vehiculo si pregunta por uno, buscar (solo con tema donde: la cosa que busca, p. ej. "llave dinamométrica").
 - ayuda: pregunta qué puedes hacer.
 - desconocido: no encaja en nada.
 
@@ -161,7 +163,8 @@ export const ESQUEMA_INTENCION = {
 		zona: { type: 'string' },
 		reforma: { type: 'boolean' },
 		items: { type: 'array', items: { type: 'string' } },
-		tema: { type: 'string', enum: ['general', 'vehiculo', 'gasto', 'compras', 'agenda'] }
+		tema: { type: 'string', enum: ['general', 'vehiculo', 'gasto', 'compras', 'agenda', 'donde'] },
+		buscar: { type: 'string' }
 	},
 	required: ['accion']
 } as const;
@@ -217,8 +220,9 @@ export function normalizarIntencion(raw: unknown, vehiculos: VehiculoBot[], text
 			return items.length ? { tipo: 'compra', items, vehiculoId } : { tipo: 'desconocido', texto };
 		}
 		case 'consulta': {
-			const temas: TemaConsulta[] = ['general', 'vehiculo', 'gasto', 'compras', 'agenda'];
+			const temas: TemaConsulta[] = ['general', 'vehiculo', 'gasto', 'compras', 'agenda', 'donde'];
 			const tema = temas.includes(o.tema as TemaConsulta) ? (o.tema as TemaConsulta) : vehiculoId ? 'vehiculo' : 'general';
+			if (tema === 'donde') return { tipo: 'consulta', vehiculoId: null, tema, buscar: str(o.buscar, 80) };
 			return { tipo: 'consulta', vehiculoId, tema };
 		}
 		case 'ayuda':
@@ -236,6 +240,7 @@ export const TEXTO_AYUDA = `<b>Escríbeme como hablarías:</b>
 • <i>Hay que pintar la pared del fondo</i>
 • <i>Comprar lija de 400, 6 €</i>
 • <i>¿Qué le toca a la Bandit?</i> · <i>¿Cuánto llevo gastado este mes?</i>
+• <i>¿Dónde está la dinamométrica?</i>
 
 También fotos de tickets (los leo y apunto el gasto) y notas de voz.
 

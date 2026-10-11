@@ -25,6 +25,8 @@ export const load = async ({ locals }) => {
 		compras,
 		fotos: await adjuntosDe(db, 'local', tareas.map((t) => t.id)),
 		zonas: [...new Set(tareas.map((t) => t.zona).filter((z): z is string => Boolean(z)))].sort(),
+		// Zonas del plano del local, para proponerlas al apuntar dónde es la tarea
+		zonasPlano: (await locals.db.select({ codigo: s.zonas.codigo, nombre: s.zonas.nombre }).from(s.zonas).orderBy(s.zonas.orden)).map((z) => `${z.codigo} · ${z.nombre}`),
 		gastoAnio: gastos.filter((g) => g.fecha.startsWith(hoy.slice(0, 4))).reduce((t, g) => t + g.importeCent, 0)
 	};
 };

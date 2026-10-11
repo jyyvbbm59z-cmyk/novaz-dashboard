@@ -2,9 +2,13 @@ import * as s from '@novaz/core/schema';
 import { desc, eq } from 'drizzle-orm';
 import { adjuntosDe } from '$lib/server/adjuntos';
 import { cargarInventario } from '$lib/server/inventario';
+import { cargarPlano } from '$lib/server/ubicaciones';
+import { describirUbicacion } from '@novaz/core';
 
 export const load = async ({ locals }) => {
-	const articulos = await cargarInventario(locals.db);
+	const [inventario, plano] = await Promise.all([cargarInventario(locals.db), cargarPlano(locals.db)]);
+	// Cada artículo con su sitio descrito: código «D·E2·3» y texto
+	const articulos = inventario.map((a) => ({ ...a, sitio: describirUbicacion(a, plano.zonas, plano.muebles) }));
 	const movs = await locals.db
 		.select({ m: s.stock, vehiculo: s.vehiculos.alias, entrada: s.entradas.titulo })
 		.from(s.stock)
@@ -18,6 +22,7 @@ export const load = async ({ locals }) => {
 	const unicos = (xs: (string | null)[]) => [...new Set(xs.filter((x): x is string => Boolean(x)))].sort((a, b) => a.localeCompare(b, 'es'));
 	return {
 		articulos,
+		plano,
 		historial,
 		fotosInv: await adjuntosDe(locals.db, 'articulo', articulos.map((a) => a.id)),
 		categoriasInv: unicos(articulos.map((a) => a.categoria)),

@@ -95,7 +95,7 @@ class Bot {
 
 	private async entender(texto: string, vehiculos: VehiculoBot[]): Promise<Intencion> {
 		const reglas = interpretarReglas(texto, vehiculos);
-		if (texto.trim().startsWith('/') || !this.ai) return reglas;
+		if (texto.trim().startsWith('/') || !this.ai || (reglas.tipo === 'consulta' && reglas.tema === 'donde')) return reglas;
 		try {
 			const i = await interpretarConIa(this.ai, texto, vehiculos, this.locals.hoy);
 			if (i.tipo !== 'desconocido') return i;

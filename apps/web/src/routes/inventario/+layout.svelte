@@ -7,11 +7,12 @@
 	const SECCIONES = $derived([
 		['/inventario', 'Herramientas', herramientas],
 		['/inventario/reserva', 'Recambios y consumibles', reserva],
+		['/inventario/plano', 'Plano del local', null],
 		['/inventario/recuento', 'Recuento', null]
 	] as const);
 </script>
 
 <p class="etiqueta mb-1">Taller</p>
 <h1 class="titulo-pagina mb-5">Inventario</h1>
-<Pestanas fija pestanas={SECCIONES.map(([href, texto, cuenta]) => ({ href, texto, activa: page.url.pathname === href, cuenta }))} />
+<Pestanas fija pestanas={SECCIONES.map(([href, texto, cuenta]) => ({ href, texto, activa: page.url.pathname === href || (href === '/inventario/plano' && page.url.pathname.startsWith('/inventario/mueble')), cuenta }))} />
 <div class="mt-6 min-h-[60dvh]">{@render children()}</div>

@@ -1,7 +1,9 @@
 // Bot de Telegram en las dos direcciones: lo que entiende se confirma con un botón, se apunta en la app y se puede deshacer.
 import {
+	buscarArticulos,
 	cargarAlertas,
 	datosInforme,
+	describirUbicacion,
 	euros,
 	estadoTaller,
 	mensajeInforme,
@@ -13,12 +15,13 @@ import {
 	type VehiculoBot
 } from '@novaz/core';
 import * as s from '@novaz/core/schema';
-import { and, desc, eq, gte, isNull } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull, ne } from 'drizzle-orm';
 import { borrarEntrada, borrarMovimiento, guardarEntrada, guardarMovimiento, guardarPendiente } from './acciones';
 import { cargarAgenda } from './agenda';
 import { precioCombustibleHoy } from './combustible';
 import { comprobarLectura } from './datos';
 import { borrarRepostaje, guardarRepostaje } from './repostajes';
+import { cargarPlano } from './ubicaciones';
 import { descargarTelegram } from './telegram';
 
 type Locals = App.Locals;
@@ -260,6 +263,21 @@ export async function responderConsulta(locals: Locals, i: Extract<Intencion, { 
 		if (proximas.length) lineas.push('', '<b>Lo siguiente</b>', ...proximas.map((a) => `- ${esc(a.titulo)}${a.detalle ? ` — ${esc(a.detalle)}` : ''}`));
 		lineas.push('', `<a href="${app}/flota/${i.vehiculoId}">Abrir en la app</a>`);
 		return lineas.join('\n');
+	}
+	if (i.tema === 'donde') {
+		if (!i.buscar) return '¿Qué buscas? Por ejemplo: <i>¿Dónde está la dinamométrica?</i>';
+		const [articulos, plano] = await Promise.all([db.select().from(s.articulos).where(ne(s.articulos.estado, 'baja')), cargarPlano(db)]);
+		const hallados = buscarArticulos(i.buscar, articulos, 5);
+		if (!hallados.length) return `No tengo nada parecido a «${esc(i.buscar)}» en el inventario.`;
+		return hallados
+			.map((a) => {
+				const d = describirUbicacion(a, plano.zonas, plano.muebles);
+				const estado = a.estado === 'prestada' ? ` · <b>prestada${a.prestadaA ? ` a ${esc(a.prestadaA)}` : ''}</b>` : a.estado === 'perdida' ? ' · <b>no la encuentras</b>' : '';
+				const donde = d.codigo ? `<b>${d.codigo}</b> — ${esc(d.texto ?? '')}` : a.ubicacion ? `${esc(a.ubicacion)} <i>(sin sitio en el plano)</i>` : '<i>sin ubicar</i>';
+				const enlace = d.muebleId ? ` · <a href="${app}/inventario/mueble/${d.muebleId}?articulo=${a.id}">ver</a>` : '';
+				return `📍 ${esc(a.nombre)}\n${donde}${estado}${enlace}`;
+			})
+			.join('\n\n');
 	}
 	if (i.tema === 'gasto') {
 		const anio = hoy.slice(0, 4);
