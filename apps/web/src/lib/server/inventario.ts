@@ -72,14 +72,14 @@ export async function registrarStock(locals: Locals, fd: FormData, cantidadActua
 
 	if (motivo === 'ajuste') {
 		const delta = cantidad - (await cantidadActual(articuloId));
-		if (!delta) return;
+		if (!delta) return null;
 		await locals.db.insert(s.stock).values({ articuloId, fecha, cantidad: delta, motivo: 'ajuste', notas: f.texto('notas') ?? 'Recuento' });
-		return;
+		return null;
 	}
 	cantidad = Math.abs(cantidad);
 	if (motivo === 'uso') {
 		await locals.db.insert(s.stock).values({ articuloId, fecha, cantidad: -cantidad, motivo: 'uso', entradaId: f.idOpcional('entradaId'), notas: f.texto('notas') });
-		return;
+		return null;
 	}
 	// Compra: el gasto va a la categoría que toque según el tipo de artículo
 	let movimientoId: number | null = null;
@@ -103,6 +103,7 @@ export async function registrarStock(locals: Locals, fd: FormData, cantidadActua
 		await locals.db.update(s.articulos).set({ valorCent: Math.round(importe / cantidad), fechaCompra: fecha }).where(eq(s.articulos.id, articuloId));
 	}
 	await locals.db.insert(s.stock).values({ articuloId, fecha, cantidad, motivo: 'compra', movimientoId, notas: f.texto('notas') });
+	return movimientoId;
 }
 
 /** Recuento: lo que está se marca comprobado hoy; lo que falta pasa a «perdida». */

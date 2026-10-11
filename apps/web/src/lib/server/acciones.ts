@@ -202,8 +202,11 @@ export async function guardarMovimiento(locals: Locals, fd: FormData, fijo: { ve
 	const tipo = (TIPOS_MOVIMIENTO.includes(tipoCrudo as TipoMovimiento) ? tipoCrudo : 'gasto') as TipoMovimiento;
 	const financiero = tipo === 'aportacion' || tipo === 'retirada';
 	const categoriaId = financiero ? null : f.idOpcional('categoriaId');
-	const esInmovilizado = tipo === 'gasto' && f.bool('inmovilizado');
-	const cuentaInmov = f.texto('cuentaInmovilizado') ?? '213';
+	// Una categoría que apunta a una cuenta de inmovilizado (p. ej. «Reformas del local», 215) es siempre una inversión
+	const cuentaCat = categoriaId ? (await db.select({ c: s.categorias.cuentaContable }).from(s.categorias).where(eq(s.categorias.id, categoriaId)).get())?.c : null;
+	const porCategoria = tipo === 'gasto' && !!cuentaCat && /^2[0-2]/.test(cuentaCat);
+	const esInmovilizado = tipo === 'gasto' && (f.bool('inmovilizado') || porCategoria);
+	const cuentaInmov = f.texto('cuentaInmovilizado') ?? (porCategoria ? cuentaCat! : '213');
 	const cuentaPropia = f.texto('cuentaContable');
 	if (cuentaPropia && !/^\d{3,10}$/.test(cuentaPropia)) throw new ErrorFormulario('La cuenta contable debe ser un número (p. ej. 602)');
 
@@ -244,7 +247,7 @@ export async function guardarMovimiento(locals: Locals, fd: FormData, fijo: { ve
 			cuenta: cuentaInmov,
 			fechaAlta: valores.fecha,
 			valorCent: base,
-			vidaUtilMeses: Math.max(1, Math.round((f.decimal('vidaUtilAnios') ?? 10) * 12)),
+			vidaUtilMeses: Math.max(1, Math.round((f.decimal('vidaUtilAnios') ?? (cuentaInmov.startsWith('214') ? 5 : cuentaInmov.startsWith('213') ? 8 : 10)) * 12)),
 			movimientoId
 		};
 		if (bien) await db.update(s.inmovilizado).set(datos).where(eq(s.inmovilizado.id, bien.id));

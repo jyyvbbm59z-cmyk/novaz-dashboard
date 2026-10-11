@@ -34,7 +34,10 @@
 	let fotos = $state<File[]>([]);
 	let hGasto = $state(false);
 	let tareaGasto = $state<TareaLocal | null>(null);
-	const catLocal = $derived(data.catalogo.categorias.find((c) => /local/i.test(c.nombre))?.id ?? null);
+	// Categoría de los gastos según la tarea: mantenimiento (gasto del año) o reforma (inversión)
+	const catMantenimiento = $derived(data.catalogo.categorias.find((c) => /mantenimiento del local/i.test(c.nombre))?.id ?? null);
+	const catReforma = $derived(data.catalogo.categorias.find((c) => /reforma/i.test(c.nombre))?.id ?? null);
+	let tipoTarea = $state<'mantenimiento' | 'reforma'>('mantenimiento');
 
 	const totalGastos = (id: number) => (data.gastosDe[id] ?? []).reduce((t, g) => t + g.importeCent, 0);
 	const alGuardar = async (d: Record<string, unknown>) => {
@@ -51,7 +54,7 @@
 <svelte:head><title>Local · {data.ajustes.nombreTaller}</title></svelte:head>
 
 <Cabecera antetitulo="Taller" titulo="El local">
-	<button class="btn btn-acento" onclick={() => ((edit = null), (hTarea = true))}><Plus size={18} /> Tarea</button>
+	<button class="btn btn-acento" onclick={() => ((edit = null), (tipoTarea = 'mantenimiento'), (hTarea = true))}><Plus size={18} /> Tarea</button>
 </Cabecera>
 
 {#if data.abiertas.length || data.gastoAnio}
@@ -85,13 +88,13 @@
 							{#if t.estado === 'en_curso'}<span class="chip h-5 text-[0.65rem] nivel-pronto">En curso</span>{/if}
 						</div>
 						<p class="mt-0.5 text-xs text-texto-3">
-							<span style="color: {PRIORIDAD[t.prioridad].c}">{PRIORIDAD[t.prioridad].t}</span>
+							{#if t.tipo === 'reforma'}<span class="font-semibold text-pronto">Reforma</span>{' · '}{/if}<span style="color: {PRIORIDAD[t.prioridad].c}">{PRIORIDAD[t.prioridad].t}</span>
 							{#if t.zona} · {t.zona}{/if}
 							{#if t.fechaLimite} · <span class={vencida ? 'nivel-vencido' : ''}>{vencida ? 'venció' : 'antes del'} {fechaLarga(t.fechaLimite)} ({textoDias(diasEntre(data.hoy, t.fechaLimite))})</span>{/if}
 							{#if t.cadaMeses} · <CalendarSync size={11} class="inline" /> {t.cadaMeses === 1 ? "cada mes" : `cada ${t.cadaMeses} meses`}{/if}
 						</p>
 					</div>
-					<button class="btn btn-fantasma btn-icono h-8 w-8" onclick={() => ((edit = t), (hTarea = true))} aria-label="Editar"><Pencil size={14} /></button>
+					<button class="btn btn-fantasma btn-icono h-8 w-8" onclick={() => ((edit = t), (tipoTarea = t.tipo), (hTarea = true))} aria-label="Editar"><Pencil size={14} /></button>
 				</div>
 				{#if t.detalle}<p class="mt-2 text-sm whitespace-pre-line text-texto-2">{t.detalle}</p>{/if}
 
@@ -152,7 +155,16 @@
 <Hoja bind:abierta={hTarea} titulo={edit ? 'Editar tarea' : 'Nueva tarea del local'}>
 	<form method="POST" action="?/guardar" use:enhance={enviar({ alTerminar: alGuardar })} class="flex flex-col gap-4">
 		{#if edit}<input type="hidden" name="id" value={edit.id} />{/if}
-		<label class="campo"><span>¿Qué hay que hacer? *</span><input name="titulo" class="input h-12" required value={edit?.titulo ?? ''} placeholder="Reparar la humedad de la pared del fondo" /></label>
+		<input type="hidden" name="tipo" value={tipoTarea} />
+		<div class="grid grid-cols-2 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
+			{#each [['mantenimiento', 'Mantenimiento'], ['reforma', 'Reforma']] as [v, t] (v)}
+				<button type="button" class="rounded-md py-1.5 text-sm font-semibold {tipoTarea === v ? 'bg-superficie-3 text-texto shadow-sm' : 'text-texto-3'}" onclick={() => (tipoTarea = v as typeof tipoTarea)}>{t}</button>
+			{/each}
+		</div>
+		<p class="-mt-2 text-xs text-texto-3">
+			{tipoTarea === 'reforma' ? 'Mejora el local y dura años (aislamiento, instalación, suelo…): sus gastos son inversión y se reparten en varios años.' : 'Mantener o reparar lo que hay (pintar, una humedad, un enchufe…): sus gastos son del año.'}
+		</p>
+		<label class="campo"><span>¿Qué hay que hacer? *</span><input name="titulo" class="input h-12" required value={edit?.titulo ?? ''} placeholder={tipoTarea === 'reforma' ? 'Aislar la puerta del garaje' : 'Reparar la humedad de la pared del fondo'} /></label>
 		<div class="grid grid-cols-2 gap-3">
 			<label class="campo">
 				<span>Zona</span>
@@ -192,7 +204,7 @@
 <Hoja bind:abierta={hGasto} titulo={tareaGasto ? `Gasto: ${tareaGasto.titulo}` : 'Gasto'}>
 	{#if tareaGasto}
 		{#key tareaGasto.id}
-			<MovimientoForm accion="?/gasto" categorias={data.catalogo.categorias} categoriaInicial={catLocal} ocultos={{ tareaId: tareaGasto.id }} hoy={data.hoy} pagoPorDefecto={data.ajustes.pagoPorDefecto} alGuardar={() => (hGasto = false)} />
+			<MovimientoForm accion="?/gasto" categorias={data.catalogo.categorias} categoriaInicial={tareaGasto.tipo === 'reforma' ? (catReforma ?? catMantenimiento) : catMantenimiento} ocultos={{ tareaId: tareaGasto.id }} hoy={data.hoy} pagoPorDefecto={data.ajustes.pagoPorDefecto} alGuardar={() => (hGasto = false)} />
 		{/key}
 	{/if}
 </Hoja>

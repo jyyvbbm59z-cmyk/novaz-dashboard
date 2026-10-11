@@ -42,6 +42,7 @@ export const actions = {
 		const previos = id ? ((await locals.db.select({ pasos: s.tareasLocal.pasos }).from(s.tareasLocal).where(eq(s.tareasLocal.id, id)).get())?.pasos ?? []) : [];
 		const valores = {
 			titulo: f.obligatorio('titulo', 'qué hay que hacer'),
+			tipo: (f.texto('tipo') === 'reforma' ? 'reforma' : 'mantenimiento') as 'reforma' | 'mantenimiento',
 			detalle: f.texto('detalle'),
 			zona: f.texto('zona'),
 			prioridad: PRIORIDADES.includes(prioridad) ? prioridad : 'media',

@@ -1,5 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import LeerTicket from '$comp/LeerTicket.svelte';
+	import { subirArchivo } from '$lib/imagenes';
+	import { eurosInput, type TicketLeido } from '@novaz/core';
 	import Cabecera from '$comp/Cabecera.svelte';
 	import Hoja from '$comp/Hoja.svelte';
 	import { avisar } from '$lib/avisos.svelte';
@@ -32,9 +36,28 @@
 	let hCompra = $state(false);
 	let compra = $state<Compra | null>(null);
 	let alInventario = $state(true);
+	// Lo comprado no va al inventario salvo que lo pidas (herramientas y consumibles que gastas mucho)
+	let importeCompra = $state('');
+	let tiendaCompra = $state('');
+	let fotoTicket = $state<File | null>(null);
+	function rellenar(t: TicketLeido, foto: File) {
+		if (t.importeCent != null) importeCompra = eurosInput(t.importeCent);
+		if (t.proveedor) tiendaCompra = t.proveedor;
+		fotoTicket = foto;
+	}
+	async function comprado(d: Record<string, unknown>) {
+		if (fotoTicket && d.movimientoId) {
+			await subirArchivo(fotoTicket, { entidad: 'movimiento', entidadId: Number(d.movimientoId), vehiculoId: compra?.vehiculoId ?? null }).catch((e: Error) => avisar(`Foto del ticket: ${e.message}`, 'error'));
+			await invalidateAll();
+		}
+		hCompra = false;
+	}
 	function abrir(c: Compra) {
 		compra = c;
-		alInventario = !c.destino;
+		importeCompra = '';
+		tiendaCompra = '';
+		fotoTicket = null;
+		alInventario = false;
 		hCompra = true;
 	}
 
@@ -135,7 +158,8 @@
 
 <Hoja bind:abierta={hCompra} titulo={compra ? `Comprado: ${compra.texto}` : 'Comprado'}>
 	{#if compra}
-		<form method="POST" action="?/comprado" use:enhance={enviar({ alTerminar: () => (hCompra = false) })} class="flex flex-col gap-4">
+		<form method="POST" action="?/comprado" use:enhance={enviar({ alTerminar: comprado })} class="flex flex-col gap-4">
+			<LeerTicket alLeer={rellenar} />
 			<input type="hidden" name="texto" value={compra.texto} />
 			{#if compra.articuloId}<input type="hidden" name="articuloId" value={compra.articuloId} />{/if}
 			{#if compra.vehiculoId}<input type="hidden" name="vehiculoId" value={compra.vehiculoId} />{/if}
@@ -143,13 +167,13 @@
 			<div class="grid grid-cols-2 gap-3">
 				<label class="campo"><span>Cantidad</span><input name="cantidad" class="input" inputmode="decimal" value="1" /></label>
 				<label class="campo"><span>Unidad</span><select name="unidad" class="input">{#each ['ud', 'L', 'ml', 'kg', 'g', 'm', 'juego'] as u (u)}<option selected={(compra.unidad ?? 'ud') === u}>{u}</option>{/each}</select></label>
-				<label class="campo"><span>Importe total (€)</span><input name="importe" class="input" inputmode="decimal" placeholder="Opcional" /></label>
-				<label class="campo"><span>Tienda</span><input name="proveedor" class="input" /></label>
+				<label class="campo"><span>Importe total (€)</span><input name="importe" class="input" inputmode="decimal" bind:value={importeCompra} placeholder="Opcional" /></label>
+				<label class="campo"><span>Tienda</span><input name="proveedor" class="input" bind:value={tiendaCompra} /></label>
 			</div>
 			{#if !compra.articuloId}
 				<label class="flex items-start gap-3 text-sm">
 					<input type="checkbox" name="alInventario" bind:checked={alInventario} class="mt-0.5 h-5 w-5 accent-[var(--acento)]" />
-					<span>Añadir al inventario<span class="block text-xs text-texto-3">{compra.destino ? 'Solo si te sobra y lo guardas en el taller.' : 'Así sabrás que lo tienes y no volverá a salir en la lista.'}</span></span>
+					<span>Añadir al inventario<span class="block text-xs text-texto-3">Solo para herramientas o consumibles que gastas a menudo.</span></span>
 				</label>
 				{#if alInventario}
 					<select name="tipoArticulo" class="input"><option value="recambio">Es un recambio</option><option value="consumible">Es un consumible</option></select>

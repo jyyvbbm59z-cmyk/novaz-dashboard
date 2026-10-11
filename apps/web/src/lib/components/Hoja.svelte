@@ -31,7 +31,8 @@
 				<X size={20} />
 			</button>
 		</header>
-		<div class="overflow-y-auto px-5 py-4">
+		<!-- Solo desplazamiento vertical: en iOS el anillo de foco de un campo bastaba para que la hoja se moviera en horizontal -->
+		<div class="overflow-x-hidden overflow-y-auto overscroll-contain px-5 py-4" style="touch-action: pan-y">
 			{#if abierta}{@render children()}{/if}
 		</div>
 	</div>
@@ -41,6 +42,8 @@
 	.hoja {
 		margin: auto auto 0;
 		width: 100%;
+		max-width: 100vw;
+		overflow: hidden;
 		max-height: 92dvh;
 		padding: 0 0 env(safe-area-inset-bottom);
 		border: 1px solid var(--borde);

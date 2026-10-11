@@ -553,6 +553,8 @@ export type EstadoTareaLocal = (typeof ESTADOS_TAREA_LOCAL)[number];
 export const tareasLocal = sqliteTable('tareas_local', {
 	id: id(),
 	titulo: text('titulo').notNull(),
+	/** Mantenimiento (gasto del año) o reforma (inversión: se reparte en varios años). */
+	tipo: text('tipo', { enum: ['mantenimiento', 'reforma'] }).notNull().default('mantenimiento'),
 	detalle: text('detalle'),
 	zona: text('zona'),
 	prioridad: text('prioridad', { enum: PRIORIDADES }).notNull().default('media'),

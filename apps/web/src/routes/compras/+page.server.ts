@@ -38,7 +38,7 @@ export const load = async ({ locals }) => {
 };
 
 /** Marca algo como comprado: suma al inventario (creando el artículo si no existe) y apunta el gasto. */
-async function comprar(locals: App.Locals, fd: FormData) {
+async function comprar(locals: App.Locals, fd: FormData): Promise<number | null> {
 	const f = leer(fd);
 	const itemId = f.idOpcional('itemId');
 	const item = itemId ? await locals.db.select().from(s.listaCompra).where(eq(s.listaCompra.id, itemId)).get() : null;
@@ -57,11 +57,17 @@ async function comprar(locals: App.Locals, fd: FormData) {
 		datos.set('articuloId', String(articuloId));
 		datos.set('motivo', 'compra');
 		if (!datos.get('cantidad')) datos.set('cantidad', '1');
-		await registrarStock(locals, datos, async () => 0);
+		return await registrarStock(locals, datos, async () => 0);
 	} else if (f.euros('importe')) {
 		// Va directo a su sitio (la moto de la avería, la tarea del local…) sin pasar por el inventario
 		const cats = await locals.db.select().from(s.categorias).where(eq(s.categorias.tipo, 'gasto'));
-		const cat = item?.tareaLocalId ? cats.find((c) => /local/i.test(c.nombre)) : item?.pendienteId || f.idOpcional('vehiculoId') ? cats.find((c) => /recambio/i.test(c.nombre)) : null;
+		// Para una tarea del local: su categoría según sea mantenimiento o reforma (inversión)
+		const tarea = item?.tareaLocalId ? await locals.db.select({ tipo: s.tareasLocal.tipo }).from(s.tareasLocal).where(eq(s.tareasLocal.id, item.tareaLocalId)).get() : null;
+		const cat = tarea
+			? (tarea.tipo === 'reforma' ? cats.find((c) => /reforma/i.test(c.nombre)) : null) ?? cats.find((c) => /mantenimiento del local/i.test(c.nombre))
+			: item?.pendienteId || f.idOpcional('vehiculoId')
+				? cats.find((c) => /recambio/i.test(c.nombre))
+				: null;
 		const datos = new FormData();
 		datos.set('tipo', 'gasto');
 		datos.set('importe', fd.get('importe') as string);
@@ -71,7 +77,9 @@ async function comprar(locals: App.Locals, fd: FormData) {
 		if (proveedor) datos.set('proveedor', proveedor);
 		const movId = await guardarMovimiento(locals, datos, { vehiculoId: item?.vehiculoId ?? f.idOpcional('vehiculoId') });
 		if (item?.tareaLocalId) await locals.db.update(s.movimientos).set({ tareaLocalId: item.tareaLocalId }).where(eq(s.movimientos.id, movId));
+		return movId;
 	}
+	return null;
 }
 
 export const actions = {
@@ -82,10 +90,10 @@ export const actions = {
 	}),
 	comprado: accion(async ({ request, locals }) => {
 		const fd = await request.formData();
-		await comprar(locals, fd);
+		const movimientoId = await comprar(locals, fd);
 		const id = leer(fd).idOpcional('itemId');
 		if (id) await locals.db.update(s.listaCompra).set({ comprado: true }).where(eq(s.listaCompra.id, id));
-		return { mensaje: 'Comprado', momento: 'tareaHecha' };
+		return { mensaje: 'Comprado', momento: 'tareaHecha', movimientoId };
 	}),
 	borrar: accion(async ({ request, locals }) => {
 		await locals.db.delete(s.listaCompra).where(eq(s.listaCompra.id, leer(await request.formData()).id('id')));
