@@ -22,7 +22,7 @@
 		planes = [],
 		fases = [],
 		entrada = null,
-		claseInicial = 'nota',
+		claseInicial = 'mantenimiento',
 		planInicial = null,
 		planesIniciales = [],
 		gastosExistentes = [],
@@ -57,12 +57,15 @@
 		alGuardar?: () => void;
 	} = $props();
 
-	const CLASES = [
-		['diario', 'Diario'],
+	// Lo que se registra: mantenimiento, reparación o mejora. El diario solo tiene sentido con una obra en marcha;
+	// «Nota» ya no se ofrece (las antiguas se siguen pudiendo editar).
+	const CLASES = $derived([
+		...(fases.length || entrada?.clase === 'diario' ? [['diario', 'Diario de obra']] : []),
 		['mantenimiento', 'Mantenimiento'],
 		['reparacion', 'Reparación'],
-		['nota', 'Nota']
-	] as const;
+		['mejora', 'Mejora'],
+		...(entrada?.clase === 'nota' ? [['nota', 'Nota']] : [])
+	]);
 
 	// Valores iniciales: el formulario se monta de nuevo cada vez que se abre la hoja.
 	const ini = (() => ({ clase: entrada?.clase ?? claseInicial, titulo: entrada?.titulo ?? tituloInicial, texto: entrada?.texto ?? '' }))();
@@ -207,7 +210,7 @@
 	<input type="hidden" name="vehiculoId" value={vehiculoId} />
 	{#each Object.entries(ocultos) as [k, v] (k)}<input type="hidden" name={k} value={v} />{/each}
 
-	<div class="grid grid-cols-4 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
+	<div class="grid gap-1 rounded-lg border border-borde bg-superficie-2 p-1" style="grid-template-columns: repeat({CLASES.length}, minmax(0, 1fr))">
 		{#each CLASES as [v, t] (v)}
 			<label class="cursor-pointer rounded-md py-1.5 text-center text-xs font-semibold {clase === v ? 'bg-superficie-3 text-texto' : 'text-texto-3'}">
 				<input type="radio" name="clase" value={v} bind:group={clase} class="sr-only" />{t}

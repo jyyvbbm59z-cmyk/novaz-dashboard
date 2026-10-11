@@ -122,7 +122,7 @@
 				km={data.km[vehiculo.id] ?? null}
 				categorias={cat.categorias}
 				fases={obra?.fases ?? []}
-				claseInicial={obra ? 'diario' : 'nota'}
+				claseInicial={obra ? 'diario' : 'mantenimiento'}
 				faseInicial={obra?.tareas[0]?.faseId ?? null}
 				alGuardar={listo}
 			/>

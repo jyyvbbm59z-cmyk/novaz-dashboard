@@ -38,8 +38,8 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 		const fase = await db.select().from(s.fases).where(eq(s.fases.id, faseId)).get();
 		restauracionId = fase?.restauracionId ?? null;
 	}
-	const claseCruda = f.texto('clase') ?? (planIds.length ? 'mantenimiento' : restauracionId ? 'diario' : 'nota');
-	const clase = (CLASES_ENTRADA.includes(claseCruda as ClaseEntrada) ? claseCruda : 'nota') as ClaseEntrada;
+	const claseCruda = f.texto('clase') ?? (restauracionId && !planIds.length ? 'diario' : 'mantenimiento');
+	const clase = (CLASES_ENTRADA.includes(claseCruda as ClaseEntrada) ? claseCruda : 'mantenimiento') as ClaseEntrada;
 
 	let titulo = f.texto('titulo');
 	if (!titulo && planIds.length) {

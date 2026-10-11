@@ -136,8 +136,8 @@
 		if (confirm(`¿Borrar ${que}?`)) await accion(ruta, { id });
 	}
 
-	const colorClase: Record<string, string> = { diario: 'var(--acento)', mantenimiento: 'var(--ok)', reparacion: 'var(--urgente)', nota: 'var(--texto-3)' };
-	const nombreClase: Record<string, string> = { diario: 'Diario', mantenimiento: 'Mantenimiento', reparacion: 'Reparación', nota: 'Nota' };
+	const colorClase: Record<string, string> = { diario: 'var(--acento)', mantenimiento: 'var(--ok)', reparacion: 'var(--urgente)', mejora: 'var(--pronto)', nota: 'var(--texto-3)' };
+	const nombreClase: Record<string, string> = { diario: 'Diario de obra', mantenimiento: 'Mantenimiento', reparacion: 'Reparación', mejora: 'Mejora', nota: 'Nota' };
 	const kmMes = $derived(data.ritmo ? Math.round(data.ritmo * 30) : null);
 </script>
 
@@ -862,7 +862,7 @@
 		checklistInicial={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.checklist ?? null) : null}
 		adjuntosExistentes={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.adjuntos ?? []) : []}
 		gastosExistentes={entradaEdit ? data.movimientos.filter((m) => m.entradaId === entradaEdit!.id && m.tipo === 'gasto').sort((a, b) => a.id - b.id) : []}
-		claseInicial={pendResolver ? (pendResolver.tipo === 'mejora' ? 'mejora' : 'reparacion') : planHecho || sesionPlanes.length ? 'mantenimiento' : activa ? 'diario' : 'nota'}
+		claseInicial={pendResolver ? (pendResolver.tipo === 'mejora' ? 'mejora' : 'reparacion') : activa && !planHecho && !sesionPlanes.length ? 'diario' : 'mantenimiento'}
 		planInicial={planHecho}
 		planesIniciales={entradaEdit?.planes.map((p) => p.id) ?? (sesionPlanes.length ? sesionPlanes : pendResolver ? (data.mejoras[pendResolver.id]?.cubiertos ?? []) : [])}
 		alGuardar={() => ((hEntrada = false), (pendResolver = null), (sesionPlanes = []))}
