@@ -15,7 +15,7 @@ export const load = async ({ platform }) => ({ telegramConfigurado: Boolean(plat
 export const actions = {
 	general: accion(async ({ request, locals }) => {
 		const f = leer(await request.formData());
-		const acento = f.texto('acento') ?? '#f2a33a';
+		const acento = f.texto('acento') ?? '#ebab00';
 		if (!/^#[0-9a-f]{6}$/i.test(acento)) throw new ErrorFormulario('Color no válido');
 		const tema = f.texto('tema');
 		await guardar(locals.db, {
@@ -52,7 +52,7 @@ export const actions = {
 		if (!token) throw new ErrorFormulario('Falta el token del bot en Cloudflare: añade TELEGRAM_TOKEN como Secreto en novaz-dashboard');
 		if (!chat) throw new ErrorFormulario('Guarda primero el chat ID');
 		const { ajustes, hoy, db } = locals;
-		let texto = `🔧 <b>${ajustes.nombreTaller}</b>\nLos avisos llegan aquí. ¡A rodar!`;
+		let texto = `<b>${ajustes.nombreTaller}</b>\nLos avisos de Telegram están conectados.`;
 		if (ajustes.parteDiario) {
 			// El informe de hoy tal cual llegará cada mañana (sin marcar nada como avisado)
 			const lunes = new Date(`${hoy}T12:00:00Z`).getUTCDay() === 1;

@@ -9,7 +9,7 @@ export const load = async ({ locals }) => {
 		catalogos(db),
 		cargarAlertas(db, { hoy, urgenteDias: ajustes.urgenteDias }),
 		db
-			.select({ id: s.vehiculos.id, alias: s.vehiculos.alias, matricula: s.vehiculos.matricula, tipoId: s.vehiculos.tipoId, estadoId: s.vehiculos.estadoId })
+			.select({ id: s.vehiculos.id, alias: s.vehiculos.alias, matricula: s.vehiculos.matricula, tipoId: s.vehiculos.tipoId, estadoId: s.vehiculos.estadoId, propietario: s.vehiculos.propietario })
 			.from(s.vehiculos)
 			.orderBy(asc(s.vehiculos.alias))
 	]);

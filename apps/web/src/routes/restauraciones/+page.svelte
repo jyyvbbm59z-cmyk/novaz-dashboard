@@ -32,7 +32,7 @@
 
 {#if !lista.length}
 	<div class="vacio">
-		{verTerminadas ? 'Aún no has terminado ninguna. Todo llegará.' : 'No hay restauraciones en marcha.'}
+		{verTerminadas ? 'Aún no hay restauraciones terminadas.' : 'No hay restauraciones en marcha.'}
 		{#if !verTerminadas}<div class="mt-4"><button class="btn btn-acento" onclick={() => (hNueva = true)}><Wrench size={16} /> Empezar una</button></div>{/if}
 	</div>
 {:else}

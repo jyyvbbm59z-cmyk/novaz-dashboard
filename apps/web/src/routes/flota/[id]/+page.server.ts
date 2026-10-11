@@ -258,7 +258,7 @@ export const actions = {
 
 	resolver: accion(async ({ request, params, locals, platform }) => {
 		const r = await resolverPendiente(locals, vid(params), await request.formData(), platform!.env.ARCHIVOS);
-		return { mensaje: '¡Reparado! Pasa al historial', momento: 'tareaHecha', entradaId: r.entradaId };
+		return { mensaje: 'Reparado. Pasa al historial', momento: 'tareaHecha', entradaId: r.entradaId };
 	}),
 
 	descartarPendiente: accion(async ({ request, params, locals }) => {

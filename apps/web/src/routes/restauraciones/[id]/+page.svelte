@@ -192,7 +192,7 @@
 								</form>
 							{:else}
 								<span class="min-w-0 flex-1">
-									<span class="block truncate font-display text-lg font-semibold tracking-wide uppercase">{f.nombre}</span>
+									<span class="block truncate text-base font-semibold">{f.nombre}</span>
 									<span class="text-xs text-texto-3">{f.hechas}/{f.tareas.length}{f.fechaFin ? ` · ${fechaLarga(f.fechaFin)}` : ''}</span>
 								</span>
 							{/if}
@@ -370,6 +370,6 @@
 				{#each data.catalogo.estados as e (e.id)}<option value={e.id} selected={e.orden === 1}>{e.nombre}</option>{/each}
 			</select>
 		</label>
-		<button class="btn btn-acento h-12"><Flag size={18} /> ¡Terminada!</button>
+		<button class="btn btn-acento h-12"><Flag size={18} /> Marcar como terminada</button>
 	</form>
 </Hoja>

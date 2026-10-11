@@ -1,182 +1,108 @@
 <script lang="ts">
-	import { diasEntre, euros, fechaLarga, textoDias } from '@novaz/core';
-	import { ArrowRight, Boxes, CircleCheck, ShoppingCart, Warehouse, Wrench } from '@lucide/svelte';
+	import { accion } from '$lib/enviar';
+	import { euros } from '@novaz/core';
+	import { ArrowRight, Check, CircleCheck, Landmark } from '@lucide/svelte';
 
 	let { data } = $props();
 
 	const fecha = $derived(
 		new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(data.hoy + 'T12:00:00Z'))
 	);
-	const saludo = $derived.by(() => {
-		const h = Number(new Intl.DateTimeFormat('es-ES', { hour: 'numeric', hour12: false, timeZone: data.ajustes.zonaHoraria }).format(new Date()));
-		return h < 6 ? 'Trasnochando' : h < 14 ? 'Buenos días' : h < 21 ? 'Buenas tardes' : 'Buenas noches';
-	});
-	const pendientes = $derived(data.alertas);
-	const maxCat = $derived(Math.max(1, ...data.gasto.categorias.map((c) => c.total)));
-	const disponible = $derived(data.dinero.banco + data.dinero.caja);
-	const nombreMes = $derived(new Intl.DateTimeFormat('es-ES', { month: 'long', timeZone: 'UTC' }).format(new Date(data.hoy + 'T12:00:00Z')));
-	const nombreClase: Record<string, string> = { diario: 'Diario', mantenimiento: 'Mantenimiento', reparacion: 'Reparación', nota: 'Nota' };
+	const mes = $derived(new Intl.DateTimeFormat('es-ES', { month: 'long', timeZone: 'UTC' }).format(new Date(data.hoy + 'T12:00:00Z')));
+	const atencion = $derived(data.asuntos.filter((a) => a.nivel === 'vencido' || a.nivel === 'urgente').length);
+	const COLOR: Record<string, string> = { vencido: 'var(--vencido)', urgente: 'var(--urgente)', pronto: 'var(--pronto)', normal: 'var(--borde)' };
+	const MAX = 8;
+	let todos = $state(false);
+	const visibles = $derived(todos ? data.asuntos : data.asuntos.slice(0, MAX));
 </script>
 
 <svelte:head><title>{data.ajustes.nombreTaller}</title></svelte:head>
 
-<header class="mb-6">
+<header class="mb-5">
 	<p class="etiqueta first-letter:uppercase">{fecha}</p>
-	<h1 class="titulo-pagina">{saludo}</h1>
+	<h1 class="titulo-pagina">Hoy</h1>
+	<p class="mt-1 text-sm text-texto-2">
+		{#if atencion}<strong class="text-texto">{atencion} {atencion === 1 ? 'asunto requiere' : 'asuntos requieren'} atención</strong> · {/if}{data.asuntos.length
+			? `${data.asuntos.length} ${data.asuntos.length === 1 ? 'cosa pendiente' : 'cosas pendientes'}`
+			: 'Nada pendiente'}
+	</p>
 </header>
 
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-	<!-- Lo que viene -->
-	<section>
-		<div class="mb-3 flex items-baseline justify-between">
-			<h2 class="text-2xl">Lo que viene</h2>
-			<span class="text-xs text-texto-3">{pendientes.length + data.taller.localTotal ? `${pendientes.length + data.taller.localTotal} ${pendientes.length + data.taller.localTotal === 1 ? 'pendiente' : 'pendientes'}` : ''}</span>
-		</div>
-		{#if !pendientes.length && !data.taller.local.length}
-			<div class="tarjeta flex items-center gap-3 p-5 text-texto-2">
-				<CircleCheck class="nivel-ok" size={22} /> Todo al día. Papeles y mantenimientos en regla.
-			</div>
-		{:else}
-			<ul class="tarjeta lista-filas overflow-hidden">
-				{#each pendientes as a (a.clave)}
-					<li>
-						<a href="/flota/{a.vehiculoId}?pestana={a.tipo === 'vencimiento' ? 'papeles' : a.tipo === 'pendiente' ? 'historial' : 'mantenimiento'}" class="flex items-center gap-3 px-4 py-3 transition hover:bg-superficie-2">
-							<span class="h-9 w-1 shrink-0 rounded-full" style="background: var(--{a.nivel})"></span>
+<div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+	<!-- Lo que hay que hacer -->
+	<section class="tarjeta overflow-hidden">
+		{#if data.asuntos.length}
+			<ul class="lista-filas">
+				{#each visibles as a (a.clave)}
+					<li class="flex items-stretch">
+						<span class="w-1 shrink-0" style="background: {COLOR[a.nivel]}"></span>
+						<a href={a.href} class="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 transition hover:bg-superficie-2">
 							<div class="min-w-0 flex-1">
-								<p class="truncate font-medium">{a.titulo} <span class="font-normal text-texto-3">· {a.vehiculo}</span></p>
-								<p class="truncate text-xs text-texto-3">{a.detalle}</p>
+								<p class="truncate text-sm font-medium">{a.titulo}</p>
+								<p class="truncate text-xs text-texto-3">{a.contexto}</p>
 							</div>
-							<span class="cifra shrink-0 text-right text-base nivel-{a.nivel}">
-								{#if a.tipo === 'pendiente'}<span class="font-sans text-xs font-semibold tracking-wide uppercase">{a.nivel === 'urgente' ? 'Urgente' : 'Reparar'}</span>{:else if a.tipo === 'vencimiento' && a.dias != null}{textoDias(a.dias)}{:else if a.kmRestantes != null}{a.kmRestantes < 0 ? `+${(-a.kmRestantes).toLocaleString('es-ES')}` : a.kmRestantes.toLocaleString('es-ES')} km{:else if a.dias != null}{textoDias(a.dias)}{/if}
-							</span>
+							{#if a.cuando}<span class="shrink-0 text-right text-xs font-semibold {a.nivel === 'vencido' ? 'nivel-vencido' : a.nivel === 'urgente' ? 'nivel-urgente' : 'text-texto-2'}">{a.cuando}</span>{/if}
 						</a>
+						{#if a.tareaLocalId}
+							<button
+								class="flex w-12 shrink-0 items-center justify-center border-l border-borde text-texto-3 transition hover:bg-superficie-2 hover:text-ok"
+								onclick={(e) => accion('/local?/estado', { id: a.tareaLocalId!, estado: 'hecha' }, e.currentTarget)}
+								aria-label="Marcar «{a.titulo}» como hecha"
+								title="Hecha"><Check size={18} /></button
+							>
+						{/if}
 					</li>
 				{/each}
-				{#each data.taller.local as t (t.id)}
-					{@const vencida = t.fechaLimite != null && t.fechaLimite < data.hoy}
-					{@const nivel = t.prioridad === 'alta' || vencida ? 'vencido' : t.prioridad === 'media' ? 'urgente' : 'pronto'}
-					<li>
-						<a href="/local" class="flex items-center gap-3 px-4 py-3 transition hover:bg-superficie-2">
-							<span class="h-9 w-1 shrink-0 rounded-full" style="background: var(--{nivel})"></span>
-							<div class="min-w-0 flex-1">
-								<p class="truncate font-medium">{t.titulo} <span class="font-normal text-texto-3">· El local</span></p>
-								<p class="truncate text-xs text-texto-3">{t.zona ?? 'Tarea del local'}{t.pasos.length ? ` · ${t.pasos.filter((p) => p.hecho).length}/${t.pasos.length} pasos` : ''}</p>
-							</div>
-							<span class="cifra shrink-0 text-right text-base nivel-{nivel}">
-								{#if t.fechaLimite}{textoDias(diasEntre(data.hoy, t.fechaLimite))}{:else}<Warehouse size={16} class="text-texto-3" />{/if}
-							</span>
-						</a>
-					</li>
-				{/each}
-				{#if data.taller.localTotal > data.taller.local.length}
-					<li><a href="/local" class="block px-4 py-2.5 text-xs text-texto-3 hover:text-texto">Y {data.taller.localTotal - data.taller.local.length} más en el local →</a></li>
-				{/if}
 			</ul>
+			{#if data.asuntos.length > MAX}
+				<button class="w-full border-t border-borde py-2.5 text-xs font-medium text-texto-3 hover:text-texto" onclick={() => (todos = !todos)}>
+					{todos ? 'Ver menos' : `Ver las ${data.asuntos.length - MAX} restantes`}
+				</button>
+			{/if}
+		{:else}
+			<p class="flex items-center gap-3 px-4 py-4 text-sm text-texto-2"><CircleCheck size={18} class="nivel-ok" /> Todo al día: papeles, revisiones, averías y el local.</p>
 		{/if}
-		{#if data.taller.compras || data.taller.fueraDeSitio}
-			<div class="mt-3 flex flex-wrap gap-2">
-				{#if data.taller.compras}<a href="/compras" class="chip h-9 px-3 hover:text-texto"><ShoppingCart size={14} /> {data.taller.compras} por comprar</a>{/if}
-				{#if data.taller.fueraDeSitio}<a href="/inventario" class="chip h-9 px-3 nivel-urgente"><Boxes size={14} /> {data.taller.fueraDeSitio} {data.taller.fueraDeSitio === 1 ? 'herramienta sin localizar' : 'herramientas sin localizar'}</a>{/if}
-			</div>
+		{#if data.proximoTramite}
+			{@const p = data.proximoTramite}
+			<a href={p.href} class="flex items-center gap-3 border-t border-borde bg-superficie-2/50 px-4 py-2.5 text-xs text-texto-3 hover:text-texto">
+				<span class="flex-1">Próximo trámite: <strong class="font-semibold text-texto-2">{p.titulo} de {p.vehiculo}</strong>, {p.cuando} ({p.detalle})</span>
+				<ArrowRight size={13} class="shrink-0" />
+			</a>
 		{/if}
 	</section>
 
-	<!-- Dinero -->
-	<section>
-		<div class="mb-3 flex items-baseline justify-between">
-			<h2 class="text-2xl">Dinero</h2>
-			<span class="flex gap-3"><a href="/contabilidad/nuevo" class="text-xs font-semibold text-acento">＋ Apuntar factura</a><a href="/contabilidad/tesoreria" class="text-xs text-texto-3 hover:text-texto">Tesorería →</a></span>
-		</div>
-		<div class="tarjeta p-5">
-			<!-- Lo que hay -->
-			<a href="/contabilidad/tesoreria" class="block">
-				<p class="etiqueta">Disponible</p>
-				<p class="cifra mt-1 text-5xl {disponible < 0 ? 'nivel-vencido' : ''}">{euros(disponible)}</p>
-				<p class="mt-1 text-xs text-texto-3">
-					Banco {euros(data.dinero.banco)}{#if data.dinero.caja}{' · '}Caja {euros(data.dinero.caja)}{/if}{' · '}{data.dinero.diasCuadre == null ? 'sin cuadrar con el banco' : data.dinero.diasCuadre === 0 ? 'cuadrado hoy' : `cuadrado hace ${data.dinero.diasCuadre} ${data.dinero.diasCuadre === 1 ? 'día' : 'días'}`}
-				</p>
-			</a>
-			{#if disponible < 0 || data.dinero.diasCuadre == null || data.dinero.diasCuadre > 30}
-				<a href="/contabilidad/tesoreria" class="mt-3 flex items-center gap-2 rounded-lg bg-urgente/10 px-3 py-2 text-xs text-texto-2 hover:bg-urgente/15">
-					{disponible < 0 ? '¿En tu banco hay otra cifra? Cuádralo y la app se ajusta' : 'Hace tiempo que no cuadras con el banco'} <ArrowRight size={13} class="ml-auto shrink-0" />
-				</a>
+	<div class="flex flex-col gap-4">
+		<!-- Dinero en una línea -->
+		<a href="/contabilidad" class="tarjeta block p-4 transition hover:border-texto-3/40">
+			<p class="etiqueta flex items-center gap-1.5"><Landmark size={13} /> En el banco</p>
+			<p class="cifra mt-1 text-4xl {data.dinero.disponible < 0 ? 'nivel-vencido' : ''}">{euros(data.dinero.disponible)}</p>
+			<p class="mt-1 text-xs text-texto-3">
+				Gastado en {mes}: <span class="text-texto-2">{euros(data.dinero.gastoMes, { redondo: true })}</span> · en {data.hoy.slice(0, 4)}: <span class="text-texto-2">{euros(data.dinero.gastoAnio, { redondo: true })}</span>
+			</p>
+			{#if data.dinero.disponible < 0 || data.dinero.diasCuadre == null || data.dinero.diasCuadre > 30}
+				<p class="mt-2 text-xs nivel-urgente">{data.dinero.disponible < 0 ? '¿En el banco pone otra cifra? Cuádralo en Tesorería.' : 'Hace tiempo que no cuadras con el banco.'}</p>
 			{/if}
+		</a>
 
-			<!-- Lo que entra y sale -->
-			<div class="mt-4 grid grid-cols-2 gap-3 border-t border-borde pt-4 text-sm">
-				{#each [[nombreMes, data.dinero.mes], [data.hoy.slice(0, 4), data.dinero.anio]] as [titulo, f] (titulo)}
-					{@const flujo = f as { entradas: number; salidas: number }}
-					<div>
-						<p class="etiqueta mb-1.5 first-letter:uppercase">{titulo}</p>
-						<p class="flex justify-between gap-2"><span class="text-texto-3">Entradas</span><span class="cifra nivel-ok">+{euros(flujo.entradas, { redondo: true })}</span></p>
-						<p class="flex justify-between gap-2"><span class="text-texto-3">Salidas</span><span class="cifra">−{euros(flujo.salidas, { redondo: true })}</span></p>
-					</div>
-				{/each}
-			</div>
-
-			{#if data.gasto.categorias.length}
-				<p class="etiqueta mt-5 mb-2">En qué se va · {data.hoy.slice(0, 4)}</p>
-				<ul class="flex flex-col gap-2.5">
-					{#each data.gasto.categorias as c (c.nombre)}
-						<li class="grid grid-cols-[7rem_1fr_auto] items-center gap-3 text-sm">
-							<span class="truncate text-texto-2">{c.nombre}</span>
-							<span class="h-2 overflow-hidden rounded-full bg-superficie-3"><span class="block h-full rounded-full" style="width:{(c.total / maxCat) * 100}%; background:{c.color}"></span></span>
-							<span class="cifra text-texto-2">{euros(c.total, { redondo: true })}</span>
+		<!-- Obras -->
+		{#if data.obras.length}
+			<section class="tarjeta p-4">
+				<a href="/restauraciones" class="etiqueta mb-3 flex items-center justify-between hover:text-texto">En el taller <ArrowRight size={12} /></a>
+				<ul class="flex flex-col gap-3">
+					{#each data.obras as o (o.id)}
+						<li>
+							<a href="/restauraciones/{o.id}" class="block">
+								<div class="flex items-baseline justify-between gap-3 text-sm">
+									<span class="min-w-0 truncate font-medium">{o.nombre}</span>
+									<span class="cifra shrink-0 text-texto-2">{Math.round(o.avance * 100)} %</span>
+								</div>
+								<div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-superficie-3"><div class="h-full rounded-full bg-acento" style="width: {o.avance * 100}%"></div></div>
+								<p class="mt-1 text-xs text-texto-3">{o.vehiculo}{o.estado === 'pausada' ? ' · pausada' : o.estado === 'planificada' ? ' · planificada' : ''}</p>
+							</a>
 						</li>
 					{/each}
 				</ul>
-			{/if}
-		</div>
-	</section>
-
-	<!-- Restauraciones -->
-	<section class="lg:col-span-2">
-		<div class="mb-3 flex items-baseline justify-between">
-			<h2 class="text-2xl">En el taller</h2>
-			<a href="/restauraciones" class="text-xs text-texto-3 hover:text-texto">Restauraciones →</a>
-		</div>
-		{#if !data.restauraciones.length}
-			<a href="/restauraciones" class="vacio flex items-center justify-center gap-2 hover:text-texto"><Wrench size={16} /> Ninguna obra en marcha. ¿Empezamos una?</a>
-		{:else}
-			<div class="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 xl:grid-cols-3" style="scrollbar-width:none">
-				{#each data.restauraciones as r (r.id)}
-					<a href="/restauraciones/{r.id}" class="tarjeta group relative w-72 shrink-0 snap-start overflow-hidden sm:w-auto">
-						<div class="aspect-[2/1] bg-superficie-2">
-							{#if r.portada}<img src="/archivos/{r.portada}?mini" alt="" class="h-full w-full object-cover opacity-80 transition group-hover:opacity-100" />{/if}
-						</div>
-						<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 pt-10 text-white">
-							<p class="text-xs text-white/70">{r.vehiculo}</p>
-							<p class="truncate font-display text-2xl font-bold uppercase">{r.nombre}</p>
-							<div class="mt-2 flex items-center gap-2.5">
-								<div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/20"><div class="h-full rounded-full bg-acento" style="width:{r.avance * 100}%"></div></div>
-								<span class="cifra text-sm">{Math.round(r.avance * 100)}%</span>
-							</div>
-						</div>
-					</a>
-				{/each}
-			</div>
+			</section>
 		{/if}
-	</section>
-
-	<!-- Últimas entradas -->
-	<section class="lg:col-span-2">
-		<h2 class="mb-3 text-2xl">Últimos movimientos en el taller</h2>
-		{#if !data.entradas.length}
-			<div class="vacio">Aquí verás lo último que registres.</div>
-		{:else}
-			<ul class="tarjeta lista-filas">
-				{#each data.entradas as e (e.id)}
-					<li>
-						<a href="/flota/{e.vehiculoId}#entrada-{e.id}" class="flex items-center gap-3 px-4 py-3 hover:bg-superficie-2">
-							<div class="min-w-0 flex-1">
-								<p class="truncate text-sm font-medium">{e.titulo}</p>
-								<p class="text-xs text-texto-3">{e.vehiculo} · {nombreClase[e.clase]} · {fechaLarga(e.fecha)}</p>
-							</div>
-							<ArrowRight size={16} class="text-texto-3" />
-						</a>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</section>
+	</div>
 </div>

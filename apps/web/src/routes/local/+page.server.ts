@@ -98,7 +98,7 @@ export const actions = {
 			if (lista.length) await sincronizarCompras(locals.db, lista.map((l) => l.texto).join('\n'), { tareaLocalId: nueva.id });
 		}
 		return hecha
-			? { mensaje: t.cadaMeses ? `¡Hecha! La siguiente, dentro de ${t.cadaMeses} meses` : '¡Hecha!', momento: 'faseCompletada' }
+			? { mensaje: t.cadaMeses ? `Hecha. La siguiente, dentro de ${t.cadaMeses} meses` : 'Hecha', momento: 'faseCompletada' }
 			: { mensaje: 'Actualizada' };
 	}),
 

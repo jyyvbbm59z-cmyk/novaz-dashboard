@@ -54,11 +54,14 @@
 	<button class="btn btn-acento" onclick={() => ((edit = null), (hTarea = true))}><Plus size={18} /> Tarea</button>
 </Cabecera>
 
-<section class="mb-4 grid grid-cols-3 gap-3">
-	<div class="tarjeta p-4"><p class="etiqueta">Pendientes</p><p class="cifra mt-1 text-3xl">{data.abiertas.length}</p></div>
-	<div class="tarjeta p-4"><p class="etiqueta">Urgentes o vencidas</p><p class="cifra mt-1 text-3xl {data.abiertas.some((t) => t.prioridad === 'alta' || (t.fechaLimite && t.fechaLimite < data.hoy)) ? 'nivel-vencido' : ''}">{data.abiertas.filter((t) => t.prioridad === 'alta' || (t.fechaLimite && t.fechaLimite < data.hoy)).length}</p></div>
-	<div class="tarjeta p-4"><p class="etiqueta">Gastado {data.hoy.slice(0, 4)}</p><p class="cifra mt-1 text-3xl">{euros(data.gastoAnio, { redondo: true })}</p></div>
-</section>
+{#if data.abiertas.length || data.gastoAnio}
+	{@const urgentes = data.abiertas.filter((t) => t.prioridad === 'alta' || (t.fechaLimite && t.fechaLimite < data.hoy)).length}
+	<p class="mb-4 flex flex-wrap gap-x-3 gap-y-1 text-sm text-texto-2">
+		{#if data.abiertas.length}<span><strong class="cifra text-base text-texto">{data.abiertas.length}</strong> {data.abiertas.length === 1 ? 'tarea abierta' : 'tareas abiertas'}</span>{/if}
+		{#if urgentes}<span class="nivel-vencido">· {urgentes} {urgentes === 1 ? 'urgente o fuera de plazo' : 'urgentes o fuera de plazo'}</span>{/if}
+		{#if data.gastoAnio}<span>· <strong class="cifra text-base text-texto">{euros(data.gastoAnio, { redondo: true })}</strong> gastados en {data.hoy.slice(0, 4)}</span>{/if}
+	</p>
+{/if}
 
 {#if data.zonas.length > 1}
 	<div class="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0" style="scrollbar-width:none">

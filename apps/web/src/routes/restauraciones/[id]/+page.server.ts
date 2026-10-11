@@ -215,7 +215,7 @@ export const actions = {
 		if (estadoVehiculo) {
 			await locals.db.update(s.vehiculos).set({ estadoId: estadoVehiculo }).where(eq(s.vehiculos.id, await vehiculoDe(locals, rid(params))));
 		}
-		return terminada ? { mensaje: '¡Restauración terminada!', momento: 'restauracionTerminada' } : { mensaje: 'Estado actualizado' };
+		return terminada ? { mensaje: 'Restauración terminada', momento: 'restauracionTerminada' } : { mensaje: 'Estado actualizado' };
 	}),
 
 	portada: accion(async ({ request, params, locals }) => {

@@ -10,7 +10,7 @@
 	let { data } = $props();
 	const a = $derived(data.ajustes);
 
-	const PRESETS = ['#f2a33a', '#ff6b35', '#e5534b', '#e8ff59', '#4cc38a', '#2fb8a6', '#4f8cff', '#9b6dff', '#ecebe8'];
+	const PRESETS = ['#ebab00', '#f2a33a', '#ff6b35', '#e5534b', '#e8ff59', '#4cc38a', '#2fb8a6', '#4f8cff', '#9b6dff', '#ecebe8'];
 	let acento = $state((() => data.ajustes.acento)());
 	$effect(() => {
 		document.documentElement.style.setProperty('--acento', acento);

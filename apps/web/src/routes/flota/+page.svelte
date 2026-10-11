@@ -72,40 +72,41 @@
 	<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
 		{#each lista as v (v.id)}
 			{@const e = estado(v.estadoId)}
-			<a href="/flota/{v.id}" class="tarjeta group overflow-hidden transition hover:border-texto-3/40">
-				<div class="relative aspect-[16/9] overflow-hidden bg-superficie-2">
-					{#if v.portada}
+			{@const av = data.aviso[v.id]}
+			<a href="/flota/{v.id}" class="tarjeta group flex overflow-hidden transition hover:border-texto-3/40 {v.portada ? 'flex-col' : ''}">
+				{#if v.portada}
+					<!-- Con foto: la foto manda -->
+					<div class="relative aspect-[2/1] overflow-hidden bg-superficie-2">
 						<img src="/archivos/{v.portada}?mini" alt="" loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
-					{:else}
-						<div class="flex h-full items-center justify-center text-texto-3/50"><Icono nombre={tipoDe(v.tipoId)?.icono} size={56} /></div>
-					{/if}
-					<div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent"></div>
-					<div class="absolute bottom-2.5 left-3"><Placa matricula={v.matricula} /></div>
-					{#if v.alertas}
-						<span class="absolute top-2.5 right-2.5 chip border-transparent bg-black/60 text-white backdrop-blur">
-							<span class="punto" style="background: var(--{v.nivel})"></span>{v.alertas}
-						</span>
-					{/if}
-					{#if v.propietario === 'tercero'}
-						<span class="absolute top-2.5 left-2.5 chip border-transparent bg-black/60 text-white backdrop-blur">{v.contacto ?? 'Tercero'}</span>
-					{/if}
-				</div>
-				<div class="flex flex-col gap-1.5 p-3.5">
+						<div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent"></div>
+						<div class="absolute bottom-2.5 left-3"><Placa matricula={v.matricula} /></div>
+						{#if v.propietario === 'tercero'}<span class="absolute top-2.5 left-2.5 chip border-transparent bg-black/60 text-white backdrop-blur">{v.contacto ?? 'Tercero'}</span>{/if}
+					</div>
+				{:else}
+					<!-- Sin foto: fila compacta con el icono del tipo -->
+					<div class="flex w-16 shrink-0 items-center justify-center border-r border-borde bg-superficie-2 text-texto-3"><Icono nombre={tipoDe(v.tipoId)?.icono} size={26} /></div>
+				{/if}
+				<div class="flex min-w-0 flex-1 flex-col gap-1 p-3.5">
 					<div class="flex items-baseline justify-between gap-2">
-						<h2 class="truncate text-2xl">{v.alias}</h2>
+						<h2 class="truncate text-lg">{v.alias}</h2>
 						{#if v.km != null}<span class="cifra shrink-0 text-sm text-texto-2">{v.km.toLocaleString('es-ES')} km</span>{/if}
 					</div>
-					<div class="flex items-center gap-2 text-sm text-texto-3">
-						{#if e}<span class="punto" style="background:{e.color}"></span>{e.nombre}{/if}
-						<span class="truncate">· {[v.marca, v.modelo, v.anio].filter(Boolean).join(' ')}</span>
+					<div class="flex min-w-0 items-center gap-2 text-xs text-texto-3">
+						{#if !v.portada && v.matricula}<span class="shrink-0 font-mono text-texto-2">{v.matricula}</span>·{/if}
+						{#if e}<span class="punto" style="background:{e.color}"></span><span class="shrink-0">{e.nombre}</span>{/if}
+						{#if v.propietario === 'tercero' && !v.portada}<span class="truncate">· de {v.contacto ?? 'un tercero'}</span>{:else}<span class="truncate">· {[v.marca, v.modelo, v.anio].filter(Boolean).join(' ')}</span>{/if}
 					</div>
 					{#if v.restauracion}
-						<div class="mt-1.5 flex items-center gap-2.5">
+						<div class="mt-1 flex items-center gap-2.5">
 							<div class="h-1.5 flex-1 overflow-hidden rounded-full bg-superficie-3">
 								<div class="h-full rounded-full" style="width:{Math.round(v.restauracion.avance * 100)}%; background: var(--acento)"></div>
 							</div>
 							<span class="cifra text-xs text-texto-2">{Math.round(v.restauracion.avance * 100)}%</span>
 						</div>
+					{:else if av}
+						<p class="mt-0.5 flex items-center gap-1.5 truncate text-xs font-medium nivel-{av.nivel}"><span class="punto" style="background: var(--{av.nivel})"></span><span class="truncate">{av.texto}</span></p>
+					{:else}
+						<p class="mt-0.5 text-xs text-texto-3">Todo al día</p>
 					{/if}
 				</div>
 			</a>

@@ -16,7 +16,7 @@
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import VencimientoForm from '$comp/VencimientoForm.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad } from '@novaz/core';
+	import { diasEntre, euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad } from '@novaz/core';
 	import FacturaForm from '$comp/FacturaForm.svelte';
 	import type { Entrada, Movimiento, Pendiente, Vencimiento } from '@novaz/core/schema';
 	import { Check, CircleAlert, Download, FileText, Gauge, ListChecks, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
@@ -34,6 +34,10 @@
 	const activa = $derived(data.restauraciones.find((r) => r.estado !== 'terminada'));
 	const planesVeh = $derived(data.mantenimiento.map((m) => ({ id: m.plan.id, nombre: m.plan.nombre, codigo: m.plan.codigo, tareas: m.plan.tareas, incluye: m.plan.incluye })));
 	const alertasVeh = $derived(data.alertas.filter((a) => a.vehiculoId === v.id));
+	// El próximo papel que vence (para cuando no hay nada urgente)
+	const proximoPapel = $derived(
+		data.vencimientos.filter((x) => x.estado === 'vigente' && x.fechaVence >= data.hoy).sort((x, y) => x.fechaVence.localeCompare(y.fechaVence))[0] ?? null
+	);
 
 	const PESTANAS = [
 		['historial', 'Historial'],
@@ -173,26 +177,38 @@
 		<p class="cifra mt-1 text-3xl">{data.km?.toLocaleString('es-ES') ?? '—'}</p>
 		<p class="text-xs text-texto-3">{kmMes ? `~${kmMes.toLocaleString('es-ES')} km/mes` : 'Toca para actualizar'}</p>
 	</button>
-	<div class="tarjeta p-4">
-		<p class="etiqueta">Gasto {data.hoy.slice(0, 4)}</p>
-		<p class="cifra mt-1 text-3xl">{euros(data.totales.gastoAnio, { redondo: true })}</p>
-		<p class="text-xs text-texto-3">{enUso && data.usoMes.total ? `Uso ≈ ${euros(data.usoMes.total, { redondo: true })}/mes` : `Total ${euros(data.totales.gasto, { redondo: true })}`}</p>
-	</div>
-	<a href="?pestana=papeles" class="tarjeta p-4 transition hover:border-texto-3/40">
-		<p class="etiqueta">Avisos</p>
+	{#if enUso && data.usoMes.total}
+		<a href="?pestana=gastos" class="tarjeta p-4 transition hover:border-texto-3/40">
+			<p class="etiqueta">Cuesta al mes</p>
+			<p class="cifra mt-1 text-3xl">{euros(data.usoMes.total, { redondo: true })}</p>
+			<p class="text-xs text-texto-3">{data.usoMes.porKm != null ? `${(data.usoMes.porKm / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €/km` : 'Uso estimado'}</p>
+		</a>
+	{:else}
+		<a href="?pestana=gastos" class="tarjeta p-4 transition hover:border-texto-3/40">
+			<p class="etiqueta">{activa ? 'Invertido' : 'Gastado en total'}</p>
+			<p class="cifra mt-1 text-3xl">{euros(data.totales.gasto, { redondo: true })}</p>
+			<p class="text-xs text-texto-3">En {data.hoy.slice(0, 4)}: {euros(data.totales.gastoAnio, { redondo: true })}</p>
+		</a>
+	{/if}
+	<a href="?pestana={alertasVeh[0]?.tipo === 'mantenimiento' ? 'mantenimiento' : 'papeles'}" class="tarjeta p-4 transition hover:border-texto-3/40">
+		<p class="etiqueta">Lo siguiente</p>
 		{#if alertasVeh.length}
-			<p class="cifra mt-1 text-3xl nivel-{alertasVeh[0].nivel}">{alertasVeh.length}</p>
-			<p class="truncate text-xs text-texto-3">{alertasVeh[0].titulo} · {alertasVeh[0].tipo === 'vencimiento' && alertasVeh[0].dias != null ? textoDias(alertasVeh[0].dias) : alertasVeh[0].detalle}</p>
+			{@const a = alertasVeh[0]}
+			<p class="mt-1 truncate text-lg font-semibold nivel-{a.nivel}">{a.titulo}</p>
+			<p class="truncate text-xs text-texto-3">{a.tipo === 'vencimiento' && a.dias != null ? textoDias(a.dias) : a.detalle}{alertasVeh.length > 1 ? ` · y ${alertasVeh.length - 1} más` : ''}</p>
+		{:else if proximoPapel}
+			<p class="mt-1 truncate text-lg font-semibold">{proximoPapel.tipo.nombre}</p>
+			<p class="truncate text-xs text-texto-3">{fechaLarga(proximoPapel.fechaVence)} · {textoDias(diasEntre(data.hoy, proximoPapel.fechaVence))}</p>
 		{:else}
-			<p class="cifra mt-1 text-3xl nivel-ok">0</p>
-			<p class="text-xs text-texto-3">Todo al día</p>
+			<p class="mt-1 text-lg font-semibold text-texto-3">Nada</p>
+			<p class="text-xs text-texto-3">Sin papeles registrados</p>
 		{/if}
 	</a>
-	<div class="tarjeta p-4">
-		<p class="etiqueta">Historial</p>
-		<p class="cifra mt-1 text-3xl">{data.entradas.length}</p>
-		<p class="text-xs text-texto-3">{data.entradas.reduce((a, e) => a + (e.horas ?? 0), 0).toLocaleString('es-ES')} h registradas</p>
-	</div>
+	<a href="?pestana=gastos" class="tarjeta p-4 transition hover:border-texto-3/40">
+		<p class="etiqueta">Gasto {data.hoy.slice(0, 4)}</p>
+		<p class="cifra mt-1 text-3xl">{euros(data.totales.gastoAnio, { redondo: true })}</p>
+		<p class="text-xs text-texto-3">Total {euros(data.totales.gasto, { redondo: true })}</p>
+	</a>
 </section>
 
 {#if activa}

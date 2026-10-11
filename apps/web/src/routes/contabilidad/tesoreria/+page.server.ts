@@ -71,7 +71,7 @@ export const actions = {
 			.insert(s.ajustes)
 			.values({ clave: 'ultimoCuadre', valor: locals.hoy })
 			.onConflictDoUpdate({ target: s.ajustes.clave, set: { valor: locals.hoy } });
-		return { mensaje: cuenta === '570' ? '¡Caja cuadrada!' : '¡Cuadrado con el banco!', momento: 'cajaCuadrada', diferencia: 0 };
+		return { mensaje: cuenta === '570' ? 'Caja cuadrada' : 'Cuadrado con el banco', momento: 'cajaCuadrada', diferencia: 0 };
 	}),
 
 	borrarCuadre: accion(async ({ request, locals }) => {

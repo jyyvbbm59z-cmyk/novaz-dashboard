@@ -169,6 +169,13 @@
       "when": 1791626370669,
       "tag": "0023_consumos_reales",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1791705768619,
+      "tag": "0024_marca_sobria",
+      "breakpoints": true
     }
   ]
 }

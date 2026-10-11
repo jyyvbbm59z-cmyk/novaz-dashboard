@@ -1,10 +1,9 @@
 <script lang="ts">
 	import ArticuloDetalle from '$comp/ArticuloDetalle.svelte';
 	import ArticuloForm from '$comp/ArticuloForm.svelte';
-	import Cifra from '$comp/Cifra.svelte';
 	import Hoja from '$comp/Hoja.svelte';
 	import { diasEntre, euros } from '@novaz/core';
-	import { ClipboardCheck, Plus, Search, Wrench } from '@lucide/svelte';
+	import { Plus, Search, Wrench } from '@lucide/svelte';
 
 	let { data } = $props();
 	const herramientas = $derived(data.articulos.filter((a) => a.tipo === 'herramienta'));
@@ -50,14 +49,19 @@
 
 <svelte:head><title>Herramientas · {data.ajustes.nombreTaller}</title></svelte:head>
 
-<section class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-	<Cifra etiqueta="Herramientas" valor={activas.reduce((t, a) => t + Math.max(a.cantidad, 0), 0)} detalle="{activas.length} tipos distintos" icono={Wrench} />
-	<Cifra etiqueta="Valor" valor={euros(valor, { redondo: true })} detalle="A precio de compra" />
-	<Cifra etiqueta="Fuera de su sitio" valor={cuenta('prestada') + cuenta('perdida')} detalle="{cuenta('prestada')} prestadas · {cuenta('perdida')} sin encontrar" tono={cuenta('perdida') ? 'vencido' : undefined} />
-	<Cifra etiqueta="Recuento" valor={sinRecontar ? `${sinRecontar} sin revisar` : 'Al día'} detalle={recuentos.length ? `Último: ${recuentos.at(-1)?.split('-').reverse().join('/')}` : 'Nunca'} tono={sinRecontar ? 'urgente' : 'ok'} href="/inventario/recuento" icono={ClipboardCheck} />
-</section>
+{#if herramientas.length}
+	<!-- Resumen en una línea: solo lo que tiene valor -->
+	<p class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-texto-2">
+		<span><strong class="cifra text-base text-texto">{activas.reduce((t, a) => t + Math.max(a.cantidad, 0), 0)}</strong> herramientas</span>
+		{#if valor}<span>· valen <strong class="cifra text-base text-texto">{euros(valor, { redondo: true })}</strong></span>{/if}
+		{#if cuenta('prestada') + cuenta('perdida')}<span class="nivel-urgente">· {cuenta('prestada') + cuenta('perdida')} fuera de su sitio</span>{/if}
+		<a href="/inventario/recuento" class="ml-auto text-xs {sinRecontar ? 'nivel-urgente' : 'text-texto-3'} hover:text-texto"
+			>{sinRecontar ? `${sinRecontar} sin recontar →` : `Recontado ${recuentos.length ? `el ${recuentos.at(-1)?.split('-').reverse().join('/')}` : ''} →`}</a
+		>
+	</p>
+{/if}
 
-<div class="mb-4 flex flex-wrap items-center gap-2">
+{#if herramientas.length}<div class="mb-4 flex flex-wrap items-center gap-2">
 	<label class="relative min-w-48 flex-1">
 		<Search size={15} class="absolute top-1/2 left-3 -translate-y-1/2 text-texto-3" />
 		<input bind:value={busqueda} class="input h-9 pl-9 text-sm" placeholder="Buscar herramienta, marca, nº de serie…" />
@@ -68,7 +72,7 @@
 	</select>
 	<select bind:value={agrupar} class="input h-9 w-auto text-sm"><option value="ubicacion">Por ubicación</option><option value="categoria">Por categoría</option></select>
 	<button class="btn btn-acento h-9" onclick={() => (hNueva = true)}><Plus size={16} /> Herramienta</button>
-</div>
+</div>{/if}
 
 {#if !herramientas.length}
 	<div class="vacio">

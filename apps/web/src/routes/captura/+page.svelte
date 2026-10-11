@@ -26,7 +26,8 @@
 	const vehiculos = $derived(
 		data.vehiculosMenu
 			.filter((v) => !finales.has(v.estadoId ?? -1))
-			.sort((a, b) => (data.actividad[b.id] ?? '').localeCompare(data.actividad[a.id] ?? '') || a.alias.localeCompare(b.alias))
+			// Los tuyos primero (por actividad reciente); los de clientes, al final
+			.sort((a, b) => Number(a.propietario === 'tercero') - Number(b.propietario === 'tercero') || (data.actividad[b.id] ?? '').localeCompare(data.actividad[a.id] ?? '') || a.alias.localeCompare(b.alias))
 	);
 	const vehiculo = $derived(data.vehiculosMenu.find((v) => v.id === vehiculoId));
 	const obra = $derived(data.obras.find((o) => o.vehiculoId === vehiculoId));
@@ -61,15 +62,19 @@
 				<span class="block text-xs text-texto-3">Una pared que pintar, una humedad, el extintor…</span>
 			</span>
 		</a>
-		<h1 class="mb-5 text-4xl">¿O de un vehículo?</h1>
+		<h2 class="mb-3 text-lg">O de un vehículo</h2>
 		{#if !vehiculos.length}
 			<div class="vacio">No hay vehículos. <a href="/flota/nuevo" class="text-acento">Da de alta el primero</a>.</div>
 		{/if}
 		<div class="grid grid-cols-2 gap-2.5">
 			{#each vehiculos as v (v.id)}
+				{@const est = cat.estados.find((e) => e.id === v.estadoId)}
 				<button class="tarjeta flex flex-col items-start gap-2 p-4 text-left transition active:scale-[0.98]" onclick={() => elegir(v.id)}>
-					<Icono nombre={tipoDe(v.tipoId)?.icono} size={22} class="text-texto-3" />
-					<span class="w-full truncate font-display text-xl font-bold uppercase">{v.alias}</span>
+					<span class="flex w-full items-center justify-between gap-2">
+						<Icono nombre={tipoDe(v.tipoId)?.icono} size={22} class="text-texto-3" />
+						{#if v.propietario === 'tercero'}<span class="text-[0.65rem] font-semibold tracking-wide text-texto-3 uppercase">Cliente</span>{:else if est && /restaur/i.test(est.nombre)}<span class="text-[0.65rem] font-semibold tracking-wide uppercase" style="color: {est.color}">En obra</span>{/if}
+					</span>
+					<span class="w-full truncate text-lg font-semibold">{v.alias}</span>
 					<Placa matricula={v.matricula} />
 				</button>
 			{/each}

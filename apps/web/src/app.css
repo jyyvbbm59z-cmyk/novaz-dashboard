@@ -10,7 +10,7 @@
 /* ─── Tokens ──────────────────────────────────────────────────────────────── */
 :root,
 [data-theme='oscuro'] {
-	--acento: #f2a33a;
+	--acento: #ebab00;
 	--fondo: #0d0e10;
 	--superficie: #15171a;
 	--superficie-2: #1c1f23;
@@ -20,7 +20,7 @@
 	--texto-2: #a3a8b0;
 	--texto-3: #6c727c;
 	--vencido: #f0524f;
-	--urgente: #ff9440;
+	--urgente: #ff8a3d;
 	--pronto: #7aa2ff;
 	--ok: #4cc38a;
 	--sombra: 0 1px 0 rgb(255 255 255 / 0.035) inset, 0 10px 30px -14px rgb(0 0 0 / 0.7);
@@ -93,12 +93,16 @@
 		min-height: 100dvh;
 		font-feature-settings: 'cv11', 'ss01';
 	}
-	h1,
-	h2,
-	h3 {
+	/* La tipografía condensada en mayúsculas, solo para los títulos de página; el resto, en tono normal */
+	h1 {
 		@apply font-display tracking-wide uppercase;
 		font-weight: 700;
 		line-height: 1.05;
+	}
+	h2,
+	h3 {
+		@apply font-sans font-semibold tracking-tight;
+		line-height: 1.2;
 	}
 	::selection {
 		background: color-mix(in oklab, var(--acento) 35%, transparent);
@@ -195,8 +199,8 @@
 		text-wrap: balance;
 	}
 	.seccion-titulo {
-		@apply font-display text-[1.6rem] font-bold tracking-wide uppercase;
-		line-height: 1;
+		@apply font-sans text-lg font-semibold tracking-tight;
+		line-height: 1.2;
 	}
 	.tabla {
 		@apply w-full text-sm;

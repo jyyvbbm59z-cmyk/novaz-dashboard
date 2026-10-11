@@ -80,7 +80,7 @@ async function efecto(efecto: Efecto, el?: Element | null) {
 		return;
 	}
 	const { default: confetti } = await import('canvas-confetti');
-	const acento = getComputedStyle(document.documentElement).getPropertyValue('--acento').trim() || '#f2a33a';
+	const acento = getComputedStyle(document.documentElement).getPropertyValue('--acento').trim() || '#ebab00';
 	const colores = [acento, '#ffffff', '#ecebe8', '#8a8f98'];
 	if (efecto === 'confeti') {
 		confetti({ particleCount: 110, spread: 75, origin: { y: 0.7 }, colors: colores, disableForReducedMotion: true });

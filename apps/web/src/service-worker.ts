@@ -28,7 +28,7 @@ const SIN_CONEXION = `<!doctype html><html lang="es"><meta charset="utf-8"><meta
 <title>Sin conexión</title><body style="margin:0;min-height:100dvh;display:grid;place-items:center;background:#0d0e10;color:#ecebe8;font-family:system-ui;text-align:center;padding:2rem">
 <div><p style="font-size:3rem;margin:0">🔧</p><h1 style="font-weight:700;letter-spacing:.05em;text-transform:uppercase">Sin conexión</h1>
 <p style="color:#a3a8b0">Lo que estabas escribiendo sigue guardado como borrador.<br>Vuelve a intentarlo cuando haya cobertura.</p>
-<button onclick="location.reload()" style="margin-top:1rem;padding:.8rem 1.4rem;border:0;border-radius:.6rem;background:#f2a33a;font-weight:700">Reintentar</button></div></body></html>`;
+<button onclick="location.reload()" style="margin-top:1rem;padding:.8rem 1.4rem;border:0;border-radius:.6rem;background:#ebab00;font-weight:700">Reintentar</button></div></body></html>`;
 
 sw.addEventListener('fetch', (e) => {
 	const req = e.request;

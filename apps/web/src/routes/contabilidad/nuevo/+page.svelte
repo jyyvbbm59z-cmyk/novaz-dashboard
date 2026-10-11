@@ -129,7 +129,7 @@
 	<!-- Paso 3: hecho -->
 	<div class="mx-auto flex max-w-md flex-col items-center gap-4 py-8 text-center">
 		<span class="flex h-16 w-16 items-center justify-center rounded-full bg-ok text-black"><Check size={34} strokeWidth={3} /></span>
-		<h2 class="seccion-titulo text-3xl">¡Apuntado!</h2>
+		<h2 class="seccion-titulo text-2xl">Apuntado</h2>
 		<p class="text-texto-2">{hecho.titulo}{mensual ? '. Se repetirá cada mes automáticamente.' : '.'}</p>
 		<SubirArchivos entidad="movimiento" entidadId={hecho.movimientoId} texto="Adjuntar la factura (foto o PDF)" clase="btn" />
 		<div class="flex flex-wrap justify-center gap-2">

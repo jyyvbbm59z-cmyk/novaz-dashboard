@@ -52,7 +52,7 @@
 					{@render bloque('A) Activo no corriente', b.activo.noCorriente)}
 					{@render bloque('B) Activo corriente', b.activo.corriente)}
 				</tbody>
-				<tfoot class="border-t-2 border-borde"><tr><td class="font-display text-lg font-bold uppercase">Total activo</td><td class="num text-base font-semibold">{euros(b.activo.total)}</td></tr></tfoot>
+				<tfoot class="border-t-2 border-borde"><tr><td class="font-semibold">Total activo</td><td class="num text-base font-semibold">{euros(b.activo.total)}</td></tr></tfoot>
 			</table>
 		</section>
 		<section class="tarjeta overflow-hidden">
@@ -63,7 +63,7 @@
 					{@render bloque('B) Pasivo no corriente', b.pnPasivo.noCorriente)}
 					{@render bloque('C) Pasivo corriente', b.pnPasivo.corriente)}
 				</tbody>
-				<tfoot class="border-t-2 border-borde"><tr><td class="font-display text-lg font-bold uppercase">Total PN y pasivo</td><td class="num text-base font-semibold">{euros(b.pnPasivo.total)}</td></tr></tfoot>
+				<tfoot class="border-t-2 border-borde"><tr><td class="font-semibold">Total PN y pasivo</td><td class="num text-base font-semibold">{euros(b.pnPasivo.total)}</td></tr></tfoot>
 			</table>
 		</section>
 	</div>

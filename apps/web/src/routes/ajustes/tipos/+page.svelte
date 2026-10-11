@@ -46,7 +46,7 @@
 		<li class="tarjeta flex items-start gap-3 p-4">
 			<span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-superficie-3"><Icono nombre={t.icono} size={22} /></span>
 			<div class="min-w-0 flex-1">
-				<p class="font-display text-xl font-bold uppercase">{t.nombre}</p>
+				<p class="text-lg font-semibold">{t.nombre}</p>
 				<p class="text-xs text-texto-3">{data.usos[t.id] ?? 0} vehículos · {t.campos.length} campos</p>
 				{#if t.campos.length}<p class="mt-1.5 truncate text-xs text-texto-2">{t.campos.map((c) => c.etiqueta).join(' · ')}</p>{/if}
 			</div>
