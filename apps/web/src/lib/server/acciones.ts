@@ -357,11 +357,22 @@ async function aplicarMejora(locals: Locals, vehiculoId: number, titulo: string,
 	} catch {
 		return;
 	}
+	// Varias mejoras pueden proponer la misma revisión (p. ej. «Suspensión: revisión»): no se duplica, se reinicia
+	const existentes = await locals.db
+		.select({ id: s.planesMantenimiento.id, nombre: s.planesMantenimiento.nombre })
+		.from(s.planesMantenimiento)
+		.where(and(eq(s.planesMantenimiento.vehiculoId, vehiculoId), eq(s.planesMantenimiento.activo, true)));
 	for (const r of extras.revisiones ?? []) {
+		const ya = existentes.find((p) => p.nombre.toLowerCase() === r.nombre.toLowerCase());
+		if (ya) {
+			await locals.db.insert(s.entradasPlanes).values({ entradaId, planId: ya.id }).onConflictDoNothing();
+			continue;
+		}
 		const [plan] = await locals.db
 			.insert(s.planesMantenimiento)
 			.values({ codigo: CODIGO_MEJORA, nombre: r.nombre, cadaKm: r.cadaKm, cadaMeses: r.cadaMeses, tareas: r.tareas, vehiculoId, avisoKm: 500, avisoDias: 30, orden: 50, notas: `Desde la mejora «${titulo}»` })
 			.returning({ id: s.planesMantenimiento.id });
+		existentes.push({ id: plan.id, nombre: r.nombre });
 		await locals.db.insert(s.entradasPlanes).values({ entradaId, planId: plan.id }).onConflictDoNothing();
 	}
 	const tareas = (extras.tareas ?? []).filter(Boolean);
