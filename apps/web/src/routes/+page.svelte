@@ -13,6 +13,8 @@
 	});
 	const pendientes = $derived(data.alertas);
 	const maxCat = $derived(Math.max(1, ...data.gasto.categorias.map((c) => c.total)));
+	const disponible = $derived(data.dinero.banco + data.dinero.caja);
+	const nombreMes = $derived(new Intl.DateTimeFormat('es-ES', { month: 'long', timeZone: 'UTC' }).format(new Date(data.hoy + 'T12:00:00Z')));
 	const nombreClase: Record<string, string> = { diario: 'Diario', mantenimiento: 'Mantenimiento', reparacion: 'Reparación', nota: 'Nota' };
 </script>
 
@@ -82,16 +84,39 @@
 	<!-- Dinero -->
 	<section>
 		<div class="mb-3 flex items-baseline justify-between">
-			<h2 class="text-2xl">Gasto</h2>
-			<span class="flex gap-3"><a href="/contabilidad/nuevo" class="text-xs font-semibold text-acento">＋ Apuntar factura</a><a href="/contabilidad" class="text-xs text-texto-3 hover:text-texto">Ver todo →</a></span>
+			<h2 class="text-2xl">Dinero</h2>
+			<span class="flex gap-3"><a href="/contabilidad/nuevo" class="text-xs font-semibold text-acento">＋ Apuntar factura</a><a href="/contabilidad/tesoreria" class="text-xs text-texto-3 hover:text-texto">Tesorería →</a></span>
 		</div>
 		<div class="tarjeta p-5">
-			<div class="grid grid-cols-2 gap-4">
-				<div><p class="etiqueta">Este mes</p><p class="cifra mt-1 text-4xl">{euros(data.gasto.mes, { redondo: true })}</p></div>
-				<div><p class="etiqueta">{data.hoy.slice(0, 4)}</p><p class="cifra mt-1 text-4xl text-texto-2">{euros(data.gasto.anio, { redondo: true })}</p></div>
+			<!-- Lo que hay -->
+			<a href="/contabilidad/tesoreria" class="block">
+				<p class="etiqueta">Disponible</p>
+				<p class="cifra mt-1 text-5xl {disponible < 0 ? 'nivel-vencido' : ''}">{euros(disponible)}</p>
+				<p class="mt-1 text-xs text-texto-3">
+					Banco {euros(data.dinero.banco)}{#if data.dinero.caja}{' · '}Caja {euros(data.dinero.caja)}{/if}{' · '}{data.dinero.diasCuadre == null ? 'sin cuadrar con el banco' : data.dinero.diasCuadre === 0 ? 'cuadrado hoy' : `cuadrado hace ${data.dinero.diasCuadre} ${data.dinero.diasCuadre === 1 ? 'día' : 'días'}`}
+				</p>
+			</a>
+			{#if disponible < 0 || data.dinero.diasCuadre == null || data.dinero.diasCuadre > 30}
+				<a href="/contabilidad/tesoreria" class="mt-3 flex items-center gap-2 rounded-lg bg-urgente/10 px-3 py-2 text-xs text-texto-2 hover:bg-urgente/15">
+					{disponible < 0 ? '¿En tu banco hay otra cifra? Cuádralo y la app se ajusta' : 'Hace tiempo que no cuadras con el banco'} <ArrowRight size={13} class="ml-auto shrink-0" />
+				</a>
+			{/if}
+
+			<!-- Lo que entra y sale -->
+			<div class="mt-4 grid grid-cols-2 gap-3 border-t border-borde pt-4 text-sm">
+				{#each [[nombreMes, data.dinero.mes], [data.hoy.slice(0, 4), data.dinero.anio]] as [titulo, f] (titulo)}
+					{@const flujo = f as { entradas: number; salidas: number }}
+					<div>
+						<p class="etiqueta mb-1.5 first-letter:uppercase">{titulo}</p>
+						<p class="flex justify-between gap-2"><span class="text-texto-3">Entradas</span><span class="cifra nivel-ok">+{euros(flujo.entradas, { redondo: true })}</span></p>
+						<p class="flex justify-between gap-2"><span class="text-texto-3">Salidas</span><span class="cifra">−{euros(flujo.salidas, { redondo: true })}</span></p>
+					</div>
+				{/each}
 			</div>
+
 			{#if data.gasto.categorias.length}
-				<ul class="mt-5 flex flex-col gap-2.5">
+				<p class="etiqueta mt-5 mb-2">En qué se va · {data.hoy.slice(0, 4)}</p>
+				<ul class="flex flex-col gap-2.5">
 					{#each data.gasto.categorias as c (c.nombre)}
 						<li class="grid grid-cols-[7rem_1fr_auto] items-center gap-3 text-sm">
 							<span class="truncate text-texto-2">{c.nombre}</span>
