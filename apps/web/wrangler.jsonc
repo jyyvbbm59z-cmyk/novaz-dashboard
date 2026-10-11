@@ -22,6 +22,8 @@
 			"bucket_name": "novaz-archivos"
 		}
 	],
+	// Workers AI: lectura de tickets por foto (tramo gratuito diario de la cuenta)
+	"ai": { "binding": "AI" },
 	// No borrar al desplegar las variables puestas a mano en el panel de Cloudflare
 	"keep_vars": true,
 	"vars": {
@@ -29,5 +31,23 @@
 		"ACCESS_TEAM_DOMAIN": "novaz.cloudflareaccess.com",
 		"ACCESS_AUD": "20665ac4a6e38086162999f51e22f046a92e2571f3cec68ac1957168d7ca363f"
 	},
-	"observability": { "enabled": true }
+	"observability": { "enabled": true },
+	// Desarrollo local (vite dev): lo mismo pero sin Workers AI, que exige conexión remota con credenciales
+	"env": {
+		"local": {
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "novaz",
+					"database_id": "8d5980dc-6344-4b43-a08c-b1d480cf3577",
+					"migrations_dir": "../../packages/core/migrations"
+				}
+			],
+			"r2_buckets": [{ "binding": "ARCHIVOS", "bucket_name": "novaz-archivos" }],
+			"vars": {
+				"ACCESS_TEAM_DOMAIN": "novaz.cloudflareaccess.com",
+				"ACCESS_AUD": "20665ac4a6e38086162999f51e22f046a92e2571f3cec68ac1957168d7ca363f"
+			}
+		}
+	}
 }

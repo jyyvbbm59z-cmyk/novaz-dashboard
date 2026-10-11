@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import LeerTicket from '$comp/LeerTicket.svelte';
+	import { avisar } from '$lib/avisos.svelte';
 	import { enviar } from '$lib/enviar';
-	import { CUENTAS_INMOVILIZADO, desglosarIva, ETIQUETA_PAGO, euros, eurosInput, parsearEuros, TIPOS_IVA } from '@novaz/core';
+	import { subirArchivo } from '$lib/imagenes';
+	import { CUENTAS_INMOVILIZADO, desglosarIva, ETIQUETA_PAGO, euros, eurosInput, parsearEuros, TIPOS_IVA, type TicketLeido } from '@novaz/core';
 	import type { Adjunto, Categoria, Cuenta, FormaPago, Inmovilizado, Movimiento, TipoMovimiento } from '@novaz/core/schema';
 	import Galeria from '$comp/Galeria.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
@@ -35,6 +39,34 @@
 		categoriaInicial?: number | null;
 		alGuardar?: () => void;
 	} = $props();
+
+	// Ticket leído con la IA: rellena el formulario y, al guardar, la foto se adjunta al gasto
+	let formulario: HTMLFormElement;
+	let fotoTicket = $state<File | null>(null);
+	function rellenar(t: TicketLeido, foto: File) {
+		const campo = (n: string, v: string | null) => {
+			const el = formulario.elements.namedItem(n) as HTMLInputElement | null;
+			if (el && v) el.value = v;
+		};
+		if (t.importeCent != null) importe = eurosInput(t.importeCent);
+		campo('fecha', t.fecha);
+		campo('concepto', t.combustible && t.litros ? `Repostaje ${t.litros.toLocaleString('es-ES')} L` : t.concepto);
+		campo('proveedor', t.proveedor);
+		if (t.combustible) {
+			const c = categorias.find((x) => x.tipo === 'gasto' && /combust/i.test(x.nombre));
+			if (c) categoriaId = String(c.id);
+		}
+		if (t.ivaPct != null) ivaPct = t.ivaPct;
+		fotoTicket = foto;
+	}
+	async function guardado(d: Record<string, unknown>) {
+		if (fotoTicket && d.movimientoId) {
+			await subirArchivo(fotoTicket, { entidad: 'movimiento', entidadId: Number(d.movimientoId), vehiculoId: vehiculoFijo ?? null }).catch((e: Error) => avisar(`Foto del ticket: ${e.message}`, 'error'));
+			await invalidateAll();
+		}
+		fotoTicket = null;
+		alGuardar?.();
+	}
 
 	// Valores iniciales (el formulario se monta de nuevo cada vez que se abre la hoja)
 	const ini = (() => {
@@ -109,7 +141,8 @@
 		<a href="/contabilidad/tesoreria" class="btn w-fit">Ir a tesorería para deshacerlo</a>
 	</div>
 {/if}
-<form method="POST" action={accion} use:enhance={enviar({ alTerminar: alGuardar })} class="flex flex-col gap-4 {movimiento?.cuadreSaldoCent != null ? 'hidden' : ''}">
+<form bind:this={formulario} method="POST" action={accion} use:enhance={enviar({ alTerminar: guardado })} class="flex flex-col gap-4 {movimiento?.cuadreSaldoCent != null ? 'hidden' : ''}">
+	{#if !movimiento && tipo === 'gasto'}<LeerTicket alLeer={rellenar} />{/if}
 	{#if movimiento}<input type="hidden" name="id" value={movimiento.id} />{/if}
 	{#if vehiculoFijo}<input type="hidden" name="vehiculoId" value={vehiculoFijo} />{/if}
 	{#each Object.entries(ocultos) as [k, v] (k)}<input type="hidden" name={k} value={v} />{/each}

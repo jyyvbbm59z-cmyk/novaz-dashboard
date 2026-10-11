@@ -518,6 +518,29 @@ export const listaCompra = sqliteTable('lista_compra', {
 	creado: creado()
 });
 
+// ─── Repostajes ───────────────────────────────────────────────────────────────
+
+export const repostajes = sqliteTable(
+	'repostajes',
+	{
+		id: id(),
+		vehiculoId: integer('vehiculo_id')
+			.notNull()
+			.references(() => vehiculos.id, { onDelete: 'cascade' }),
+		fecha: text('fecha').notNull(),
+		km: integer('km'),
+		litros: real('litros').notNull(),
+		importeCent: integer('importe_cent').notNull(),
+		/** Depósito lleno: el consumo real se mide entre dos llenados. */
+		lleno: bool('lleno').notNull().default(true),
+		gasolinera: text('gasolinera'),
+		/** El gasto que se apuntó en la contabilidad. */
+		movimientoId: integer('movimiento_id').references(() => movimientos.id, { onDelete: 'set null' }),
+		creado: creado()
+	},
+	(t) => [index('repostajes_vehiculo_idx').on(t.vehiculoId, t.fecha)]
+);
+
 // ─── Local ────────────────────────────────────────────────────────────────────
 
 export const ESTADOS_TAREA_LOCAL = ['pendiente', 'en_curso', 'hecha', 'descartada'] as const;
@@ -597,3 +620,4 @@ export type Articulo = typeof articulos.$inferSelect;
 export type MovimientoStock = typeof stock.$inferSelect;
 export type ItemCompra = typeof listaCompra.$inferSelect;
 export type TareaLocal = typeof tareasLocal.$inferSelect;
+export type Repostaje = typeof repostajes.$inferSelect;

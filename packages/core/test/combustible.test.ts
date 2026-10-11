@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { combustibleDe, costeUsoMensual, descargarPrecios, precioDe } from '../src/combustible';
+import { combustibleDe, consumoReal, costeUsoMensual, descargarPrecios, precioDe } from '../src/combustible';
 
 describe('precio del combustible', () => {
 	const estaciones = (...precios: (number | null)[]) => ({ estaciones: precios.map((precio) => ({ precio })) });
@@ -72,5 +72,28 @@ describe('coste de uso mensual', () => {
 	it('sin km o sin consumo no inventa el combustible', () => {
 		expect(costeUsoMensual({ ...base, kmMes: null }).partes[0].mensual).toBeNull();
 		expect(costeUsoMensual({ ...base, consumo: null }).partes[0].detalle).toMatch(/consumo/);
+	});
+});
+
+describe('consumo real de lleno a lleno', () => {
+	const r = (fecha: string, km: number | null, litros: number, lleno = true, importeCent = Math.round(litros * 180)) => ({ fecha, km, litros, importeCent, lleno });
+
+	it('mide entre llenados e incluye los repostajes parciales intermedios', () => {
+		const c = consumoReal([r('2026-09-01', 116000, 40), r('2026-09-10', 116300, 10, false), r('2026-09-20', 116700, 30)]);
+		// Tras el lleno de 116.000: 10 + 30 litros en 700 km = 5,7 L/100 km
+		expect(c.tramos).toHaveLength(1);
+		expect(c.media).toBe(5.7);
+		expect(c.ultimo).toBe(5.7);
+		expect(c.precioMedio).toBe(1.8);
+	});
+
+	it('con un solo llenado no hay consumo todavía', () => {
+		expect(consumoReal([r('2026-09-01', 116000, 40)]).media).toBeNull();
+		expect(consumoReal([]).precioMedio).toBeNull();
+	});
+
+	it('ordena por km aunque se apunten desordenados e ignora los que no tienen km', () => {
+		const c = consumoReal([r('2026-10-01', 117000, 35), r('2026-09-01', 116000, 40), r('2026-09-15', null, 20, false)]);
+		expect(c.media).toBe(3.5);
 	});
 });

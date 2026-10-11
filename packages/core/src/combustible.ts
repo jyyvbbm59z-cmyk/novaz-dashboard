@@ -98,6 +98,8 @@ export interface DatosCosteUso {
 	kmMes: number | null;
 	/** L/100 km. */
 	consumo: number | null;
+	/** El consumo sale de los repostajes (si no, es el de la ficha). */
+	consumoEsReal?: boolean;
 	/** € por litro. */
 	precioLitro: number | null;
 	/** Papeles vigentes del vehículo. */
@@ -123,7 +125,7 @@ export function costeUsoMensual(d: DatosCosteUso) {
 					? 'Pon el consumo medio (L/100 km) en Editar'
 					: !d.precioLitro
 						? 'Sin precio del combustible'
-						: `${n(d.kmMes)} km/mes · ${n(d.consumo, 1)} L/100 km · ${n(d.precioLitro, 3)} €/L`
+						: `${n(d.kmMes)} km/mes · ${n(d.consumo, 1)} L/100 km ${d.consumoEsReal ? '(real)' : '(estimado)'} · ${n(d.precioLitro, 3)} €/L`
 	});
 
 	// Fijos: lo que cuesta cada papel, repartido entre los meses que cubre
@@ -173,5 +175,47 @@ export function costeUsoMensual(d: DatosCosteUso) {
 		porKm: d.kmMes ? total / d.kmMes : null,
 		anual: total * 12,
 		completo: partes.every((p) => p.mensual != null)
+	};
+}
+
+// ─── Consumo real (repostajes) ───────────────────────────────────────────────
+
+export interface RepostajeConsumo {
+	fecha: string;
+	km: number | null;
+	litros: number;
+	importeCent: number;
+	lleno: boolean;
+}
+
+/**
+ * Consumo real por el método de lleno a lleno: entre dos repostajes con el depósito lleno, los litros que se
+ * echaron después del primero (incluidos los parciales intermedios) son lo que se gastó en esos km.
+ */
+export function consumoReal(repostajes: RepostajeConsumo[]) {
+	const orden = repostajes.filter((r) => r.km != null).sort((a, b) => a.km! - b.km! || a.fecha.localeCompare(b.fecha));
+	const tramos: { desde: string; hasta: string; km: number; litros: number; consumo: number }[] = [];
+	let ultimoLleno: RepostajeConsumo | null = null;
+	let litros = 0;
+	for (const r of orden) {
+		if (ultimoLleno) litros += r.litros;
+		if (!r.lleno) continue;
+		if (ultimoLleno && r.km! > ultimoLleno.km!) {
+			const km = r.km! - ultimoLleno.km!;
+			tramos.push({ desde: ultimoLleno.fecha, hasta: r.fecha, km, litros, consumo: Math.round((litros / km) * 1000) / 10 });
+		}
+		ultimoLleno = r;
+		litros = 0;
+	}
+	const kmTotal = tramos.reduce((t, x) => t + x.km, 0);
+	const litrosTotal = tramos.reduce((t, x) => t + x.litros, 0);
+	const litrosPagados = repostajes.reduce((t, r) => t + r.litros, 0);
+	return {
+		/** L/100 km de media (null si aún no hay dos llenados). */
+		media: kmTotal ? Math.round((litrosTotal / kmTotal) * 1000) / 10 : null,
+		ultimo: tramos.at(-1)?.consumo ?? null,
+		tramos,
+		/** € por litro de media de lo pagado. */
+		precioMedio: litrosPagados ? Math.round((repostajes.reduce((t, r) => t + r.importeCent, 0) / litrosPagados / 100) * 1000) / 1000 : null
 	};
 }

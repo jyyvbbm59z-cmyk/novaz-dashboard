@@ -2,7 +2,7 @@
 import { and, eq, gte, inArray } from 'drizzle-orm';
 import type { Ajustes } from './ajustes';
 import { lecturasValidas, ritmoKmDia } from './alertas';
-import { combustibleDe, costeUsoMensual, type PreciosCombustible } from './combustible';
+import { combustibleDe, consumoReal, costeUsoMensual, type PreciosCombustible } from './combustible';
 import { cargarAlertas, lecturasPorVehiculo, vehiculosActivos, type Alerta, type DB } from './consultas';
 import { euros } from './dinero';
 import { diasEntre, sumarDias } from './fechas';
@@ -68,7 +68,7 @@ export async function datosInforme(
 	// Solo los de Novaz (los de clientes no son coste tuyo) y que no estén en restauración
 	const enUso = (await vehiculosActivos(db)).filter((v) => v.propietario === 'novaz' && !/restaur/i.test(estados.find((e) => e.id === v.estadoId)?.nombre ?? ''));
 	const ids = enUso.map((v) => v.id);
-	const [lecturas, gastos, vencs, tipos] = ids.length
+	const [lecturas, gastos, vencs, tipos, repostajes] = ids.length
 		? await Promise.all([
 				lecturasPorVehiculo(db, ids),
 				db
@@ -81,9 +81,10 @@ export async function datosInforme(
 					.from(s.vencimientos)
 					.innerJoin(s.tiposVencimiento, eq(s.vencimientos.tipoId, s.tiposVencimiento.id))
 					.where(and(eq(s.vencimientos.estado, 'vigente'), inArray(s.vencimientos.vehiculoId, ids))),
-				db.select().from(s.tiposVehiculo)
+				db.select().from(s.tiposVehiculo),
+				db.select().from(s.repostajes).where(inArray(s.repostajes.vehiculoId, ids))
 			])
-		: [new Map(), [], [], []];
+		: [new Map(), [], [], [], []];
 	const flota: DatosInforme['flota'] = [];
 	const kmSinActualizar: DatosInforme['kmSinActualizar'] = [];
 	for (const v of enUso) {
@@ -93,10 +94,12 @@ export async function datosInforme(
 		const esMoto = /moto/i.test(tipos.find((x) => x.id === v.tipoId)?.nombre ?? '');
 		const comb = combustibleDe(v.campos.combustible) ?? (esMoto ? 'gasolina' : null);
 		const ritmo = ritmoKmDia(ls, hoy);
+		const real = consumoReal(repostajes.filter((r) => r.vehiculoId === v.id)).media;
 		const c = costeUsoMensual({
 			hoy,
 			kmMes: ritmo != null ? Math.round(ritmo * 30.44) : null,
-			consumo: Number(v.campos.consumo) || null,
+			consumo: real ?? (Number(v.campos.consumo) || null),
+			consumoEsReal: real != null,
 			precioLitro: comb && o.precios?.[comb] ? o.precios[comb]!.media : null,
 			vencimientos: vencs.filter((x) => x.v.vehiculoId === v.id).map((x) => ({ id: x.v.id, tipo: x.tipo, importeCent: x.v.importeCent, fechaInicio: x.v.fechaInicio, fechaVence: x.v.fechaVence })),
 			gastos: gastos.filter((g) => g.vehiculoId === v.id).map((g) => ({ fecha: g.fecha, importeCent: g.importe, categoria: g.categoria, vencimientoId: g.vencimientoId }))

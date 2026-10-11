@@ -178,8 +178,8 @@ export const actions = {
 	gasto: accion(async ({ request, params, locals }) => {
 		const fd = await request.formData();
 		const nuevo = !leer(fd).idOpcional('id');
-		await guardarMovimiento(locals, fd, { vehiculoId: await vehiculoDe(locals, rid(params)), restauracionId: rid(params) });
-		return { mensaje: nuevo ? 'Gasto registrado' : 'Gasto actualizado' };
+		const movimientoId = await guardarMovimiento(locals, fd, { vehiculoId: await vehiculoDe(locals, rid(params)), restauracionId: rid(params) });
+		return { mensaje: nuevo ? 'Gasto registrado' : 'Gasto actualizado', movimientoId };
 	}),
 
 	borrarGasto: accion(async ({ request, locals, platform }) => {

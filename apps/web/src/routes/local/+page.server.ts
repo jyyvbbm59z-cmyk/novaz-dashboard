@@ -107,7 +107,7 @@ export const actions = {
 		const tareaId = leer(fd).id('tareaId');
 		const movId = await guardarMovimiento(locals, fd, { vehiculoId: null });
 		await locals.db.update(s.movimientos).set({ tareaLocalId: tareaId }).where(eq(s.movimientos.id, movId));
-		return { mensaje: 'Gasto apuntado' };
+		return { mensaje: 'Gasto apuntado', movimientoId: movId };
 	}),
 
 	borrarGasto: accion(async ({ request, locals, platform }) => {

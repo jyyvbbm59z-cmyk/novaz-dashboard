@@ -6,6 +6,7 @@ import {
 	metricasKm,
 	costesVehiculo,
 	costeUsoMensual,
+	consumoReal,
 	combustibleDe,
 	planAplica,
 	plantillaSugerida,
@@ -33,6 +34,7 @@ import { crearFactura } from '$lib/server/facturas';
 import { aplicarPlantilla } from '$lib/server/revisiones';
 import { cargarInventario, cerrarCompras } from '$lib/server/inventario';
 import { precioCombustibleHoy } from '$lib/server/combustible';
+import { borrarRepostaje, guardarRepostaje } from '$lib/server/repostajes';
 import { avanceRestauraciones, comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 
@@ -149,11 +151,18 @@ export const load = async ({ params, locals }) => {
 	const tipoComb = combustibleDe(v.campos.combustible) ?? (/moto/i.test(tipoVeh?.nombre ?? '') ? 'gasolina' : null);
 	const precios = tipoComb ? await precioCombustibleHoy(locals) : null;
 	const precio = tipoComb && precios ? precios[tipoComb] : null;
-	const consumo = Number(v.campos.consumo) || null;
+	// Consumo: el real de los repostajes (de lleno a lleno) si lo hay; si no, el que pusiste en la ficha
+	const [repostajes, gasolinerasUsadas] = await Promise.all([
+		db.select().from(s.repostajes).where(eq(s.repostajes.vehiculoId, id)).orderBy(desc(s.repostajes.fecha), desc(s.repostajes.id)),
+		db.selectDistinct({ g: s.repostajes.gasolinera }).from(s.repostajes)
+	]);
+	const real = consumoReal(repostajes);
+	const consumo = real.media ?? (Number(v.campos.consumo) || null);
 	const usoMes = costeUsoMensual({
 		hoy,
 		kmMes: ritmo != null ? Math.round(ritmo * 30.44) : null,
 		consumo,
+		consumoEsReal: real.media != null,
 		precioLitro: precio?.media ?? null,
 		vencimientos: vencs.filter((x) => x.v.estado === 'vigente').map(({ v: x, tipo }) => ({ id: x.id, tipo: tipo.nombre, importeCent: x.importeCent, fechaInicio: x.fechaInicio, fechaVence: x.fechaVence })),
 		gastos: gastos.map((x) => ({ fecha: x.m.fecha, importeCent: x.m.importeCent, categoria: x.categoria?.nombre ?? null, vencimientoId: x.m.vencimientoId }))
@@ -169,6 +178,9 @@ export const load = async ({ params, locals }) => {
 		costes,
 		usoMes,
 		combustibleInfo,
+		repostajes,
+		consumo: { real, ficha: Number(v.campos.consumo) || null },
+		gasolineras: gasolinerasUsadas.map((x) => x.g).filter((g): g is string => Boolean(g)).sort(),
 		inventario: (await cargarInventario(db))
 			.filter((a) => a.tipo !== 'herramienta' && (!a.vehiculoIds.length || a.vehiculoIds.includes(id)))
 			.map((a) => ({ id: a.id, nombre: a.nombre, unidad: a.unidad, cantidad: a.cantidad })),
@@ -271,6 +283,18 @@ export const actions = {
 		return { mensaje: 'Descartado' };
 	}),
 
+	repostaje: accion(async ({ request, params, locals }) => {
+		const fd = await request.formData();
+		fd.set('vehiculoId', String(vid(params)));
+		const r = await guardarRepostaje(locals, fd);
+		return { mensaje: `Repostaje guardado (${(r.importe / 100).toFixed(2).replace('.', ',')} €)`, movimientoId: r.movimientoId };
+	}),
+
+	borrarRepostaje: accion(async ({ request, locals, platform }) => {
+		await borrarRepostaje(locals, leer(await request.formData()).id('id'), platform!.env.ARCHIVOS);
+		return { mensaje: 'Repostaje borrado' };
+	}),
+
 	borrarEntrada: accion(async ({ request, locals, platform }) => {
 		await borrarEntrada(locals, platform!.env.ARCHIVOS, leer(await request.formData()).id('id'));
 		return { mensaje: 'Entrada borrada' };
@@ -299,8 +323,8 @@ export const actions = {
 	gasto: accion(async ({ request, params, locals }) => {
 		const fd = await request.formData();
 		const nuevo = !leer(fd).idOpcional('id');
-		await guardarMovimiento(locals, fd, { vehiculoId: vid(params) });
-		return { mensaje: nuevo ? 'Movimiento registrado' : 'Movimiento actualizado' };
+		const movimientoId = await guardarMovimiento(locals, fd, { vehiculoId: vid(params) });
+		return { mensaje: nuevo ? 'Movimiento registrado' : 'Movimiento actualizado', movimientoId };
 	}),
 
 	borrarGasto: accion(async ({ request, locals, platform }) => {

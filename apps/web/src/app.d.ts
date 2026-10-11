@@ -12,6 +12,8 @@ declare global {
 			env: {
 				DB: D1Database;
 				ARCHIVOS: R2Bucket;
+				/** Workers AI: lectura de tickets por foto. */
+				AI?: Ai;
 				ACCESS_TEAM_DOMAIN?: string;
 				ACCESS_AUD?: string;
 				/** Secreto: token del bot de Telegram (para el botón de prueba). */

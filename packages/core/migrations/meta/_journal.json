@@ -176,6 +176,13 @@
       "when": 1791705768619,
       "tag": "0024_marca_sobria",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1791706877913,
+      "tag": "0025_repostajes",
+      "breakpoints": true
     }
   ]
 }

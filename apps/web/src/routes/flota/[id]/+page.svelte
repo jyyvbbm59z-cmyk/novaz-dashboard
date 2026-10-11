@@ -11,6 +11,7 @@
 	import Nivel from '$comp/Nivel.svelte';
 	import Pestanas from '$comp/Pestanas.svelte';
 	import PendienteForm from '$comp/PendienteForm.svelte';
+	import RepostajeForm from '$comp/RepostajeForm.svelte';
 	import ComprasLigadas from '$comp/ComprasLigadas.svelte';
 	import Placa from '$comp/Placa.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
@@ -19,7 +20,7 @@
 	import { diasEntre, euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad } from '@novaz/core';
 	import FacturaForm from '$comp/FacturaForm.svelte';
 	import type { Entrada, Movimiento, Pendiente, Vencimiento } from '@novaz/core/schema';
-	import { Check, CircleAlert, Download, FileText, Gauge, ListChecks, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
+	import { Check, CircleAlert, Download, FileText, Fuel, Gauge, ListChecks, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
 	import { Paperclip } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -55,6 +56,10 @@
 	let entradaEdit = $state<(typeof data.entradas)[number] | null>(null);
 	let planHecho = $state<number | null>(null);
 	let hKm = $state(false);
+	let hRepostaje = $state(false);
+	let papelVer = $state<number | null>(null);
+	let hPapel = $state(false);
+	const papel = $derived(data.vencimientos.find((x) => x.id === papelVer) ?? null);
 	let hVenc = $state(false);
 	let vencEdit = $state<Vencimiento | null>(null);
 	let vencRenovar = $state(false);
@@ -224,9 +229,10 @@
 {/if}
 
 <!-- Acciones -->
-<div class="mt-4 grid grid-cols-5 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+<div class="mt-4 grid {enUso ? 'grid-cols-6' : 'grid-cols-5'} gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
 	<button class="btn btn-acento flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0 h-auto" onclick={() => nuevaEntrada()}><NotebookPen size={18} /><span class="text-xs sm:text-sm">Entrada</span></button>
 	<SubirArchivos entidad="vehiculo" entidadId={v.id} vehiculoId={v.id} camara clase="btn flex-col gap-1 py-2 h-auto sm:h-10 sm:flex-row sm:py-0 text-xs sm:text-sm" />
+	{#if enUso}<button class="btn h-auto flex-col gap-1 px-1 py-2 sm:h-10 sm:flex-row sm:px-4 sm:py-0" onclick={() => (hRepostaje = true)}><Fuel size={18} /><span class="text-[0.68rem] sm:text-sm">Repostar</span></button>{/if}
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => (hKm = true)}><Gauge size={18} /><span class="text-xs sm:text-sm">Km</span></button>
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((gastoEdit = null), (hGasto = true))}><ReceiptText size={18} /><span class="text-xs sm:text-sm">Gasto</span></button>
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((pendEdit = null), (hPendiente = true))}><CircleAlert size={18} /><span class="text-xs sm:text-sm">Avería</span></button>
@@ -338,42 +344,48 @@
 			</ol>
 		{/if}
 	{:else if pestana === 'papeles'}
-		<div class="flex flex-col gap-3">
-			{#each data.vencimientos.filter((x) => x.estado === 'vigente') as x (x.id)}
-				{@const docs = data.adjuntos.filter((a) => a.entidad === 'vencimiento' && a.entidadId === x.id)}
-				<article class="tarjeta p-4">
-					<div class="flex items-start gap-3">
-						<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-superficie-3"><Icono nombre={x.tipo.icono} size={20} /></span>
-						<div class="min-w-0 flex-1">
-							<div class="flex flex-wrap items-center gap-2">
-								<h3 class="text-xl">{x.tipo.nombre}</h3>
-								{#if x.estadoCalc}<Nivel nivel={x.estadoCalc.nivel} texto={textoDias(x.estadoCalc.dias)} />{/if}
-							</div>
-							<p class="mt-0.5 text-sm text-texto-2">Vence el <strong class="text-texto">{fechaLarga(x.fechaVence)}</strong>{x.fechaInicio ? ` · desde ${fechaLarga(x.fechaInicio)}` : ''}</p>
-							<p class="mt-0.5 text-xs text-texto-3">{[x.proveedor, x.referencia, x.importeCent ? euros(x.importeCent) : null].filter(Boolean).join(' · ')}</p>
-						</div>
-					</div>
-					{#if docs.length}<div class="mt-3"><Galeria adjuntos={docs} columnas="grid-cols-4 sm:grid-cols-6" /></div>{/if}
-					<div class="mt-3 flex flex-wrap gap-2">
-						<button class="btn btn-acento h-9" onclick={() => abrirVenc(x, true)}><RefreshCw size={16} /> Renovar</button>
-						<SubirArchivos entidad="vencimiento" entidadId={x.id} vehiculoId={v.id} texto="Documento" clase="btn h-9" />
-						<button class="btn btn-fantasma h-9" onclick={() => abrirVenc(x)}><Pencil size={15} /></button>
-						<button class="btn btn-fantasma btn-peligro h-9" onclick={() => borrar('?/borrarVencimiento', x.id, 'este vencimiento')}><Trash2 size={15} /></button>
-					</div>
-				</article>
-			{/each}
-
-			{#if data.sinRegistrar.length}
-				<div class="tarjeta border-dashed p-4">
-					<p class="etiqueta mb-3">Sin registrar</p>
-					<div class="flex flex-wrap gap-2">
-						{#each data.sinRegistrar as t (t.id)}
-							<button class="btn" onclick={() => abrirVenc(null, false, t.id)}><Plus size={16} /> {t.nombre}</button>
-						{/each}
-					</div>
-				</div>
+		<div class="flex flex-col gap-4">
+			{#if data.vencimientos.some((x) => x.estado === 'vigente')}
+				<!-- Un papel por fila; al tocarlo, su detalle y las acciones -->
+				<ul class="tarjeta lista-filas overflow-hidden">
+					{#each data.vencimientos.filter((x) => x.estado === 'vigente').sort((a, b) => a.fechaVence.localeCompare(b.fechaVence)) as x (x.id)}
+						{@const nivel = x.estadoCalc?.nivel ?? 'ok'}
+						{@const docs = data.adjuntos.filter((a) => a.entidad === 'vencimiento' && a.entidadId === x.id).length}
+						<li class="flex items-center">
+							<button class="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition hover:bg-superficie-2" onclick={() => ((papelVer = x.id), (hPapel = true))}>
+								<Icono nombre={x.tipo.icono} size={18} class="shrink-0 text-texto-3" />
+								<div class="min-w-0 flex-1">
+									<p class="truncate text-sm font-medium">{x.tipo.nombre}</p>
+									<p class="truncate text-xs text-texto-3">{[x.proveedor, x.importeCent ? euros(x.importeCent) : null, docs ? `${docs} doc.` : null].filter(Boolean).join(' · ') || 'Sin detalles'}</p>
+								</div>
+								<div class="shrink-0 text-right">
+									<p class="text-sm">{fechaLarga(x.fechaVence)}</p>
+									<p class="text-xs {nivel === 'ok' ? 'text-texto-3' : `nivel-${nivel} font-semibold`}">{x.estadoCalc ? textoDias(x.estadoCalc.dias) : ''}</p>
+								</div>
+							</button>
+							{#if nivel === 'vencido' || nivel === 'urgente'}
+								<button class="mr-3 shrink-0 text-xs font-semibold text-acento hover:underline" onclick={() => abrirVenc(x, true)}>Renovar</button>
+							{/if}
+						</li>
+					{/each}
+				</ul>
 			{/if}
-			<button class="btn w-fit" onclick={() => abrirVenc(null)}><Plus size={16} /> Otro vencimiento</button>
+
+			<!-- Lo que falta por apuntar -->
+			<ul class="lista-filas rounded-xl border border-dashed border-borde text-sm">
+				{#each data.sinRegistrar as t (t.id)}
+					<li>
+						<button class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-texto-2 transition hover:bg-superficie-2 hover:text-texto" onclick={() => abrirVenc(null, false, t.id)}>
+							<Plus size={15} class="shrink-0 text-texto-3" /><span class="flex-1">{t.nombre}</span><span class="text-xs text-texto-3">sin registrar</span>
+						</button>
+					</li>
+				{/each}
+				<li>
+					<button class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-texto-3 transition hover:bg-superficie-2 hover:text-texto" onclick={() => abrirVenc(null)}>
+						<Plus size={15} class="shrink-0" /><span>Otro papel o vencimiento</span>
+					</button>
+				</li>
+			</ul>
 
 			{#if data.vencimientos.some((x) => x.estado !== 'vigente')}
 				<details class="mt-2">
@@ -537,6 +549,49 @@
 							<strong class="text-texto-2">{pr.media.toLocaleString('es-ES', { minimumFractionDigits: 3 })} €/L</strong> de media en {pr.estaciones} {pr.estaciones === 1 ? 'gasolinera' : 'gasolineras'}, la más barata a {pr.minimo.toLocaleString('es-ES', { minimumFractionDigits: 3 })} €/L.
 							Fuente: Ministerio (Geoportal de Gasolineras){data.combustibleInfo.fecha !== data.hoy ? `, dato del ${fechaLarga(data.combustibleInfo.fecha!)}` : ''}.
 						</p>
+					{/if}
+				</div>
+			</section>
+
+			<!-- Combustible: consumo real y repostajes -->
+			{@const cr = data.consumo.real}
+			<section class="mb-6">
+				<div class="mb-2 flex items-center justify-between gap-2">
+					<p class="etiqueta">Combustible</p>
+					<button class="btn h-8 text-xs" onclick={() => (hRepostaje = true)}><Fuel size={14} /> Repostaje</button>
+				</div>
+				<div class="tarjeta p-4">
+					<div class="grid grid-cols-3 gap-3 text-sm">
+						<div>
+							<p class="text-xs text-texto-3">Consumo real</p>
+							<p class="cifra text-2xl">{cr.media != null ? cr.media.toLocaleString('es-ES') : '—'}<span class="ml-1 text-xs text-texto-3">L/100</span></p>
+						</div>
+						<div>
+							<p class="text-xs text-texto-3">Último tramo</p>
+							<p class="cifra text-2xl">{cr.ultimo != null ? cr.ultimo.toLocaleString('es-ES') : '—'}<span class="ml-1 text-xs text-texto-3">L/100</span></p>
+						</div>
+						<div>
+							<p class="text-xs text-texto-3">Pagas de media</p>
+							<p class="cifra text-2xl">{cr.precioMedio != null ? cr.precioMedio.toLocaleString('es-ES', { minimumFractionDigits: 3 }) : '—'}<span class="ml-1 text-xs text-texto-3">€/L</span></p>
+						</div>
+					</div>
+					{#if cr.media == null}
+						<p class="mt-3 text-xs text-texto-3">
+							{data.repostajes.length ? 'Con el siguiente repostaje con el depósito lleno sale tu consumo real.' : 'Apunta los repostajes (con el depósito lleno) y la app calcula tu consumo real.'}
+							{#if data.consumo.ficha}Mientras tanto, el coste usa {data.consumo.ficha.toLocaleString('es-ES')} L/100 km de la ficha.{/if}
+						</p>
+					{/if}
+					{#if data.repostajes.length}
+						<ul class="mt-3 flex flex-col border-t border-borde pt-2 text-sm">
+							{#each data.repostajes.slice(0, 8) as r (r.id)}
+								<li class="group flex items-center gap-3 py-1.5">
+									<span class="w-16 shrink-0 text-xs text-texto-3">{fechaLarga(r.fecha).replace(/ \d{4}$/, '')}</span>
+									<span class="min-w-0 flex-1 truncate">{r.litros.toLocaleString('es-ES')} L{r.lleno ? '' : ' (parcial)'}{r.km != null ? ` · ${r.km.toLocaleString('es-ES')} km` : ''}{r.gasolinera ? ` · ${r.gasolinera}` : ''}</span>
+									<span class="cifra shrink-0">{euros(r.importeCent)}</span>
+									<button class="text-texto-3 opacity-60 hover:text-vencido group-hover:opacity-100" onclick={() => confirm('¿Borrar este repostaje y su gasto?') && accion('?/borrarRepostaje', { id: r.id })} aria-label="Borrar repostaje"><Trash2 size={13} /></button>
+								</li>
+							{/each}
+						</ul>
 					{/if}
 				</div>
 			</section>
@@ -745,6 +800,36 @@
 
 <Hoja bind:abierta={hPendiente} titulo={pendEdit ? 'Editar avería' : 'Apuntar avería o trabajo pendiente'}>
 	<PendienteForm vehiculoId={v.id} hoy={data.hoy} km={data.km} pendiente={pendEdit} compras={pendEdit ? data.comprasPend.filter((c) => c.pendienteId === pendEdit!.id).map((c) => c.texto) : []} adjuntos={pendEdit ? (data.adjuntosPend[pendEdit.id] ?? []) : []} alGuardar={() => (hPendiente = false)} />
+</Hoja>
+
+<Hoja bind:abierta={hPapel} titulo={papel?.tipo.nombre ?? ''}>
+	{#if papel}
+		{@const docs = data.adjuntos.filter((a) => a.entidad === 'vencimiento' && a.entidadId === papel.id)}
+		<dl class="grid grid-cols-[7rem_1fr] gap-x-4 gap-y-2 text-sm">
+			<dt class="text-texto-3">Vence</dt><dd><strong>{fechaLarga(papel.fechaVence)}</strong>{papel.estadoCalc ? ` · ${textoDias(papel.estadoCalc.dias)}` : ''}</dd>
+			{#if papel.fechaInicio}<dt class="text-texto-3">Desde</dt><dd>{fechaLarga(papel.fechaInicio)}</dd>{/if}
+			{#if papel.proveedor}<dt class="text-texto-3">Proveedor</dt><dd>{papel.proveedor}</dd>{/if}
+			{#if papel.referencia}<dt class="text-texto-3">Referencia</dt><dd class="font-mono text-xs leading-5">{papel.referencia}</dd>{/if}
+			{#if papel.importeCent}<dt class="text-texto-3">Importe</dt><dd>{euros(papel.importeCent)}</dd>{/if}
+			{#if papel.notas}<dt class="text-texto-3">Notas</dt><dd class="whitespace-pre-line text-texto-2">{papel.notas}</dd>{/if}
+		</dl>
+		<div class="mt-5">
+			<p class="etiqueta mb-2">Documentos</p>
+			{#if docs.length}<div class="mb-2"><Galeria adjuntos={docs} columnas="grid-cols-4" /></div>{/if}
+			<SubirArchivos entidad="vencimiento" entidadId={papel.id} vehiculoId={v.id} texto={docs.length ? 'Añadir otro' : 'Adjuntar póliza, recibo…'} clase="btn h-9 text-sm" />
+		</div>
+		<div class="mt-6 flex flex-col gap-2 border-t border-borde pt-4">
+			<button class="btn btn-acento h-11" onclick={() => { const x = papel!; hPapel = false; abrirVenc(x, true); }}><RefreshCw size={16} /> Renovar</button>
+			<div class="flex gap-2">
+				<button class="btn h-10 flex-1" onclick={() => { const x = papel!; hPapel = false; abrirVenc(x); }}><Pencil size={15} /> Editar</button>
+				<button class="btn btn-peligro h-10" onclick={() => { const id = papel!.id; hPapel = false; borrar('?/borrarVencimiento', id, 'este vencimiento'); }} aria-label="Borrar"><Trash2 size={15} /></button>
+			</div>
+		</div>
+	{/if}
+</Hoja>
+
+<Hoja bind:abierta={hRepostaje} titulo="Repostaje · {v.alias}">
+	<RepostajeForm vehiculoId={v.id} hoy={data.hoy} km={data.km} gasolineras={data.gasolineras} precioHoy={data.combustibleInfo?.precio?.media ?? null} alGuardar={() => (hRepostaje = false)} />
 </Hoja>
 
 <Hoja bind:abierta={hKm} titulo="Actualizar km">

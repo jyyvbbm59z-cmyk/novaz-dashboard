@@ -1,9 +1,10 @@
-import { kmActual, lecturasPorVehiculo, lecturasValidas } from '@novaz/core';
+import { combustibleDe, kmActual, lecturasPorVehiculo, lecturasValidas } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { and, asc, eq, inArray, max } from 'drizzle-orm';
 import { guardarEntrada, guardarMovimiento, guardarPendiente, marcarTarea } from '$lib/server/acciones';
 import { comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
+import { guardarRepostaje } from '$lib/server/repostajes';
 
 export const load = async ({ locals }) => {
 	const { db } = locals;
@@ -25,9 +26,24 @@ export const load = async ({ locals }) => {
 				.where(and(inArray(s.tareas.faseId, fases.map((f) => f.id)), eq(s.tareas.hecha, false)))
 				.orderBy(asc(s.tareas.orden))
 		: [];
+	// Para el repostaje: gasolineras ya usadas y el combustible de cada vehículo (precio de referencia)
+	const [gasolineras, vehs, tipos] = await Promise.all([
+		db.selectDistinct({ g: s.repostajes.gasolinera }).from(s.repostajes),
+		db.select({ id: s.vehiculos.id, campos: s.vehiculos.campos, tipoId: s.vehiculos.tipoId }).from(s.vehiculos),
+		db.select({ id: s.tiposVehiculo.id, nombre: s.tiposVehiculo.nombre }).from(s.tiposVehiculo)
+	]);
+	const precios = locals.ajustes.precioCombustible;
+	const precioHoy = Object.fromEntries(
+		vehs.map((v) => {
+			const tipo = combustibleDe(v.campos.combustible) ?? (/moto/i.test(tipos.find((t) => t.id === v.tipoId)?.nombre ?? '') ? 'gasolina' : null);
+			return [v.id, tipo && precios?.[tipo] ? precios[tipo]!.media : null];
+		})
+	);
 	const lecturas = await lecturasPorVehiculo(db, (await db.select({ id: s.vehiculos.id }).from(s.vehiculos)).map((v) => v.id));
 
 	return {
+		gasolineras: gasolineras.map((x) => x.g).filter((g): g is string => Boolean(g)).sort(),
+		precioHoy,
 		actividad: Object.fromEntries(actividad.map((a) => [a.id, a.ultima ?? ''])),
 		km: Object.fromEntries([...lecturas].map(([id, ls]) => [id, kmActual(lecturasValidas(ls))])),
 		obras: restas.map((r) => {
@@ -48,8 +64,8 @@ export const actions = {
 		return { mensaje: 'Registrado', momento: 'entradaCreada', entradaId: r.entradaId };
 	}),
 	gasto: accion(async ({ request, locals }) => {
-		await guardarMovimiento(locals, await request.formData());
-		return { mensaje: 'Gasto registrado' };
+		const movimientoId = await guardarMovimiento(locals, await request.formData());
+		return { mensaje: 'Gasto registrado', movimientoId };
 	}),
 	km: accion(async ({ request, locals }) => {
 		const f = leer(await request.formData());
@@ -59,6 +75,10 @@ export const actions = {
 		await comprobarLectura(locals.db, f.id('vehiculoId'), fecha, km);
 		await registrarKm(locals.db, f.id('vehiculoId'), fecha, km);
 		return { mensaje: 'Km guardados' };
+	}),
+	repostaje: accion(async ({ request, locals }) => {
+		const r = await guardarRepostaje(locals, await request.formData());
+		return { mensaje: `Repostaje guardado (${(r.importe / 100).toFixed(2).replace('.', ',')} €)`, movimientoId: r.movimientoId };
 	}),
 	pendiente: accion(async ({ request, locals }) => {
 		const fd = await request.formData();

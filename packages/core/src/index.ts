@@ -16,3 +16,4 @@ export * from './inventario';
 export * from './combustible';
 export * from './taller';
 export * from './informe';
+export * from './ticket';

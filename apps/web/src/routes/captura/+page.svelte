@@ -3,18 +3,19 @@
 	import EntradaForm from '$comp/EntradaForm.svelte';
 	import Icono from '$comp/Icono.svelte';
 	import MovimientoForm from '$comp/MovimientoForm.svelte';
+	import RepostajeForm from '$comp/RepostajeForm.svelte';
 	import PendienteForm from '$comp/PendienteForm.svelte';
 	import Placa from '$comp/Placa.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { ArrowLeft, Check, CircleAlert, Gauge, ListChecks, NotebookPen, ReceiptText, Warehouse } from '@lucide/svelte';
+	import { ArrowLeft, Check, CircleAlert, Fuel, Gauge, ListChecks, NotebookPen, ReceiptText, Warehouse } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	let { data } = $props();
 	const cat = $derived(data.catalogo);
 
 	let vehiculoId = $state<number | null>(null);
-	let que = $state<'entrada' | 'foto' | 'gasto' | 'km' | 'tarea' | 'pendiente' | null>(null);
+	let que = $state<'entrada' | 'foto' | 'gasto' | 'km' | 'tarea' | 'pendiente' | 'repostaje' | null>(null);
 	let hecho = $state(false);
 
 	onMount(() => {
@@ -96,7 +97,7 @@
 
 		{#if !que}
 			<div class="grid grid-cols-2 gap-2.5">
-				{#each [['entrada', obra ? 'Diario de obra' : 'Entrada', NotebookPen], ['pendiente', 'Avería / por reparar', CircleAlert], ['gasto', 'Gasto', ReceiptText], ['km', 'Kilómetros', Gauge], ...(obra?.tareas.length ? [['tarea', 'Tarea hecha', ListChecks]] : [])] as [id, t, I] (id)}
+				{#each [['entrada', obra ? 'Diario de obra' : 'Entrada', NotebookPen], ['pendiente', 'Avería / por reparar', CircleAlert], ['gasto', 'Gasto', ReceiptText], ...(obra ? [] : [['repostaje', 'Repostaje', Fuel]]), ['km', 'Kilómetros', Gauge], ...(obra?.tareas.length ? [['tarea', 'Tarea hecha', ListChecks]] : [])] as [id, t, I] (id)}
 					{@const C = I as typeof NotebookPen}
 					<button class="tarjeta flex h-28 flex-col items-start justify-between p-4 text-left transition active:scale-[0.98] {id === 'entrada' ? 'border-acento/50' : ''}" onclick={() => (que = id as typeof que)}>
 						<C size={26} class={id === 'entrada' ? 'text-acento' : 'text-texto-2'} />
@@ -127,6 +128,8 @@
 			/>
 		{:else if que === 'gasto'}
 			<MovimientoForm pagoPorDefecto={data.ajustes.pagoPorDefecto} accion="?/gasto" categorias={cat.categorias} hoy={data.hoy} vehiculoFijo={vehiculo.id} alGuardar={listo} />
+		{:else if que === 'repostaje'}
+			<RepostajeForm vehiculoId={vehiculo.id} hoy={data.hoy} km={data.km[vehiculo.id] ?? null} gasolineras={data.gasolineras} precioHoy={data.precioHoy[vehiculo.id] ?? null} alGuardar={listo} />
 		{:else if que === 'pendiente'}
 			<PendienteForm vehiculoId={vehiculo.id} hoy={data.hoy} km={data.km[vehiculo.id] ?? null} alGuardar={listo} />
 		{:else if que === 'km'}

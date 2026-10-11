@@ -5,7 +5,8 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		adapter: adapter(),
+		// En local se usa el entorno «local» de wrangler.jsonc (sin Workers AI)
+		adapter: adapter({ platformProxy: { environment: 'local' } }),
 		alias: { $comp: 'src/lib/components' }
 	}
 };

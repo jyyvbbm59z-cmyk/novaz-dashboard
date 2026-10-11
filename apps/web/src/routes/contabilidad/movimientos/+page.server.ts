@@ -55,8 +55,8 @@ export const actions = {
 	guardar: accion(async ({ request, locals }) => {
 		const fd = await request.formData();
 		const nuevo = !leer(fd).idOpcional('id');
-		await guardarMovimiento(locals, fd);
-		return { mensaje: nuevo ? 'Movimiento registrado' : 'Movimiento actualizado' };
+		const movimientoId = await guardarMovimiento(locals, fd);
+		return { mensaje: nuevo ? 'Movimiento registrado' : 'Movimiento actualizado', movimientoId };
 	}),
 	borrarAdjunto: accion(async ({ request, locals, platform }) => {
 		await borrarAdjuntos(locals.db, platform!.env.ARCHIVOS, [leer(await request.formData()).id('id')]);

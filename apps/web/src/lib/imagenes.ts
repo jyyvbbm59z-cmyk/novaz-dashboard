@@ -1,6 +1,6 @@
 // Compresión en el navegador antes de subir: ahorra datos móviles y espacio en R2.
 
-async function aBlob(bmp: ImageBitmap, max: number, calidad: number): Promise<Blob> {
+async function aBlob(bmp: ImageBitmap, max: number, calidad: number, tipo = 'image/webp'): Promise<Blob> {
 	const escala = Math.min(1, max / Math.max(bmp.width, bmp.height));
 	const w = Math.round(bmp.width * escala);
 	const h = Math.round(bmp.height * escala);
@@ -8,7 +8,7 @@ async function aBlob(bmp: ImageBitmap, max: number, calidad: number): Promise<Bl
 	canvas.width = w;
 	canvas.height = h;
 	canvas.getContext('2d')!.drawImage(bmp, 0, 0, w, h);
-	return new Promise((ok, ko) => canvas.toBlob((b) => (b ? ok(b) : ko(new Error('No se pudo comprimir'))), 'image/webp', calidad));
+	return new Promise((ok, ko) => canvas.toBlob((b) => (b ? ok(b) : ko(new Error('No se pudo comprimir'))), tipo, calidad));
 }
 
 export async function prepararArchivo(f: File): Promise<{ archivo: File; mini: File | null }> {
@@ -46,4 +46,16 @@ export async function subirArchivo(
 		throw new Error(cuerpo?.message ?? `Error ${r.status}`);
 	}
 	return r.json();
+}
+
+/** Foto de un ticket lista para leer: JPEG de 1600 px como mucho (legible y ligera). */
+export async function fotoParaLeer(f: File): Promise<File> {
+	try {
+		const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
+		const b = await aBlob(bmp, 1600, 0.85, 'image/jpeg');
+		bmp.close();
+		return new File([b], 'ticket.jpg', { type: 'image/jpeg' });
+	} catch {
+		return f;
+	}
 }
