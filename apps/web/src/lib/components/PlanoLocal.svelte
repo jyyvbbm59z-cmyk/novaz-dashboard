@@ -1,7 +1,9 @@
 <script lang="ts">
 	// Plano del local a escala (metros): muros, pilares, entradas, zonas y muebles.
 	// En modo edición los muebles se arrastran y tocar un hueco propone un mueble nuevo ahí.
-	import { huella, PLANO_LOCAL as P } from '@novaz/core';
+	import { huella, PLANO_LOCAL as P, type Rect } from '@novaz/core';
+	import { prefersReducedMotion, Tween } from 'svelte/motion';
+	import { cubicInOut } from 'svelte/easing';
 	import type { Mueble, Zona } from '@novaz/core/schema';
 
 	let {
@@ -14,6 +16,7 @@
 		editable = false,
 		compacto = false,
 		clase = '',
+		enfoque = null,
 		alTocarMueble,
 		alTocarZona,
 		alTocarVacio,
@@ -29,6 +32,8 @@
 		editable?: boolean;
 		compacto?: boolean;
 		clase?: string;
+		/** Zona o mueble al que acercarse (con zoom animado); null = el local entero. */
+		enfoque?: Rect | null;
 		alTocarMueble?: (id: number) => void;
 		alTocarZona?: (id: number) => void;
 		alTocarVacio?: (x: number, y: number) => void;
@@ -44,6 +49,23 @@
 		`M${P.puertaFondo.hasta} ${P.fondo} L${P.ancho} ${P.fondo}`
 	];
 	const VB = { x: -0.45, y: -0.75, w: P.ancho + 0.9, h: C.y + C.alto + 1.0 };
+
+	// Zoom: una caja con la misma proporción que el plano (así el dibujo no cambia de tamaño), centrada en lo enfocado
+	function cajaDe(r: Rect | null) {
+		if (!r) return VB;
+		const margen = Math.max(r.ancho, r.alto) * 0.6 + 0.6;
+		let w = r.ancho + margen * 2;
+		let h = r.alto + margen * 2;
+		if (w / h > VB.w / VB.h) h = (w * VB.h) / VB.w;
+		else w = (h * VB.w) / VB.h;
+		const minW = 2.2;
+		if (w < minW) ((h = (minW * VB.h) / VB.w), (w = minW));
+		return { x: r.x + r.ancho / 2 - w / 2, y: r.y + r.alto / 2 - h / 2, w, h };
+	}
+	const vista = new Tween(VB, { easing: cubicInOut });
+	$effect(() => {
+		vista.set(cajaDe(enfoque), { duration: prefersReducedMotion.current ? 0 : 850 });
+	});
 	const zonaDe = (m: Mueble) => zonas.find((z) => z.id === m.zonaId);
 
 	// Arrastre (solo en edición): posición provisional mientras se mueve
@@ -89,7 +111,7 @@
 
 <svg
 	bind:this={svg}
-	viewBox="{VB.x} {VB.y} {VB.w} {VB.h}"
+	viewBox="{vista.current.x} {vista.current.y} {vista.current.w} {vista.current.h}"
 	class="plano block h-auto w-full touch-none select-none {editable ? 'editando' : ''} {clase}"
 	role="img"
 	aria-label="Plano del local"

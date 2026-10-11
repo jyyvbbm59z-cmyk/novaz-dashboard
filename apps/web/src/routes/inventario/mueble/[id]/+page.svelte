@@ -4,6 +4,7 @@
 	import AltaRapida from '$comp/AltaRapida.svelte';
 	import ArticuloForm from '$comp/ArticuloForm.svelte';
 	import Hoja from '$comp/Hoja.svelte';
+	import FrenteMueble from '$comp/FrenteMueble.svelte';
 	import MuebleForm from '$comp/MuebleForm.svelte';
 	import PlanoLocal from '$comp/PlanoLocal.svelte';
 	import { accion } from '$lib/enviar';
@@ -20,6 +21,8 @@
 	const enNivel = (n: number | null) => aqui.filter((a) => (n == null ? a.nivel == null || a.nivel > m.niveles : a.nivel === n));
 	const marcado = $derived(Number(page.url.searchParams.get('nivel')) || null);
 	const articuloMarcado = $derived(Number(page.url.searchParams.get('articulo')) || null);
+	const contenido = $derived(aqui.reduce<Record<number, string[]>>((c, a) => ((c[a.nivel ?? 0] ??= []).push(a.nombre), c), {}));
+	const irA = (k: number) => document.getElementById(`n-${k}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
 	const nombreNivel = (n: number) => `${def.nivel.charAt(0).toUpperCase()}${def.nivel.slice(1)} ${n}`;
 
 	$effect(() => {
@@ -85,6 +88,12 @@
 			<a href="/inventario/etiquetas?mueble={m.id}" class="btn h-9"><Printer size={15} /> Etiquetas</a>
 		</div>
 
+		{#if m.niveles > 0}
+			<div class="tarjeta p-3 lg:hidden">
+				<FrenteMueble mueble={m} {contenido} resaltar={marcado} color={zona?.color} alTocarNivel={irA} clase="mx-auto h-auto max-h-64 w-full" />
+			</div>
+		{/if}
+
 		{#snippet fila(a: (typeof aqui)[number])}
 			<li id="a-{a.id}">
 				<button class="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-superficie-2 {articuloMarcado === a.id ? 'bg-acento/10' : ''}" onclick={() => ((verId = a.id), (hVer = true))}>
@@ -120,8 +129,11 @@
 		{/if}
 	</div>
 
-	<aside class="tarjeta hidden p-2 lg:block">
-		<PlanoLocal zonas={data.plano.zonas} muebles={data.plano.muebles} resaltados={[m.id]} seleccion={m.id} compacto />
+	<aside class="hidden flex-col gap-3 lg:flex">
+		{#if m.niveles > 0}
+			<div class="tarjeta p-3"><FrenteMueble mueble={m} {contenido} resaltar={marcado} color={zona?.color} alTocarNivel={irA} clase="mx-auto h-auto max-h-80 w-full" /></div>
+		{/if}
+		<div class="tarjeta p-2"><PlanoLocal zonas={data.plano.zonas} muebles={data.plano.muebles} resaltados={[m.id]} seleccion={m.id} compacto /></div>
 	</aside>
 </div>
 

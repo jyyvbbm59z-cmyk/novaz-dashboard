@@ -274,7 +274,7 @@ export async function responderConsulta(locals: Locals, i: Extract<Intencion, { 
 				const d = describirUbicacion(a, plano.zonas, plano.muebles);
 				const estado = a.estado === 'prestada' ? ` · <b>prestada${a.prestadaA ? ` a ${esc(a.prestadaA)}` : ''}</b>` : a.estado === 'perdida' ? ' · <b>no la encuentras</b>' : '';
 				const donde = d.codigo ? `<b>${d.codigo}</b> — ${esc(d.texto ?? '')}` : a.ubicacion ? `${esc(a.ubicacion)} <i>(sin sitio en el plano)</i>` : '<i>sin ubicar</i>';
-				const enlace = d.muebleId ? ` · <a href="${app}/inventario/mueble/${d.muebleId}?articulo=${a.id}">ver</a>` : '';
+				const enlace = d.zonaId ? ` · <a href="${app}/inventario/plano?ver=${a.id}">ver dónde</a>` : '';
 				return `📍 ${esc(a.nombre)}\n${donde}${estado}${enlace}`;
 			})
 			.join('\n\n');

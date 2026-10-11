@@ -3,7 +3,10 @@
 	import { enhance } from '$app/forms';
 	import Hoja from '$comp/Hoja.svelte';
 	import MuebleForm from '$comp/MuebleForm.svelte';
+	import Localizador from '$comp/Localizador.svelte';
 	import PlanoLocal from '$comp/PlanoLocal.svelte';
+	import { page } from '$app/state';
+	import { tick } from 'svelte';
 	import { accion, enviar } from '$lib/enviar';
 	import { buscarArticulos, MUEBLES } from '@novaz/core';
 	import type { Mueble } from '@novaz/core/schema';
@@ -13,6 +16,22 @@
 	let editando = $state(false);
 	let busqueda = $state('');
 	let zonaSel = $state<number | null>(null);
+
+	// Localizar algo con la animación (desde el buscador o desde el enlace «ver» del bot: ?ver=ID)
+	let verId = $state<number | null>((() => Number(page.url.searchParams.get('ver')) || null)());
+	const localizado = $derived(data.articulos.find((a) => a.id === verId) ?? null);
+	const contenido = $derived.by(() => {
+		const c: Record<number, string[]> = {};
+		if (localizado?.muebleId) for (const a of data.articulos) if (a.muebleId === localizado.muebleId) (c[a.nivel ?? 0] ??= []).push(a.nombre);
+		return c;
+	});
+	let escenario = $state<HTMLElement>();
+	async function localizar(id: number) {
+		verId = id;
+		editando = false;
+		await tick();
+		escenario?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
 
 	// Posición provisional mientras se guarda un arrastre (sin saltos)
 	let provisional = $state<Record<number, { x: number; y: number }>>({});
@@ -74,21 +93,25 @@
 </div>
 
 <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
-	<section class="tarjeta overflow-hidden p-2 {editando ? 'border-acento/50' : ''}">
-		{#if editando}<p class="px-2 pt-1 pb-2 text-xs text-texto-2">Toca un hueco para poner un mueble ahí · arrástralos para moverlos · tócalos para editarlos</p>{/if}
-		<PlanoLocal
-			zonas={data.plano.zonas}
-			{muebles}
-			{cuentas}
-			{resaltados}
-			zonaSeleccionada={zonaSel}
-			editable={editando}
-			alTocarMueble={tocarMueble}
-			alTocarZona={(id) => (zonaSel = zonaSel === id ? null : id)}
-			alTocarVacio={tocarVacio}
-			alMover={mover}
-			clase="max-h-[80dvh]"
-		/>
+	<section bind:this={escenario} class="tarjeta overflow-hidden p-2 {editando ? 'border-acento/50' : ''} scroll-mt-20 lg:scroll-mt-4">
+		{#if localizado && !editando}
+			<Localizador articulo={localizado} zonas={data.plano.zonas} muebles={data.plano.muebles} {contenido} alCerrar={() => (verId = null)} />
+		{:else}
+			{#if editando}<p class="px-2 pt-1 pb-2 text-xs text-texto-2">Toca un hueco para poner un mueble ahí · arrástralos para moverlos · tócalos para editarlos</p>{/if}
+			<PlanoLocal
+				zonas={data.plano.zonas}
+				{muebles}
+				{cuentas}
+				{resaltados}
+				zonaSeleccionada={zonaSel}
+				editable={editando}
+				alTocarMueble={tocarMueble}
+				alTocarZona={(id) => (zonaSel = zonaSel === id ? null : id)}
+				alTocarVacio={tocarVacio}
+				alMover={mover}
+				clase="max-h-[80dvh]"
+			/>
+		{/if}
 	</section>
 
 	<div class="flex min-w-0 flex-col gap-4 {busqueda.trim().length > 1 ? 'max-lg:order-first' : ''}">
@@ -99,14 +122,14 @@
 					<ul class="tarjeta lista-filas">
 						{#each resultados as a (a.id)}
 							<li>
-								<a href={a.muebleId ? `/inventario/mueble/${a.muebleId}?articulo=${a.id}` : `/inventario${a.tipo === 'herramienta' ? '' : '/reserva'}`} class="flex items-center gap-3 px-3 py-2.5 hover:bg-superficie-2">
+								<button class="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-superficie-2 {verId === a.id ? 'bg-acento/10' : ''}" onclick={() => localizar(a.id)}>
 									<span class="w-16 shrink-0 font-mono text-sm font-bold {a.sitio.codigo ? '' : 'text-texto-3'}">{a.sitio.codigo ?? '—'}</span>
 									<span class="min-w-0 flex-1">
 										<span class="block truncate text-sm font-medium">{a.nombre}</span>
 										<span class="block truncate text-xs text-texto-3">{sitioTexto(a)}</span>
 									</span>
 									<ArrowRight size={14} class="shrink-0 text-texto-3" />
-								</a>
+								</button>
 							</li>
 						{/each}
 					</ul>
