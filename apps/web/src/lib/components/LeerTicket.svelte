@@ -3,11 +3,12 @@
 	import { avisar } from '$lib/avisos.svelte';
 	import { fotoParaLeer } from '$lib/imagenes';
 	import type { TicketLeido } from '@novaz/core';
-	import { LoaderCircle, ScanText } from '@lucide/svelte';
+	import { Camera, Images, LoaderCircle, ScanText } from '@lucide/svelte';
 
 	let { alLeer }: { alLeer: (t: TicketLeido, foto: File) => void } = $props();
 	let leyendo = $state(false);
-	let entrada: HTMLInputElement;
+	let camara: HTMLInputElement;
+	let galeria: HTMLInputElement;
 
 	async function leer(e: Event) {
 		const f = (e.currentTarget as HTMLInputElement).files?.[0];
@@ -26,12 +27,23 @@
 			avisar((err as Error).message, 'error', 5000);
 		} finally {
 			leyendo = false;
-			entrada.value = '';
+			camara.value = '';
+			galeria.value = '';
 		}
 	}
 </script>
 
-<button type="button" class="btn w-full border-dashed" disabled={leyendo} onclick={() => entrada.click()}>
-	{#if leyendo}<LoaderCircle size={17} class="animate-spin" /> Leyendo el ticket…{:else}<ScanText size={17} /> Leer ticket con foto{/if}
-</button>
-<input bind:this={entrada} type="file" accept="image/*" capture="environment" class="hidden" onchange={leer} />
+<!-- Leer un ticket: haciendo la foto ahora o con una que ya tengas en la galería -->
+<div class="rounded-lg border border-dashed border-borde p-2">
+	{#if leyendo}
+		<p class="flex h-9 items-center justify-center gap-2 text-sm text-texto-2"><LoaderCircle size={17} class="animate-spin" /> Leyendo el ticket…</p>
+	{:else}
+		<p class="mb-1.5 flex items-center gap-1.5 px-1 text-xs text-texto-3"><ScanText size={14} /> Leer un ticket: la IA rellena los datos</p>
+		<div class="grid grid-cols-2 gap-2">
+			<button type="button" class="btn h-9 text-sm" onclick={() => camara.click()}><Camera size={16} /> Hacer foto</button>
+			<button type="button" class="btn h-9 text-sm" onclick={() => galeria.click()}><Images size={16} /> De la galería</button>
+		</div>
+	{/if}
+</div>
+<input bind:this={camara} type="file" accept="image/*" capture="environment" class="hidden" onchange={leer} aria-label="Hacer foto del ticket" />
+<input bind:this={galeria} type="file" accept="image/*" class="hidden" onchange={leer} aria-label="Elegir foto del ticket de la galería" />
