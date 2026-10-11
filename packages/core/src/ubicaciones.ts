@@ -60,8 +60,8 @@ export const ZONAS_INICIALES: (Rect & { codigo: string; nombre: string; color: s
 // ─── Muebles ─────────────────────────────────────────────────────────────────
 
 export const MUEBLES: Record<TipoMueble, { nombre: string; prefijo: string; nivel: string; ancho: number; fondo: number; niveles: number; ayudaNivel: string }> = {
-	estanteria: { nombre: 'Estantería', prefijo: 'E', nivel: 'balda', ancho: 1.0, fondo: 0.45, niveles: 5, ayudaNivel: 'La balda 1 es la de abajo' },
-	armario: { nombre: 'Armario', prefijo: 'A', nivel: 'balda', ancho: 1.0, fondo: 0.5, niveles: 4, ayudaNivel: 'La balda 1 es la de abajo' },
+	estanteria: { nombre: 'Estantería', prefijo: 'E', nivel: 'balda', ancho: 1.0, fondo: 0.45, niveles: 5, ayudaNivel: 'La balda 1 es la de arriba' },
+	armario: { nombre: 'Armario', prefijo: 'A', nivel: 'balda', ancho: 1.0, fondo: 0.5, niveles: 4, ayudaNivel: 'La balda 1 es la de arriba' },
 	cajonera: { nombre: 'Cajonera', prefijo: 'C', nivel: 'cajón', ancho: 0.7, fondo: 0.46, niveles: 7, ayudaNivel: 'El cajón 1 es el de arriba' },
 	panel: { nombre: 'Panel de pared', prefijo: 'P', nivel: 'fila', ancho: 2.0, fondo: 0.12, niveles: 4, ayudaNivel: 'La fila 1 es la de arriba' },
 	banco: { nombre: 'Banco de trabajo', prefijo: 'B', nivel: 'cajón', ancho: 2.0, fondo: 0.75, niveles: 3, ayudaNivel: 'El cajón 1 es el de la izquierda' },

@@ -17,6 +17,8 @@
 		compacto = false,
 		clase = '',
 		enfoque = null,
+		ruta = null,
+		ping = null,
 		alTocarMueble,
 		alTocarZona,
 		alTocarVacio,
@@ -34,6 +36,10 @@
 		clase?: string;
 		/** Zona o mueble al que acercarse (con zoom animado); null = el local entero. */
 		enfoque?: Rect | null;
+		/** Camino desde la entrada hasta lo que se busca (se dibuja animado). */
+		ruta?: { x: number; y: number }[] | null;
+		/** Mueble que lanza un pulso de radar. */
+		ping?: number | null;
 		alTocarMueble?: (id: number) => void;
 		alTocarZona?: (id: number) => void;
 		alTocarVacio?: (x: number, y: number) => void;
@@ -172,6 +178,21 @@
 		{/if}
 	</g>
 
+	<!-- Ruta desde la entrada -->
+	{#if ruta && ruta.length > 1}
+		{@const d = `M${ruta.map((p) => `${p.x} ${p.y}`).join(' L')}`}
+		{@const fin = ruta[ruta.length - 1]}
+		{#key d}
+			<g class="pointer-events-none">
+				<path {d} pathLength="1" fill="none" stroke="var(--acento)" stroke-opacity="0.25" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" class="ruta-trazo" />
+				<path {d} pathLength="1" fill="none" stroke="var(--acento)" stroke-width="0.06" stroke-linecap="round" stroke-linejoin="round" class="ruta-trazo" />
+				<path {d} fill="none" stroke="var(--fondo)" stroke-width="0.025" stroke-dasharray="0.06 0.22" stroke-linecap="round" class="ruta-flujo" />
+				<circle cx={ruta[0].x} cy={ruta[0].y} r="0.09" fill="var(--acento)" />
+				<circle cx={fin.x} cy={fin.y} r="0.08" fill="var(--acento)" class="ruta-fin" />
+			</g>
+		{/key}
+	{/if}
+
 	<!-- Muebles -->
 	{#each muebles as m (m.id)}
 		{@const h = huella(pos(m))}
@@ -193,6 +214,11 @@
 				stroke-width={res || seleccion === m.id ? 0.07 : 0.03}
 			/>
 			{#if res}<rect x={h.x} y={h.y} width={h.ancho} height={h.alto} rx="0.04" fill="none" stroke="var(--acento)" stroke-width="0.05" class="pulso" />{/if}
+			{#if ping === m.id}
+				{#each [0, 0.45, 0.9] as retraso (retraso)}
+					<circle cx={h.x + h.ancho / 2} cy={h.y + h.alto / 2} r={Math.max(h.ancho, h.alto) * 0.6} fill="none" stroke="var(--acento)" stroke-width="0.04" class="radar" style="animation-delay: {retraso}s" />
+				{/each}
+			{/if}
 			<text x={h.x + h.ancho / 2} y={h.y + h.alto / 2 + 0.1} text-anchor="middle" class="codigo-mueble" font-size={Math.min(0.3, Math.max(0.16, Math.min(h.ancho, h.alto) * 0.9))}>{m.codigo}</text>
 			{#if !compacto && cuentas[m.id] && Math.min(h.ancho, h.alto) >= 0.4}
 				<text x={h.x + h.ancho - 0.05} y={h.y + 0.16} text-anchor="end" class="cuenta-mueble">{cuentas[m.id]}</text>
@@ -254,9 +280,68 @@
 			transform: scale(1.8);
 		}
 	}
+	.ruta-trazo {
+		stroke-dasharray: 1;
+		stroke-dashoffset: 1;
+		animation: trazar 0.9s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+	}
+	@keyframes trazar {
+		to {
+			stroke-dashoffset: 0;
+		}
+	}
+	.ruta-flujo {
+		opacity: 0;
+		animation:
+			aparecer 0.3s 0.9s forwards,
+			fluir 1.2s linear infinite;
+	}
+	@keyframes aparecer {
+		to {
+			opacity: 0.9;
+		}
+	}
+	@keyframes fluir {
+		to {
+			stroke-dashoffset: -0.28;
+		}
+	}
+	.ruta-fin {
+		transform-box: fill-box;
+		transform-origin: center;
+		animation: latir 1s ease-in-out infinite;
+	}
+	@keyframes latir {
+		50% {
+			transform: scale(1.6);
+		}
+	}
+	.radar {
+		transform-box: fill-box;
+		transform-origin: center;
+		opacity: 0;
+		animation: radar 1.35s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+	}
+	@keyframes radar {
+		0% {
+			opacity: 0.9;
+			transform: scale(0.4);
+		}
+		100% {
+			opacity: 0;
+			transform: scale(2.6);
+		}
+	}
 	@media (prefers-reduced-motion: reduce) {
-		.pulso {
+		.pulso,
+		.ruta-flujo,
+		.ruta-fin,
+		.radar {
 			animation: none;
+		}
+		.ruta-trazo {
+			animation: none;
+			stroke-dashoffset: 0;
 		}
 	}
 </style>

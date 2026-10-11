@@ -508,7 +508,7 @@ export const articulos = sqliteTable(
 		ubicacion: text('ubicacion'),
 		zonaId: integer('zona_id').references(() => zonas.id, { onDelete: 'set null' }),
 		muebleId: integer('mueble_id').references(() => muebles.id, { onDelete: 'set null' }),
-		/** Balda o cajón dentro del mueble (1 = la balda de abajo / el cajón de arriba). */
+		/** Balda, cajón o fila dentro del mueble: se numeran siempre de arriba a abajo (1 = la de arriba). */
 		nivel: integer('nivel'),
 		unidad: text('unidad').notNull().default('ud'),
 		/** Por debajo de esto, a la lista de la compra. */

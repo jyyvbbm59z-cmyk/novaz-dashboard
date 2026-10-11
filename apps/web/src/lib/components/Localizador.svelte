@@ -1,10 +1,11 @@
 <script lang="ts">
 	// «¿Dónde está?» animado: el local → la zona → el mueble → la balda encendida con el nombre encima.
-	import { codigoUbicacion, huella, MUEBLES } from '@novaz/core';
+	import { codigoUbicacion, huella, MUEBLES, PLANO_LOCAL as P } from '@novaz/core';
 	import type { Mueble, Zona } from '@novaz/core/schema';
 	import { ArrowRight, RotateCcw, X } from '@lucide/svelte';
 	import { prefersReducedMotion } from 'svelte/motion';
-	import { fade } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
+	import { fade, scale } from 'svelte/transition';
 	import FrenteMueble from './FrenteMueble.svelte';
 	import PlanoLocal from './PlanoLocal.svelte';
 
@@ -23,8 +24,9 @@
 		alCerrar?: () => void;
 	} = $props();
 
-	type Paso = 'local' | 'zona' | 'mueble' | 'balda';
+	type Paso = 'local' | 'zona' | 'mueble' | 'entrar' | 'balda';
 	let paso = $state<Paso>('local');
+	let barrido = $state<number | null>(null);
 	const mueble = $derived(muebles.find((m) => m.id === articulo.muebleId) ?? null);
 	const zona = $derived(zonas.find((z) => z.id === (mueble ? mueble.zonaId : articulo.zonaId)) ?? null);
 	const enfoque = $derived(paso === 'local' ? null : paso === 'zona' || !mueble ? zona : huella(mueble));
@@ -35,26 +37,67 @@
 			mueble && articulo.nivel && { k: 'balda' as Paso, t: `${MUEBLES[mueble.tipo].nivel} ${articulo.nivel}` }
 		].filter(Boolean) as { k: Paso; t: string }[]
 	);
-	const orden: Paso[] = ['local', 'zona', 'mueble', 'balda'];
+	const orden: Paso[] = ['local', 'zona', 'mueble', 'entrar', 'balda'];
 	const llegado = (k: Paso) => orden.indexOf(paso) >= orden.indexOf(k);
-	const final = $derived<Paso>(mueble ? (articulo.nivel || mueble.niveles > 0 ? 'balda' : 'mueble') : zona ? 'zona' : 'local');
+	const final = $derived<Paso>(mueble ? (mueble.niveles > 0 ? 'balda' : 'mueble') : zona ? 'zona' : 'local');
+	const dentro = $derived(mueble && (paso === 'entrar' || paso === 'balda'));
+
+	// El camino desde la persiana hasta el mueble (o la zona): baja por la calle y gira hacia él
+	const ruta = $derived.by(() => {
+		const destino = mueble ? huella(mueble) : zona;
+		if (!destino || paso === 'local') return null;
+		const yF = (x: number) => P.fachada.izq.y + ((P.fachada.der.y - P.fachada.izq.y) * x) / P.ancho;
+		const ex = (P.entrada.desde + P.entrada.hasta) / 2;
+		const inicio = { x: ex, y: yF(ex) + 0.3 };
+		const c = { x: destino.x + destino.ancho / 2, y: destino.y + destino.alto / 2 };
+		const puntos = [inicio];
+		if (c.y > P.fondo) {
+			// Al cuarto trasero, por la puerta del fondo
+			const px = (P.puertaFondo.desde + P.puertaFondo.hasta) / 2;
+			puntos.push({ x: ex, y: P.fondo - 0.5 }, { x: px, y: P.fondo - 0.5 }, { x: px, y: c.y });
+			return puntos;
+		}
+		const borde = !mueble ? c.x : destino.x > ex ? destino.x - 0.12 : destino.x + destino.ancho + 0.12;
+		puntos.push({ x: ex, y: c.y }, { x: borde, y: c.y });
+		return puntos;
+	});
 
 	let relojes: ReturnType<typeof setTimeout>[] = [];
-	function animar() {
+	const luego = (ms: number, f: () => void) => relojes.push(setTimeout(f, ms));
+	function parar() {
 		relojes.forEach(clearTimeout);
 		relojes = [];
+	}
+	function animar() {
+		parar();
+		barrido = null;
 		if (prefersReducedMotion.current) return void (paso = final);
 		paso = 'local';
-		const secuencia = orden.slice(1, orden.indexOf(final) + 1);
-		secuencia.forEach((p, i) => relojes.push(setTimeout(() => (paso = p), 350 + i * 1050)));
+		luego(300, () => (paso = 'zona'));
+		if (final === 'zona') return;
+		luego(1500, () => (paso = 'mueble'));
+		if (final === 'mueble' || !mueble) return;
+		luego(2650, () => (paso = 'entrar'));
+		// Escáner: recorre las baldas de arriba a abajo y se clava en la buena
+		const n = mueble.niveles;
+		const objetivo = articulo.nivel && articulo.nivel <= n ? articulo.nivel : null;
+		const vueltas = objetivo ? [...Array.from({ length: n }, (_, i) => i + 1), ...Array.from({ length: n - objetivo }, (_, i) => n - 1 - i)] : Array.from({ length: n }, (_, i) => i + 1);
+		const t0 = 3250;
+		const paso_ms = Math.max(70, Math.min(130, 900 / vueltas.length));
+		vueltas.forEach((k, i) => luego(t0 + i * paso_ms, () => (barrido = k)));
+		luego(t0 + vueltas.length * paso_ms + 60, () => {
+			barrido = null;
+			paso = 'balda';
+		});
 	}
 	$effect(() => {
 		void articulo.id;
 		animar();
-		return () => relojes.forEach(clearTimeout);
+		return parar;
 	});
 	const saltar = () => {
-		relojes.forEach(clearTimeout);
+		parar();
+		barrido = null;
 		paso = final;
 	};
 </script>
@@ -73,10 +116,11 @@
 	<!-- Escenario: el plano con zoom y, al final, el mueble de frente -->
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<div class="relative overflow-hidden rounded-lg" onclick={saltar}>
-		<PlanoLocal {zonas} {muebles} {enfoque} zonaSeleccionada={paso !== 'local' ? (zona?.id ?? null) : null} resaltados={mueble && llegado('mueble') ? [mueble.id] : []} clase="max-h-[70dvh]" />
-		{#if paso === 'balda' && mueble}
-			<div class="absolute inset-0 flex items-center justify-center bg-superficie/85 p-4 backdrop-blur-sm" transition:fade={{ duration: prefersReducedMotion.current ? 0 : 450 }}>
-				<FrenteMueble {mueble} {contenido} resaltar={articulo.nivel} destacado={articulo.nombre} color={zona?.color} clase="h-full max-h-full w-auto max-w-full" />
+		<PlanoLocal {zonas} {muebles} {enfoque} {ruta} ping={paso === 'mueble' && mueble ? mueble.id : null} zonaSeleccionada={paso !== 'local' ? (zona?.id ?? null) : null} resaltados={mueble && llegado('mueble') ? [mueble.id] : []} clase="max-h-[70dvh]" />
+		{#if dentro && mueble}
+			<div class="absolute inset-0 bg-superficie/85 backdrop-blur-sm" transition:fade={{ duration: prefersReducedMotion.current ? 0 : 350 }}></div>
+			<div class="absolute inset-0 flex items-center justify-center p-4" transition:scale={{ start: 0.15, duration: prefersReducedMotion.current ? 0 : 600, easing: cubicOut, opacity: 0 }}>
+				<FrenteMueble {mueble} {contenido} resaltar={paso === 'balda' ? articulo.nivel : null} {barrido} destacado={paso === 'balda' ? articulo.nombre : null} color={zona?.color} clase="h-full max-h-full w-auto max-w-full" />
 			</div>
 		{/if}
 		{#if paso !== final}<p class="pointer-events-none absolute right-2 bottom-2 rounded bg-superficie/80 px-2 py-0.5 text-[0.65rem] text-texto-3">Toca para saltar</p>{/if}

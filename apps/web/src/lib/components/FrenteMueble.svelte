@@ -8,6 +8,7 @@
 		mueble,
 		contenido = {},
 		resaltar = null,
+		barrido = null,
 		destacado = null,
 		color = 'var(--texto-3)',
 		alTocarNivel,
@@ -17,6 +18,8 @@
 		/** Nombres de lo que hay en cada nivel (0 = sin nivel concreto). */
 		contenido?: Record<number, string[]>;
 		resaltar?: number | null;
+		/** Nivel por el que pasa el escáner (animación de búsqueda). */
+		barrido?: number | null;
 		/** Nombre de lo que se busca (se escribe en la balda resaltada). */
 		destacado?: string | null;
 		color?: string;
@@ -47,14 +50,9 @@
 			const w = (W - g * 2) / n;
 			return Array.from({ length: n }, (_, i) => ({ nivel: i + 1, x: g + i * w, y: 0.08, w, h: 0.22 }));
 		}
-		if (t === 'cajonera' || t === 'carro' || t === 'panel') {
-			// De arriba a abajo
-			const alto = (H - g * 2 - (t === 'carro' ? 0.12 : 0)) / n;
-			return Array.from({ length: n }, (_, i) => ({ nivel: i + 1, x: g, y: g + i * alto, w: W - g * 2, h: alto }));
-		}
-		// Estantería, armario, otro: la balda 1 es la de abajo
-		const alto = (H - g * 2) / n;
-		return Array.from({ length: n }, (_, i) => ({ nivel: i + 1, x: g, y: H - g - (i + 1) * alto, w: W - g * 2, h: alto }));
+		// Todo lo demás, siempre de arriba a abajo (la 1 es la de arriba)
+		const alto = (H - g * 2 - (t === 'carro' ? 0.12 : 0)) / n;
+		return Array.from({ length: n }, (_, i) => ({ nivel: i + 1, x: g, y: g + i * alto, w: W - g * 2, h: alto }));
 	});
 	const cajon = $derived(['cajonera', 'carro', 'banco'].includes(mueble.tipo));
 	const recortar = (t: string, ancho: number, tam: number) => {
@@ -87,18 +85,22 @@
 		{@const cosas = contenido[h.nivel] ?? []}
 		{@const tam = Math.min(fs, h.h * 0.32)}
 		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-		<g class="hueco {alTocarNivel ? 'cursor-pointer' : ''} {on ? 'encendido' : ''}" onclick={() => alTocarNivel?.(h.nivel)} style="--zona: {color}">
+		<g class="hueco {alTocarNivel ? 'cursor-pointer' : ''} {on ? 'encendido' : ''} {barrido === h.nivel ? 'escaneando' : ''}" onclick={() => alTocarNivel?.(h.nivel)} style="--zona: {color}">
 			<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class={cajon ? 'cajon' : 'balda-fondo'} />
 			{#if !cajon && mueble.tipo !== 'panel'}<rect x={h.x - g} y={h.y + h.h - 0.005} width={h.w + g * 2} height={g} class="tablero" />{/if}
 			{#if cajon}<rect x={h.x + h.w / 2 - Math.min(0.12, h.w / 4)} y={h.y + Math.min(0.05, h.h * 0.2)} width={Math.min(0.24, h.w / 2)} height="0.02" rx="0.01" class="tirador" />{/if}
 			<text x={h.x + 0.04} y={h.y + tam * 1.15 + (cajon ? Math.min(0.05, h.h * 0.2) : 0.01)} class="num" font-size={tam * 0.85}>{h.nivel}</text>
 			{#if on && destacado}
 				{@const td = Math.min(tam * 1.05, (h.w - 0.1) / Math.max(destacado.length * 0.5, 6))}
-				<text x={h.x + h.w / 2} y={h.y + (cajon ? h.h * 0.66 : h.h / 2) + td * 0.4} text-anchor="middle" class="destacado" font-size={td}>{recortar(destacado, h.w - 0.1, td)}</text>
+				<text x={h.x + h.w / 2} y={h.y + (cajon ? h.h * 0.66 : h.h / 2) + td * 0.4} text-anchor="middle" class="destacado entra" font-size={td}>{recortar(destacado, h.w - 0.1, td)}</text>
 			{:else if cosas.length}
 				<text x={h.x + h.w / 2} y={h.y + (cajon ? h.h * 0.66 : h.h / 2) + tam * 0.4} text-anchor="middle" class="cosas" font-size={tam * 0.8}>{recortar(cosas.slice(0, 2).join(' · ') + (cosas.length > 2 ? ` +${cosas.length - 2}` : ''), h.w - 0.1, tam * 0.8)}</text>
 			{/if}
-			{#if on}<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class="aro" />{/if}
+			{#if on}
+				<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class="aro" />
+				<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class="destello" />
+			{/if}
+			{#if barrido === h.nivel}<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class="haz" />{/if}
 			<title>{nombreNivel(h.nivel)}{cosas.length ? `: ${cosas.join(', ')}` : ' (vacío)'}</title>
 		</g>
 	{/each}
@@ -158,7 +160,65 @@
 		fill: none;
 		stroke: var(--acento);
 		stroke-width: 0.025;
-		animation: latido 1.3s ease-in-out infinite;
+		filter: drop-shadow(0 0 0.04px var(--acento));
+		animation: latido 1.3s 0.6s ease-in-out infinite;
+	}
+	/* El «clac» al fijarse en la balda: un fogonazo que se expande */
+	.destello {
+		fill: var(--acento);
+		stroke: var(--acento);
+		stroke-width: 0.02;
+		transform-box: fill-box;
+		transform-origin: center;
+		opacity: 0;
+		animation: destello 0.7s cubic-bezier(0.2, 0.7, 0.3, 1);
+	}
+	@keyframes destello {
+		0% {
+			opacity: 0.75;
+			transform: scale(1);
+		}
+		100% {
+			opacity: 0;
+			transform: scale(1.12, 1.6);
+		}
+	}
+	.encendido .balda-fondo,
+	.encendido .cajon {
+		animation: fijar 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+	@keyframes fijar {
+		0% {
+			transform: scale(0.94);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+	/* El escáner pasando por cada balda */
+	.haz {
+		fill: color-mix(in oklab, var(--acento) 18%, transparent);
+		stroke: color-mix(in oklab, var(--acento) 70%, transparent);
+		stroke-width: 0.012;
+	}
+	.escaneando .num {
+		fill: var(--acento);
+	}
+	.entra {
+		opacity: 0;
+		animation: entra 0.5s 0.15s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+	}
+	@keyframes entra {
+		from {
+			opacity: 0;
+			transform: translateY(0.05px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
 	}
 	@keyframes latido {
 		50% {
@@ -166,8 +226,15 @@
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.aro {
+		.aro,
+		.destello,
+		.encendido .balda-fondo,
+		.encendido .cajon {
 			animation: none;
+		}
+		.entra {
+			animation: none;
+			opacity: 1;
 		}
 	}
 </style>
