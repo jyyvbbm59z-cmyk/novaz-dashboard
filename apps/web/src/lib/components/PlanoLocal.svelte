@@ -70,7 +70,8 @@
 	}
 	const vista = new Tween(VB, { easing: cubicInOut });
 	$effect(() => {
-		vista.set(cajaDe(enfoque), { duration: prefersReducedMotion.current ? 0 : 850 });
+		// Acercarse es animado; volver al plano entero es instantáneo
+		vista.set(cajaDe(enfoque), { duration: prefersReducedMotion.current || !enfoque ? 0 : 900 });
 	});
 	const zonaDe = (m: Mueble) => zonas.find((z) => z.id === m.zonaId);
 

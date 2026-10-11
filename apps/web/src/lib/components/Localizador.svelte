@@ -24,28 +24,29 @@
 		alCerrar?: () => void;
 	} = $props();
 
-	type Paso = 'local' | 'zona' | 'mueble' | 'entrar' | 'balda';
-	let paso = $state<Paso>('local');
+	// marcar: el plano entero con el mueble señalado → acercar: zoom directo a él → entrar: se abre → balda: escáner y fijar
+	type Paso = 'marcar' | 'acercar' | 'entrar' | 'balda';
+	let paso = $state<Paso>('marcar');
 	let barrido = $state<number | null>(null);
 	const mueble = $derived(muebles.find((m) => m.id === articulo.muebleId) ?? null);
 	const zona = $derived(zonas.find((z) => z.id === (mueble ? mueble.zonaId : articulo.zonaId)) ?? null);
-	const enfoque = $derived(paso === 'local' ? null : paso === 'zona' || !mueble ? zona : huella(mueble));
+	const enfoque = $derived(paso === 'marcar' ? null : mueble ? huella(mueble) : zona);
 	const pasos = $derived(
 		[
-			zona && { k: 'zona' as Paso, t: `Zona ${zona.codigo} · ${zona.nombre}` },
-			mueble && { k: 'mueble' as Paso, t: `${mueble.nombre} ${mueble.codigo}` },
+			zona && { k: 'marcar' as Paso, t: `Zona ${zona.codigo} · ${zona.nombre}` },
+			mueble && { k: 'acercar' as Paso, t: `${mueble.nombre} ${mueble.codigo}` },
 			mueble && articulo.nivel && { k: 'balda' as Paso, t: `${MUEBLES[mueble.tipo].nivel} ${articulo.nivel}` }
 		].filter(Boolean) as { k: Paso; t: string }[]
 	);
-	const orden: Paso[] = ['local', 'zona', 'mueble', 'entrar', 'balda'];
+	const orden: Paso[] = ['marcar', 'acercar', 'entrar', 'balda'];
 	const llegado = (k: Paso) => orden.indexOf(paso) >= orden.indexOf(k);
-	const final = $derived<Paso>(mueble ? (mueble.niveles > 0 ? 'balda' : 'mueble') : zona ? 'zona' : 'local');
+	const final = $derived<Paso>(mueble ? (mueble.niveles > 0 ? 'balda' : 'acercar') : zona ? 'acercar' : 'marcar');
 	const dentro = $derived(mueble && (paso === 'entrar' || paso === 'balda'));
 
 	// El camino desde la persiana hasta el mueble (o la zona): baja por la calle y gira hacia él
 	const ruta = $derived.by(() => {
 		const destino = mueble ? huella(mueble) : zona;
-		if (!destino || paso === 'local') return null;
+		if (!destino) return null;
 		const yF = (x: number) => P.fachada.izq.y + ((P.fachada.der.y - P.fachada.izq.y) * x) / P.ancho;
 		const ex = (P.entrada.desde + P.entrada.hasta) / 2;
 		const inicio = { x: ex, y: yF(ex) + 0.3 };
@@ -72,17 +73,16 @@
 		parar();
 		barrido = null;
 		if (prefersReducedMotion.current) return void (paso = final);
-		paso = 'local';
-		luego(300, () => (paso = 'zona'));
-		if (final === 'zona') return;
-		luego(1500, () => (paso = 'mueble'));
-		if (final === 'mueble' || !mueble) return;
-		luego(2650, () => (paso = 'entrar'));
+		paso = 'marcar';
+		if (final === 'marcar') return;
+		luego(1150, () => (paso = 'acercar'));
+		if (final === 'acercar' || !mueble) return;
+		luego(2150, () => (paso = 'entrar'));
 		// Escáner: recorre las baldas de arriba a abajo y se clava en la buena
 		const n = mueble.niveles;
 		const objetivo = articulo.nivel && articulo.nivel <= n ? articulo.nivel : null;
 		const vueltas = objetivo ? [...Array.from({ length: n }, (_, i) => i + 1), ...Array.from({ length: n - objetivo }, (_, i) => n - 1 - i)] : Array.from({ length: n }, (_, i) => i + 1);
-		const t0 = 3250;
+		const t0 = 2750;
 		const paso_ms = Math.max(70, Math.min(130, 900 / vueltas.length));
 		vueltas.forEach((k, i) => luego(t0 + i * paso_ms, () => (barrido = k)));
 		luego(t0 + vueltas.length * paso_ms + 60, () => {
@@ -116,7 +116,7 @@
 	<!-- Escenario: el plano con zoom y, al final, el mueble de frente -->
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<div class="relative overflow-hidden rounded-lg" onclick={saltar}>
-		<PlanoLocal {zonas} {muebles} {enfoque} {ruta} ping={paso === 'mueble' && mueble ? mueble.id : null} zonaSeleccionada={paso !== 'local' ? (zona?.id ?? null) : null} resaltados={mueble && llegado('mueble') ? [mueble.id] : []} clase="max-h-[70dvh]" />
+		<PlanoLocal {zonas} {muebles} {enfoque} {ruta} ping={mueble && paso !== 'balda' ? mueble.id : null} zonaSeleccionada={zona?.id ?? null} resaltados={mueble ? [mueble.id] : []} clase="max-h-[70dvh]" />
 		{#if dentro && mueble}
 			<div class="absolute inset-0 bg-superficie/85 backdrop-blur-sm" transition:fade={{ duration: prefersReducedMotion.current ? 0 : 350 }}></div>
 			<div class="absolute inset-0 flex items-center justify-center p-4" transition:scale={{ start: 0.15, duration: prefersReducedMotion.current ? 0 : 600, easing: cubicOut, opacity: 0 }}>
