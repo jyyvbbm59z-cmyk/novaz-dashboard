@@ -46,6 +46,24 @@ export const PLANO_LOCAL = {
 	muro: 0.2
 } as const;
 
+/** Lo que se ve del plano entero (con margen para cotas y la entrada). */
+export const VISTA_PLANO = { x: -0.45, y: -0.75, w: PLANO_LOCAL.ancho + 0.9, h: PLANO_LOCAL.cuarto.y + PLANO_LOCAL.cuarto.alto + 1.0 };
+export type Camara = typeof VISTA_PLANO;
+
+/** Cámara que encuadra algo del plano con la misma proporción que el plano entero (el dibujo no cambia de tamaño). */
+export function cajaCamara(r: Rect | null, cerca = 1): Camara {
+	const VB = VISTA_PLANO;
+	if (!r) return VB;
+	const margen = (Math.max(r.ancho, r.alto) * 0.6 + 0.6) / cerca;
+	let w = r.ancho + margen * 2;
+	let h = r.alto + margen * 2;
+	if (w / h > VB.w / VB.h) h = (w * VB.h) / VB.w;
+	else w = (h * VB.w) / VB.h;
+	const minW = 2.2 / cerca;
+	if (w < minW) ((h = (minW * VB.h) / VB.w), (w = minW));
+	return { x: r.x + r.ancho / 2 - w / 2, y: r.y + r.alto / 2 - h / 2, w, h };
+}
+
 /** Las zonas con las que arranca el local (se pueden cambiar). Izquierda: la calle de vehículos desde la persiana; derecha: el taller. */
 export const ZONAS_INICIALES: (Rect & { codigo: string; nombre: string; color: string; notas: string })[] = [
 	{ codigo: 'A', nombre: 'Bahía delantera', color: '#4f86c6', x: 0, y: 0, ancho: 3.62, alto: 7.96, notas: 'Vehículo en trabajo, junto a la entrada' },

@@ -8,7 +8,7 @@
 		mueble,
 		contenido = {},
 		resaltar = null,
-		barrido = null,
+		foco = null,
 		destacado = null,
 		color = 'var(--texto-3)',
 		alTocarNivel,
@@ -18,8 +18,8 @@
 		/** Nombres de lo que hay en cada nivel (0 = sin nivel concreto). */
 		contenido?: Record<number, string[]>;
 		resaltar?: number | null;
-		/** Nivel por el que pasa el escáner (animación de búsqueda). */
-		barrido?: number | null;
+		/** Luz que flota entre niveles (número con decimales: 2,4 = entre la 2 y la 3). */
+		foco?: number | null;
 		/** Nombre de lo que se busca (se escribe en la balda resaltada). */
 		destacado?: string | null;
 		color?: string;
@@ -54,6 +54,16 @@
 		const alto = (H - g * 2 - (t === 'carro' ? 0.12 : 0)) / n;
 		return Array.from({ length: n }, (_, i) => ({ nivel: i + 1, x: g, y: g + i * alto, w: W - g * 2, h: alto }));
 	});
+	// Rectángulo de la luz: interpolado entre el nivel de antes y el de después
+	const focoRect = $derived.by(() => {
+		if (foco == null || !huecos.length) return null;
+		const f = Math.min(Math.max(foco, 1), huecos.length);
+		const a = huecos[Math.floor(f) - 1];
+		const b = huecos[Math.min(Math.ceil(f), huecos.length) - 1];
+		const k = f - Math.floor(f);
+		const mezcla = (p: number, q: number) => p + (q - p) * k;
+		return { x: mezcla(a.x, b.x), y: mezcla(a.y, b.y), w: mezcla(a.w, b.w), h: mezcla(a.h, b.h) };
+	});
 	const cajon = $derived(['cajonera', 'carro', 'banco'].includes(mueble.tipo));
 	const recortar = (t: string, ancho: number, tam: number) => {
 		const max = Math.max(4, Math.floor(ancho / (tam * 0.56)));
@@ -63,6 +73,14 @@
 </script>
 
 <svg viewBox="-0.12 -0.12 {W + 0.24} {H + 0.24}" class="frente block {clase || 'h-auto w-full'}" role="img" aria-label="{mueble.nombre} {mueble.codigo} visto de frente">
+	<defs>
+		<radialGradient id="foco-luz" cx="0.5" cy="0.5" r="0.7">
+			<stop offset="0" stop-color="var(--acento)" stop-opacity="0.45" />
+			<stop offset="0.6" stop-color="var(--acento)" stop-opacity="0.18" />
+			<stop offset="1" stop-color="var(--acento)" stop-opacity="0" />
+		</radialGradient>
+	</defs>
+
 	<!-- Estructura -->
 	{#if mueble.tipo === 'banco'}
 		<rect x="0" y="0" width={W} height="0.07" rx="0.01" class="tablero" />
@@ -85,14 +103,14 @@
 		{@const cosas = contenido[h.nivel] ?? []}
 		{@const tam = Math.min(fs, h.h * 0.32)}
 		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-		<g class="hueco {alTocarNivel ? 'cursor-pointer' : ''} {on ? 'encendido' : ''} {barrido === h.nivel ? 'escaneando' : ''}" onclick={() => alTocarNivel?.(h.nivel)} style="--zona: {color}">
+		<g class="hueco {alTocarNivel ? 'cursor-pointer' : ''} {on ? 'encendido' : ''} {foco != null && Math.abs(foco - h.nivel) < 0.5 ? 'escaneando' : ''}" onclick={() => alTocarNivel?.(h.nivel)} style="--zona: {color}">
 			<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class={cajon ? 'cajon' : 'balda-fondo'} />
 			{#if !cajon && mueble.tipo !== 'panel'}<rect x={h.x - g} y={h.y + h.h - 0.005} width={h.w + g * 2} height={g} class="tablero" />{/if}
 			{#if cajon}<rect x={h.x + h.w / 2 - Math.min(0.12, h.w / 4)} y={h.y + Math.min(0.05, h.h * 0.2)} width={Math.min(0.24, h.w / 2)} height="0.02" rx="0.01" class="tirador" />{/if}
 			<text x={h.x + 0.04} y={h.y + tam * 1.15 + (cajon ? Math.min(0.05, h.h * 0.2) : 0.01)} class="num" font-size={tam * 0.85}>{h.nivel}</text>
 			{#if on && destacado}
 				{@const td = Math.min(tam * 1.05, (h.w - 0.1) / Math.max(destacado.length * 0.5, 6))}
-				<text x={h.x + h.w / 2} y={h.y + (cajon ? h.h * 0.66 : h.h / 2) + td * 0.4} text-anchor="middle" class="destacado entra" font-size={td}>{recortar(destacado, h.w - 0.1, td)}</text>
+				<text x={h.x + h.w / 2} y={h.y + (cajon ? h.h * 0.66 : h.h / 2) + td * 0.4} text-anchor="middle" class="destacado" font-size={td}>{#each [...recortar(destacado, h.w - 0.1, td)] as letra, i (i)}<tspan class="letra" style="animation-delay: {0.12 + i * 0.035}s">{letra}</tspan>{/each}</text>
 			{:else if cosas.length}
 				<text x={h.x + h.w / 2} y={h.y + (cajon ? h.h * 0.66 : h.h / 2) + tam * 0.4} text-anchor="middle" class="cosas" font-size={tam * 0.8}>{recortar(cosas.slice(0, 2).join(' · ') + (cosas.length > 2 ? ` +${cosas.length - 2}` : ''), h.w - 0.1, tam * 0.8)}</text>
 			{/if}
@@ -100,10 +118,14 @@
 				<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class="aro" />
 				<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class="destello" />
 			{/if}
-			{#if barrido === h.nivel}<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class="haz" />{/if}
 			<title>{nombreNivel(h.nivel)}{cosas.length ? `: ${cosas.join(', ')}` : ' (vacío)'}</title>
 		</g>
 	{/each}
+	<!-- La luz que busca: flota entre baldas -->
+	{#if focoRect}
+		<rect x={focoRect.x - 0.03} y={focoRect.y - 0.03} width={focoRect.w + 0.06} height={focoRect.h + 0.06} rx="0.04" fill="url(#foco-luz)" class="pointer-events-none" />
+		<rect x={focoRect.x + 0.01} y={focoRect.y + 0.01} width={focoRect.w - 0.02} height={focoRect.h - 0.02} rx="0.015" fill="none" stroke="var(--acento)" stroke-opacity="0.8" stroke-width="0.012" class="pointer-events-none" />
+	{/if}
 	{#if !n}
 		<text x={W / 2} y={H / 2} text-anchor="middle" class="destacado" font-size={fs * 1.4}>{mueble.codigo}</text>
 	{/if}
@@ -197,32 +219,19 @@
 			transform: scale(1);
 		}
 	}
-	/* El escáner pasando por cada balda */
-	.haz {
-		fill: color-mix(in oklab, var(--acento) 18%, transparent);
-		stroke: color-mix(in oklab, var(--acento) 70%, transparent);
-		stroke-width: 0.012;
-	}
 	.escaneando .num {
 		fill: var(--acento);
 	}
-	.entra {
+	/* El nombre aparece letra a letra, desenfocado → nítido */
+	.letra {
 		opacity: 0;
-		animation: entra 0.5s 0.15s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+		filter: blur(0.02px);
+		animation: letra 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
 	}
-	@keyframes entra {
-		from {
-			opacity: 0;
-			transform: translateY(0.05px);
-		}
+	@keyframes letra {
 		to {
 			opacity: 1;
-			transform: none;
-		}
-	}
-	@keyframes latido {
-		50% {
-			stroke-opacity: 0.25;
+			filter: none;
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
@@ -232,7 +241,7 @@
 		.encendido .cajon {
 			animation: none;
 		}
-		.entra {
+		.letra {
 			animation: none;
 			opacity: 1;
 		}

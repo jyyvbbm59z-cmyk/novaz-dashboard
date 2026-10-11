@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Plano del local a escala (metros): muros, pilares, entradas, zonas y muebles.
 	// En modo edición los muebles se arrastran y tocar un hueco propone un mueble nuevo ahí.
-	import { huella, PLANO_LOCAL as P, type Rect } from '@novaz/core';
+	import { cajaCamara, huella, PLANO_LOCAL as P, VISTA_PLANO, type Rect } from '@novaz/core';
 	import { prefersReducedMotion, Tween } from 'svelte/motion';
 	import { cubicInOut } from 'svelte/easing';
 	import type { Mueble, Zona } from '@novaz/core/schema';
@@ -18,6 +18,9 @@
 		clase = '',
 		enfoque = null,
 		ruta = null,
+		progresoRuta = null,
+		cometa = null,
+		camara = null,
 		ping = null,
 		alTocarMueble,
 		alTocarZona,
@@ -38,6 +41,12 @@
 		enfoque?: Rect | null;
 		/** Camino desde la entrada hasta lo que se busca (se dibuja animado). */
 		ruta?: { x: number; y: number }[] | null;
+		/** Cuánto camino lleva dibujado (0–1); null = entero. */
+		progresoRuta?: number | null;
+		/** La luz que recorre el camino. */
+		cometa?: { x: number; y: number } | null;
+		/** Cámara fijada desde fuera fotograma a fotograma (manda sobre `enfoque`). */
+		camara?: { x: number; y: number; w: number; h: number } | null;
 		/** Mueble que lanza un pulso de radar. */
 		ping?: number | null;
 		alTocarMueble?: (id: number) => void;
@@ -54,20 +63,8 @@
 		`M${P.entrada.hasta} ${yF(P.entrada.hasta)} L${P.ancho} ${yF(P.ancho)} L${P.ancho} ${C.y + C.alto} L${C.x} ${C.y + C.alto} L${C.x} ${P.fondo}`,
 		`M${P.puertaFondo.hasta} ${P.fondo} L${P.ancho} ${P.fondo}`
 	];
-	const VB = { x: -0.45, y: -0.75, w: P.ancho + 0.9, h: C.y + C.alto + 1.0 };
-
-	// Zoom: una caja con la misma proporción que el plano (así el dibujo no cambia de tamaño), centrada en lo enfocado
-	function cajaDe(r: Rect | null) {
-		if (!r) return VB;
-		const margen = Math.max(r.ancho, r.alto) * 0.6 + 0.6;
-		let w = r.ancho + margen * 2;
-		let h = r.alto + margen * 2;
-		if (w / h > VB.w / VB.h) h = (w * VB.h) / VB.w;
-		else w = (h * VB.w) / VB.h;
-		const minW = 2.2;
-		if (w < minW) ((h = (minW * VB.h) / VB.w), (w = minW));
-		return { x: r.x + r.ancho / 2 - w / 2, y: r.y + r.alto / 2 - h / 2, w, h };
-	}
+	const VB = VISTA_PLANO;
+	const cajaDe = (r: Rect | null) => cajaCamara(r);
 	const vista = new Tween(VB, { easing: cubicInOut });
 	$effect(() => {
 		// Acercarse es animado; volver al plano entero es instantáneo
@@ -118,7 +115,7 @@
 
 <svg
 	bind:this={svg}
-	viewBox="{vista.current.x} {vista.current.y} {vista.current.w} {vista.current.h}"
+	viewBox={camara ? `${camara.x} ${camara.y} ${camara.w} ${camara.h}` : `${vista.current.x} ${vista.current.y} ${vista.current.w} ${vista.current.h}`}
 	class="plano block h-auto w-full touch-none select-none {editable ? 'editando' : ''} {clase}"
 	role="img"
 	aria-label="Plano del local"
@@ -128,6 +125,16 @@
 >
 	<defs>
 		<clipPath id="clip-local"><path d={interior} /></clipPath>
+		<radialGradient id="luz">
+			<stop offset="0" stop-color="var(--acento)" stop-opacity="0.95" />
+			<stop offset="0.35" stop-color="var(--acento)" stop-opacity="0.35" />
+			<stop offset="1" stop-color="var(--acento)" stop-opacity="0" />
+		</radialGradient>
+		<linearGradient id="rastro" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="7" y2="15">
+			<stop offset="0" stop-color="var(--acento)" stop-opacity="0.55" />
+			<stop offset="1" stop-color="var(--acento)" />
+		</linearGradient>
+		<filter id="halo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.08" /></filter>
 		<pattern id="rejilla" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M1 0 L0 0 0 1" fill="none" stroke="var(--trama-plano)" stroke-width="0.012" /></pattern>
 	</defs>
 
@@ -179,19 +186,22 @@
 		{/if}
 	</g>
 
-	<!-- Ruta desde la entrada -->
+	<!-- Ruta desde la entrada: un rastro de luz que se va dibujando -->
 	{#if ruta && ruta.length > 1}
-		{@const d = `M${ruta.map((p) => `${p.x} ${p.y}`).join(' L')}`}
-		{@const fin = ruta[ruta.length - 1]}
-		{#key d}
-			<g class="pointer-events-none">
-				<path {d} pathLength="1" fill="none" stroke="var(--acento)" stroke-opacity="0.25" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" class="ruta-trazo" />
-				<path {d} pathLength="1" fill="none" stroke="var(--acento)" stroke-width="0.06" stroke-linecap="round" stroke-linejoin="round" class="ruta-trazo" />
-				<path {d} fill="none" stroke="var(--fondo)" stroke-width="0.025" stroke-dasharray="0.06 0.22" stroke-linecap="round" class="ruta-flujo" />
-				<circle cx={ruta[0].x} cy={ruta[0].y} r="0.09" fill="var(--acento)" />
-				<circle cx={fin.x} cy={fin.y} r="0.08" fill="var(--acento)" class="ruta-fin" />
-			</g>
-		{/key}
+		{@const d = `M${ruta.map((p) => `${p.x.toFixed(3)} ${p.y.toFixed(3)}`).join(' L')}`}
+		{@const hecho = progresoRuta ?? 1}
+		<g class="pointer-events-none">
+			<path {d} pathLength="1" fill="none" stroke="var(--acento)" stroke-opacity="0.18" stroke-width="0.22" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1" stroke-dashoffset={1 - hecho} filter="url(#halo)" />
+			<path {d} pathLength="1" fill="none" stroke="url(#rastro)" stroke-width="0.055" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1" stroke-dashoffset={1 - hecho} />
+			{#if hecho >= 1}<path {d} fill="none" stroke="var(--acento)" stroke-width="0.03" stroke-dasharray="0.04 0.26" stroke-linecap="round" class="ruta-flujo" />{/if}
+			<circle cx={ruta[0].x} cy={ruta[0].y} r="0.07" fill="var(--acento)" opacity="0.7" />
+		</g>
+	{/if}
+	{#if cometa}
+		<g class="pointer-events-none">
+			<circle cx={cometa.x} cy={cometa.y} r="0.5" fill="url(#luz)" />
+			<circle cx={cometa.x} cy={cometa.y} r="0.075" fill="#fff" />
+		</g>
 	{/if}
 
 	<!-- Muebles -->
@@ -216,8 +226,9 @@
 			/>
 			{#if res}<rect x={h.x} y={h.y} width={h.ancho} height={h.alto} rx="0.04" fill="none" stroke="var(--acento)" stroke-width="0.05" class="pulso" />{/if}
 			{#if ping === m.id}
-				{#each [0, 0.45, 0.9] as retraso (retraso)}
-					<circle cx={h.x + h.ancho / 2} cy={h.y + h.alto / 2} r={Math.max(h.ancho, h.alto) * 0.6} fill="none" stroke="var(--acento)" stroke-width="0.04" class="radar" style="animation-delay: {retraso}s" />
+				<circle cx={h.x + h.ancho / 2} cy={h.y + h.alto / 2} r={Math.max(h.ancho, h.alto) * 0.9} fill="url(#luz)" class="respira" />
+				{#each [0, 0.8] as retraso (retraso)}
+					<circle cx={h.x + h.ancho / 2} cy={h.y + h.alto / 2} r={Math.max(h.ancho, h.alto) * 0.6} fill="none" stroke="var(--acento)" stroke-width="0.025" class="radar" style="animation-delay: {retraso}s" />
 				{/each}
 			{/if}
 			<text x={h.x + h.ancho / 2} y={h.y + h.alto / 2 + 0.1} text-anchor="middle" class="codigo-mueble" font-size={Math.min(0.3, Math.max(0.16, Math.min(h.ancho, h.alto) * 0.9))}>{m.codigo}</text>
@@ -281,47 +292,36 @@
 			transform: scale(1.8);
 		}
 	}
-	.ruta-trazo {
-		stroke-dasharray: 1;
-		stroke-dashoffset: 1;
-		animation: trazar 0.9s cubic-bezier(0.65, 0, 0.35, 1) forwards;
-	}
-	@keyframes trazar {
-		to {
-			stroke-dashoffset: 0;
-		}
-	}
 	.ruta-flujo {
-		opacity: 0;
-		animation:
-			aparecer 0.3s 0.9s forwards,
-			fluir 1.2s linear infinite;
-	}
-	@keyframes aparecer {
-		to {
-			opacity: 0.9;
-		}
+		opacity: 0.8;
+		animation: fluir 1.6s linear infinite;
 	}
 	@keyframes fluir {
 		to {
-			stroke-dashoffset: -0.28;
+			stroke-dashoffset: -0.3;
 		}
 	}
-	.ruta-fin {
+	.respira {
 		transform-box: fill-box;
 		transform-origin: center;
-		animation: latir 1s ease-in-out infinite;
+		animation: respira 2.2s ease-in-out infinite;
 	}
-	@keyframes latir {
+	@keyframes respira {
+		0%,
+		100% {
+			opacity: 0.35;
+			transform: scale(0.85);
+		}
 		50% {
-			transform: scale(1.6);
+			opacity: 0.7;
+			transform: scale(1.1);
 		}
 	}
 	.radar {
 		transform-box: fill-box;
 		transform-origin: center;
 		opacity: 0;
-		animation: radar 1.35s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+		animation: radar 1.6s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
 	}
 	@keyframes radar {
 		0% {
@@ -336,13 +336,9 @@
 	@media (prefers-reduced-motion: reduce) {
 		.pulso,
 		.ruta-flujo,
-		.ruta-fin,
+		.respira,
 		.radar {
 			animation: none;
-		}
-		.ruta-trazo {
-			animation: none;
-			stroke-dashoffset: 0;
 		}
 	}
 </style>
