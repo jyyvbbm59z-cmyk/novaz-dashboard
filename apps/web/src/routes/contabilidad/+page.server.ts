@@ -1,79 +1,77 @@
-import { diasEntre, perdidasYGanancias, resumenIva, revisionContable, sumasYSaldos, trimestreDe } from '@novaz/core';
+import { diasEntre } from '@novaz/core';
 import * as s from '@novaz/core/schema';
-import { and, eq, gte, inArray, isNull } from 'drizzle-orm';
-import { estadoTesoreria } from '$lib/server/tesoreria';
-import { corte, delEjercicio, ejercicioDeUrl, libros } from '$lib/server/contabilidad';
+import { and, eq, gte, isNull, lte } from 'drizzle-orm';
+import { corte, ejercicioDeUrl, libros } from '$lib/server/contabilidad';
 
+/** Resumen de Dinero: lo que hay en el banco, en qué se va el dinero este año y de dónde sale. */
 export const load = async ({ locals, url }) => {
-	const { hoy, ajustes } = locals;
+	const { hoy, ajustes, db } = locals;
 	const ejercicio = ejercicioDeUrl(url, hoy);
-	const { asientos, bienes } = await libros(locals);
-	const delEj = delEjercicio(asientos, ejercicio);
 	const fechaCorte = corte(ejercicio, hoy);
-	const hasta = asientos.filter((a) => a.fecha <= fechaCorte);
-	const saldo = (p: string) => hasta.reduce((t, a) => t + a.apuntes.filter((x) => x.cuenta.startsWith(p)).reduce((s, x) => s + x.debe - x.haber, 0), 0);
+	const { asientos } = await libros(locals);
 
-	const pyg = perdidasYGanancias(sumasYSaldos(delEj));
-	let ingresos = 0;
-	let gastos = 0;
-	const meses = Array.from({ length: 12 }, () => ({ ingresos: 0, gastos: 0 }));
-	for (const a of delEj)
-		for (const p of a.apuntes) {
-			const m = meses[Number(a.fecha.slice(5, 7)) - 1];
-			if (p.cuenta[0] === '7') {
-				ingresos += p.haber - p.debe;
-				m.ingresos += p.haber - p.debe;
-			} else if (p.cuenta[0] === '6') {
-				gastos += p.debe - p.haber;
-				m.gastos += p.debe - p.haber;
-			}
-		}
-
-	const iva = resumenIva(asientos, ejercicio, hoy);
-
-	// Revisión contable (siempre sobre la situación de hoy)
-	const tes = await estadoTesoreria(locals, asientos);
+	// Lo que hay: banco y caja a hoy
 	const ahora = asientos.filter((a) => a.fecha <= hoy);
-	const saldoHoy = (p: string) => ahora.reduce((t, a) => t + a.apuntes.filter((x) => x.cuenta.startsWith(p)).reduce((s, x) => s + x.debe - x.haber, 0), 0);
-	const [sinCategoria, grandes, bienesMov] = await Promise.all([
-		locals.db.select({ id: s.movimientos.id }).from(s.movimientos).where(and(isNull(s.movimientos.categoriaId), isNull(s.movimientos.cuentaContable), inArray(s.movimientos.tipo, ['gasto', 'ingreso']))),
-		locals.db
-			.select({ id: s.movimientos.id, concepto: s.movimientos.concepto, importe: s.movimientos.importeCent, cuenta: s.movimientos.cuentaContable, catCuenta: s.categorias.cuentaContable })
+	const saldo = (p: string) => ahora.reduce((t, a) => t + a.apuntes.filter((x) => x.cuenta.startsWith(p)).reduce((x, y) => x + y.debe - y.haber, 0), 0);
+
+	// Movimientos reales del ejercicio y del mismo periodo del año anterior (sin ajustes de cuadre)
+	const mismoDiaAnterior = `${ejercicio - 1}${fechaCorte.slice(4)}`;
+	const [movs, anteriores, categorias] = await Promise.all([
+		db
+			.select({ fecha: s.movimientos.fecha, tipo: s.movimientos.tipo, importe: s.movimientos.importeCent, categoriaId: s.movimientos.categoriaId })
 			.from(s.movimientos)
-			.leftJoin(s.categorias, eq(s.movimientos.categoriaId, s.categorias.id))
-			.where(and(eq(s.movimientos.tipo, 'gasto'), gte(s.movimientos.importeCent, 30000))),
-		locals.db.select({ id: s.inmovilizado.movimientoId }).from(s.inmovilizado)
+			.where(and(gte(s.movimientos.fecha, `${ejercicio}-01-01`), lte(s.movimientos.fecha, fechaCorte), isNull(s.movimientos.cuadreSaldoCent))),
+		db
+			.select({ importe: s.movimientos.importeCent, categoriaId: s.movimientos.categoriaId })
+			.from(s.movimientos)
+			.where(and(eq(s.movimientos.tipo, 'gasto'), gte(s.movimientos.fecha, `${ejercicio - 1}-01-01`), lte(s.movimientos.fecha, mismoDiaAnterior), isNull(s.movimientos.cuadreSaldoCent))),
+		db.select().from(s.categorias)
 	]);
-	const yaInmov = new Set(bienesMov.map((b) => b.id));
-	const revision = revisionContable({
-		tesoreria: tes.banco + tes.caja,
-		socio: -saldoHoy('551'),
-		ivaPagar: -saldoHoy('4750'),
-		sinCategoria: sinCategoria.length,
-		posiblesInmovilizado: grandes
-			.filter((g) => !yaInmov.has(g.id) && ['629', '602', '622'].includes(g.cuenta ?? g.catCuenta ?? '629'))
-			.map((g) => ({ id: g.id, concepto: g.concepto, importe: g.importe })),
-		hayAportacionMensual: tes.recurrentes.some((r) => r.activo && r.tipo === 'aportacion'),
-		gastoMedioMensual: tes.gastoMedioMensual,
-		diasCuadre: ajustes.ultimoCuadre ? diasEntre(ajustes.ultimoCuadre, hoy) : null,
-		sugerencia: tes.sugerencia,
-		hayMovimientos: asientos.some((a) => a.origen === 'movimiento')
-	});
-	const tActual = ejercicio === Number(hoy.slice(0, 4)) ? trimestreDe(hoy).t : 4;
+
+	const gastos = movs.filter((m) => m.tipo === 'gasto');
+	const porCategoria = new Map<number | null, { total: number; n: number; anterior: number }>();
+	for (const g of gastos) {
+		const c = porCategoria.get(g.categoriaId) ?? { total: 0, n: 0, anterior: 0 };
+		c.total += g.importe;
+		c.n++;
+		porCategoria.set(g.categoriaId, c);
+	}
+	for (const g of anteriores) {
+		const c = porCategoria.get(g.categoriaId);
+		if (c) c.anterior += g.importe;
+	}
+	const totalGasto = gastos.reduce((t, g) => t + g.importe, 0);
+	const categoriasGasto = [...porCategoria.entries()]
+		.map(([id, c]) => {
+			const cat = categorias.find((x) => x.id === id);
+			return { id, nombre: cat?.nombre ?? 'Sin categoría', color: cat?.color ?? '#6c727c', ...c };
+		})
+		.sort((a, b) => b.total - a.total);
+
+	// Gasto mes a mes
+	const meses = Array.from({ length: 12 }, () => 0);
+	for (const g of gastos) meses[Number(g.fecha.slice(5, 7)) - 1] += g.importe;
+	const mesesTranscurridos = ejercicio < Number(hoy.slice(0, 4)) ? 12 : Number(hoy.slice(5, 7));
+
+	// De dónde sale el dinero: tus aportaciones y los ingresos
+	const ingresosPorCat = new Map<number | null, number>();
+	for (const m of movs.filter((x) => x.tipo === 'ingreso')) ingresosPorCat.set(m.categoriaId, (ingresosPorCat.get(m.categoriaId) ?? 0) + m.importe);
+	const entradas = [
+		{ nombre: 'Tus aportaciones', total: movs.filter((m) => m.tipo === 'aportacion').reduce((t, m) => t + m.importe, 0) },
+		...[...ingresosPorCat.entries()].map(([id, total]) => ({ nombre: categorias.find((x) => x.id === id)?.nombre ?? 'Otros ingresos', total }))
+	].filter((e) => e.total);
+
 	return {
-		resultado: pyg.resultado,
-		antesImpuestos: pyg.antesImpuestos,
-		impuestoEstimado: Math.round((Math.max(pyg.antesImpuestos, 0) * ajustes.tipoImpuestoSociedades) / 100),
-		ingresos,
-		gastos,
-		meses: meses.map((m) => ({ ...m, resultado: m.ingresos - m.gastos })),
-		tesoreria: { banco: saldo('572'), caja: saldo('570') },
-		socio: -saldo('551'),
-		hacienda: { ivaPagar: -saldo('4750'), ivaCompensar: saldo('4700') },
-		ivaTrimestre: iva[tActual - 1],
-		inmovilizado: { bienes: bienes.length, neto: saldo('2') },
-		asientos: delEj.length,
+		banco: saldo('572'),
+		caja: saldo('570'),
+		diasCuadre: ajustes.ultimoCuadre ? diasEntre(ajustes.ultimoCuadre, hoy) : null,
 		fechaCorte,
-		revision
+		totalGasto,
+		totalAnterior: anteriores.reduce((t, g) => t + g.importe, 0),
+		mediaMensual: Math.round(totalGasto / Math.max(1, mesesTranscurridos)),
+		categoriasGasto,
+		meses,
+		mesesTranscurridos,
+		entradas
 	};
 };
