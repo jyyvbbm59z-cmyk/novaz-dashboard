@@ -1,4 +1,4 @@
-import { ordenarTareasLocal, siguienteTareaLocal } from '@novaz/core';
+import { lineaConPrecio, ordenarTareasLocal, siguienteTareaLocal } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { PRIORIDADES, type Prioridad } from '@novaz/core/schema';
 import { asc, desc, eq, isNotNull } from 'drizzle-orm';
@@ -83,7 +83,7 @@ export const actions = {
 			.update(s.tareasLocal)
 			.set({ estado: estado as 'pendiente', fechaHecha: hecha || estado === 'descartada' ? locals.hoy : null })
 			.where(eq(s.tareasLocal.id, id));
-		const lista = await locals.db.select({ texto: s.listaCompra.texto }).from(s.listaCompra).where(eq(s.listaCompra.tareaLocalId, id));
+		const lista = await locals.db.select({ texto: s.listaCompra.texto, precio: s.listaCompra.precioEstimadoCent }).from(s.listaCompra).where(eq(s.listaCompra.tareaLocalId, id));
 		if (hecha || estado === 'descartada') await cerrarCompras(locals.db, { tareaLocalId: id });
 		// Si se repite, se crea la siguiente (con lo que haya que volver a comprar)
 		if (hecha && t.cadaMeses) {
@@ -96,7 +96,7 @@ export const actions = {
 				fechaLimite: siguienteTareaLocal(locals.hoy, t.cadaMeses),
 				pasos: t.pasos.map((p) => ({ ...p, hecho: false }))
 			}).returning({ id: s.tareasLocal.id });
-			if (lista.length) await sincronizarCompras(locals.db, lista.map((l) => l.texto).join('\n'), { tareaLocalId: nueva.id });
+			if (lista.length) await sincronizarCompras(locals.db, lista.map((l) => lineaConPrecio(l.texto, l.precio)).join('\n'), { tareaLocalId: nueva.id });
 		}
 		return hecha
 			? { mensaje: t.cadaMeses ? `Hecha. La siguiente, dentro de ${t.cadaMeses} meses` : 'Hecha', momento: 'faseCompletada' }

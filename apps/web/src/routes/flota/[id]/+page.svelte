@@ -17,7 +17,7 @@
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import VencimientoForm from '$comp/VencimientoForm.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { diasEntre, euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad, REVISION_PRE_ITV, type RevisionMejora } from '@novaz/core';
+	import { diasEntre, euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad, REVISION_PRE_ITV, lineaConPrecio, type RevisionMejora } from '@novaz/core';
 	import FacturaForm from '$comp/FacturaForm.svelte';
 	import type { Entrada, Movimiento, Pendiente, Vencimiento } from '@novaz/core/schema';
 	import { Check, CircleAlert, Download, FileText, Fuel, Gauge, Scale, ListChecks, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
@@ -286,7 +286,7 @@
 				<div class="flex flex-col gap-2">
 					{#each data.porReparar as p (p.id)}
 						{@const m = data.mejoras[p.id]}
-						<article class="tarjeta p-3.5" style="border-left: 3px solid {p.tipo === 'mejora' ? 'var(--pronto)' : PRIORIDAD[p.prioridad].color}">
+						<article id="pend-{p.id}" class="tarjeta destino scroll-mt-24 p-3.5" style="border-left: 3px solid {p.tipo === 'mejora' ? 'var(--pronto)' : PRIORIDAD[p.prioridad].color}">
 							<div class="flex items-start gap-3">
 								<div class="min-w-0 flex-1">
 								<p class="font-semibold">{p.titulo}</p>
@@ -871,7 +871,7 @@
 </Hoja>
 
 <Hoja bind:abierta={hPendiente} titulo={pendEdit ? (pendEdit.tipo === 'mejora' ? 'Editar mejora' : 'Editar avería') : tipoPendiente === 'mejora' ? 'Planificar una mejora' : 'Apuntar una avería'}>
-	{#key `${pendEdit?.id}-${tipoPendiente}`}<PendienteForm tipoInicial={tipoPendiente} vehiculoId={v.id} hoy={data.hoy} km={data.km} pendiente={pendEdit} compras={pendEdit ? data.comprasPend.filter((c) => c.pendienteId === pendEdit!.id).map((c) => c.texto) : []} adjuntos={pendEdit ? (data.adjuntosPend[pendEdit.id] ?? []) : []} alGuardar={() => (hPendiente = false)} />{/key}
+	{#key `${pendEdit?.id}-${tipoPendiente}`}<PendienteForm tipoInicial={tipoPendiente} vehiculoId={v.id} hoy={data.hoy} km={data.km} pendiente={pendEdit} compras={pendEdit ? data.comprasPend.filter((c) => c.pendienteId === pendEdit!.id).map((c) => lineaConPrecio(c.texto, c.precioEstimadoCent)) : []} adjuntos={pendEdit ? (data.adjuntosPend[pendEdit.id] ?? []) : []} alGuardar={() => (hPendiente = false)} />{/key}
 </Hoja>
 
 <Hoja bind:abierta={hPapel} titulo={papel?.tipo.nombre ?? ''}>

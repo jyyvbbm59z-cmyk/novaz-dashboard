@@ -94,8 +94,8 @@
 	</div>
 	<label class="campo"><span>Detalles</span><textarea name="detalle" class="input" rows="3" placeholder="Dónde está, qué pieza hace falta, referencias…">{pendiente?.detalle ?? ''}</textarea></label>
 	<label class="campo">
-		<span>Para comprar <span class="font-normal text-texto-3">· una cosa por línea, va a la lista de la compra</span></span>
-		<textarea name="compras" class="input text-sm" rows="2" placeholder={'Retén motor de arranque\nJunta tórica'}>{compras.join('\n')}</textarea>
+		<span>Para comprar <span class="font-normal text-texto-3">· una por línea; el precio estimado, al final</span></span>
+		<textarea name="compras" class="input text-sm" rows="2" placeholder={'Retén motor de arranque · 12 €\nJunta tórica'}>{compras.join('\n')}</textarea>
 	</label>
 	<div class="campo">
 		<span>Fotos</span>

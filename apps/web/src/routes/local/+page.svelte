@@ -13,7 +13,7 @@
 	import { avisar } from '$lib/avisos.svelte';
 	import { accion, enviar } from '$lib/enviar';
 	import { subirArchivo } from '$lib/imagenes';
-	import { euros, fechaLarga, textoDias, diasEntre } from '@novaz/core';
+	import { euros, fechaLarga, lineaConPrecio, textoDias, diasEntre } from '@novaz/core';
 	import type { TareaLocal } from '@novaz/core/schema';
 	import { CalendarSync, Check, Pencil, Play, Plus, ReceiptText, Trash2, Undo2 } from '@lucide/svelte';
 
@@ -80,7 +80,7 @@
 		{#each abiertas as t (t.id)}
 			{@const vencida = t.fechaLimite != null && t.fechaLimite < data.hoy}
 			{@const hechos = t.pasos.filter((p) => p.hecho).length}
-			<article class="tarjeta p-4" style="border-left: 3px solid {PRIORIDAD[t.prioridad].c}">
+			<article id="tarea-{t.id}" class="tarjeta destino scroll-mt-24 p-4" style="border-left: 3px solid {PRIORIDAD[t.prioridad].c}">
 				<div class="flex items-start gap-3">
 					<div class="min-w-0 flex-1">
 						<div class="flex flex-wrap items-center gap-1.5">
@@ -186,8 +186,8 @@
 			<textarea name="pasos" class="input text-sm" rows="4" placeholder={'Rascar la pintura suelta\nTratamiento antihumedad\nImprimación\nPintar'}>{(edit?.pasos ?? []).map((p) => p.texto).join('\n')}</textarea>
 		</label>
 		<label class="campo">
-			<span>Para comprar <span class="font-normal text-texto-3">· una cosa por línea, va a la lista de la compra</span></span>
-			<textarea name="compras" class="input text-sm" rows="2" placeholder={'Pintura antihumedad 4 L\nRodillo'}>{edit ? data.compras.filter((c) => c.tareaLocalId === edit!.id).map((c) => c.texto).join('\n') : ''}</textarea>
+			<span>Para comprar <span class="font-normal text-texto-3">· una por línea; el precio estimado, al final</span></span>
+			<textarea name="compras" class="input text-sm" rows="2" placeholder={'Pintura antihumedad 4 L · 35 €\nRodillo'}>{edit ? data.compras.filter((c) => c.tareaLocalId === edit!.id).map((c) => lineaConPrecio(c.texto, c.precioEstimadoCent)).join('\n') : ''}</textarea>
 		</label>
 		<label class="campo">
 			<span>¿Se repite? Cada… meses (opcional)</span>

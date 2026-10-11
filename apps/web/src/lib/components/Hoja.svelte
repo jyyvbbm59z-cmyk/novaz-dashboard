@@ -31,8 +31,8 @@
 				<X size={20} />
 			</button>
 		</header>
-		<!-- Solo desplazamiento vertical: en iOS el anillo de foco de un campo bastaba para que la hoja se moviera en horizontal -->
-		<div class="overflow-x-hidden overflow-y-auto overscroll-contain px-5 py-4" style="touch-action: pan-y">
+		<!-- Solo desplazamiento vertical (min-h-0: sin él, en columna flexible no se encoge y no se puede desplazar) -->
+		<div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 py-4">
 			{#if abierta}{@render children()}{/if}
 		</div>
 	</div>

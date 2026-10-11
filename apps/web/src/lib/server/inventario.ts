@@ -1,4 +1,4 @@
-import { existencias } from '@novaz/core';
+import { existencias, separarPrecio } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { ESTADOS_HERRAMIENTA, TIPOS_ARTICULO, type EstadoHerramienta, type TipoArticulo } from '@novaz/core/schema';
 import { and, asc, eq, inArray } from 'drizzle-orm';
@@ -122,16 +122,25 @@ export async function guardarRecuento(locals: Locals, presentes: number[], falta
 
 /** Líneas «para comprar» de una avería o una tarea del local: crea las nuevas, quita las borradas y respeta lo ya comprado. */
 export async function sincronizarCompras(db: Locals['db'], texto: string, ref: { pendienteId: number; vehiculoId: number } | { tareaLocalId: number }) {
-	const lineas = [...new Set(texto.split('\n').map((l) => l.trim()).filter(Boolean))];
+	// Cada línea puede llevar su precio estimado al final: «Kit Bilstein B12 · 750 €»
+	const lineas = texto
+		.split('\n')
+		.map((l) => separarPrecio(l))
+		.filter((l) => l.texto)
+		.filter((l, i, xs) => xs.findIndex((x) => x.texto.toLocaleLowerCase('es') === l.texto.toLocaleLowerCase('es')) === i);
 	const filtro = 'pendienteId' in ref ? eq(s.listaCompra.pendienteId, ref.pendienteId) : eq(s.listaCompra.tareaLocalId, ref.tareaLocalId);
 	const existentes = await db.select().from(s.listaCompra).where(filtro);
 	const clave = (t: string) => t.toLocaleLowerCase('es');
-	const quedan = new Set(lineas.map(clave));
+	const quedan = new Map(lineas.map((l) => [clave(l.texto), l]));
 	const borrar = existentes.filter((e) => !quedan.has(clave(e.texto))).map((e) => e.id);
 	if (borrar.length) await db.delete(s.listaCompra).where(inArray(s.listaCompra.id, borrar));
+	for (const e of existentes) {
+		const l = quedan.get(clave(e.texto));
+		if (l && l.precioCent !== e.precioEstimadoCent) await db.update(s.listaCompra).set({ precioEstimadoCent: l.precioCent }).where(eq(s.listaCompra.id, e.id));
+	}
 	const ya = new Set(existentes.map((e) => clave(e.texto)));
-	const nuevas = lineas.filter((l) => !ya.has(clave(l)));
-	if (nuevas.length) await db.insert(s.listaCompra).values(nuevas.map((t) => ({ texto: t, ...ref })));
+	const nuevas = lineas.filter((l) => !ya.has(clave(l.texto)));
+	if (nuevas.length) await db.insert(s.listaCompra).values(nuevas.map((l) => ({ texto: l.texto, precioEstimadoCent: l.precioCent, ...ref })));
 }
 
 /** Al cerrar una avería o tarea, lo que no se llegó a comprar sale de la lista. */

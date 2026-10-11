@@ -511,6 +511,8 @@ export const listaCompra = sqliteTable('lista_compra', {
 	texto: text('texto').notNull(),
 	cantidad: real('cantidad'),
 	unidad: text('unidad'),
+	/** Lo que se calcula que costará (total de la línea). */
+	precioEstimadoCent: integer('precio_estimado_cent'),
 	articuloId: integer('articulo_id').references(() => articulos.id, { onDelete: 'set null' }),
 	vehiculoId: integer('vehiculo_id').references(() => vehiculos.id, { onDelete: 'set null' }),
 	/** Para qué es: una avería por reparar o una tarea del local. */

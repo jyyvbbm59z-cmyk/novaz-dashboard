@@ -101,3 +101,18 @@ describe('tareas del local', () => {
 		expect(orden.map((t) => t.id)).toEqual([3, 4, 2, 1]);
 	});
 });
+
+describe('precio estimado en «Para comprar»', () => {
+	it('separa el precio del final de la línea', async () => {
+		const { separarPrecio, lineaConPrecio } = await import('../src/inventario');
+		expect(separarPrecio('Kit Bilstein B12 Pro-Kit · 750 €')).toEqual({ texto: 'Kit Bilstein B12 Pro-Kit', precioCent: 75000 });
+		expect(separarPrecio('Filtro de aceite - 8,50€')).toEqual({ texto: 'Filtro de aceite', precioCent: 850 });
+		expect(separarPrecio('Neumáticos (4) 640 euros')).toEqual({ texto: 'Neumáticos (4)', precioCent: 64000 });
+		expect(separarPrecio('Llantas 17" ≈ 1.200 €')).toEqual({ texto: 'Llantas 17"', precioCent: 120000 });
+		expect(separarPrecio('Neumáticos 215/40 ZR17')).toEqual({ texto: 'Neumáticos 215/40 ZR17', precioCent: null });
+		expect(separarPrecio('750 €')).toEqual({ texto: '750 €', precioCent: null });
+		expect(lineaConPrecio('Filtro de aceite', 850)).toBe('Filtro de aceite · 8,50 €');
+		expect(lineaConPrecio('Kit', 75000)).toBe('Kit · 750 €');
+		expect(lineaConPrecio('Kit', null)).toBe('Kit');
+	});
+});

@@ -1,4 +1,4 @@
-import { cargarAlertas, listaCompraAutomatica } from '@novaz/core';
+import { cargarAlertas, listaCompraAutomatica, separarPrecio } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { accion, leer } from '$lib/server/form';
@@ -21,7 +21,7 @@ export const load = async ({ locals }) => {
 	// De dónde viene cada cosa: una avería de un vehículo o una tarea del local
 	const [pends, tareas] = await Promise.all([
 		locals.db
-			.select({ id: s.pendientes.id, titulo: s.pendientes.titulo, vehiculoId: s.pendientes.vehiculoId, vehiculo: s.vehiculos.alias })
+			.select({ id: s.pendientes.id, titulo: s.pendientes.titulo, tipo: s.pendientes.tipo, presupuesto: s.pendientes.presupuestoCent, vehiculoId: s.pendientes.vehiculoId, vehiculo: s.vehiculos.alias })
 			.from(s.pendientes)
 			.innerJoin(s.vehiculos, eq(s.pendientes.vehiculoId, s.vehiculos.id))
 			.where(inArray(s.pendientes.id, [0, ...manual.map((m) => m.pendienteId ?? 0)])),
@@ -30,11 +30,21 @@ export const load = async ({ locals }) => {
 			.from(s.tareasLocal)
 			.where(inArray(s.tareasLocal.id, [0, ...manual.map((m) => m.tareaLocalId ?? 0)]))
 	]);
-	const origenes: { clave: string; titulo: string; detalle: string; href: string }[] = [
-		...pends.map((p) => ({ clave: `p${p.id}`, titulo: p.titulo, detalle: `${p.vehiculo} · avería`, href: `/flota/${p.vehiculoId}?pestana=historial` })),
-		...tareas.map((t) => ({ clave: `t${t.id}`, titulo: t.titulo, detalle: 'El local', href: '/local' }))
+	// Cada grupo enlaza a su origen exacto (la tarjeta de la mejora, avería o tarea) para ver el contexto y editarlo
+	const origenes: { clave: string; titulo: string; detalle: string; href: string; presupuesto: number | null }[] = [
+		...pends.map((p) => ({ clave: `p${p.id}`, titulo: p.titulo, detalle: `${p.vehiculo} · ${p.tipo === 'mejora' ? 'mejora' : 'avería'}`, href: `/flota/${p.vehiculoId}?pestana=historial#pend-${p.id}`, presupuesto: p.presupuesto })),
+		...tareas.map((t) => ({ clave: `t${t.id}`, titulo: t.titulo, detalle: 'El local', href: `/local#tarea-${t.id}`, presupuesto: null }))
 	];
-	return { automaticos: listaCompraAutomatica(articulos, revisiones), manual, origenes };
+	// Lo automático: el precio de la última compra del artículo (por la cantidad que toca)
+	const automaticos = listaCompraAutomatica(articulos, revisiones).map((i) => {
+		const a = i.articuloId ? articulos.find((x) => x.id === i.articuloId) : null;
+		return {
+			...i,
+			precioEstimadoCent: a?.valorCent ? Math.round(a.valorCent * (i.cantidad && i.cantidad > 0 ? i.cantidad : 1)) : null,
+			href: i.motivo === 'revision' && i.vehiculoId ? `/flota/${i.vehiculoId}?pestana=mantenimiento` : '/inventario/reserva'
+		};
+	});
+	return { automaticos, manual, origenes };
 };
 
 /** Marca algo como comprado: suma al inventario (creando el artículo si no existe) y apunta el gasto. */
@@ -89,8 +99,18 @@ async function comprar(locals: App.Locals, fd: FormData): Promise<number | null>
 export const actions = {
 	anadir: accion(async ({ request, locals }) => {
 		const f = leer(await request.formData());
-		await locals.db.insert(s.listaCompra).values({ texto: f.obligatorio('texto', 'qué comprar'), cantidad: f.decimal('cantidad'), unidad: f.texto('unidad') });
+		// También aquí el precio puede ir al final: «Lija de 400 · 6 €»
+		const { texto, precioCent } = separarPrecio(f.obligatorio('texto', 'qué comprar'));
+		await locals.db.insert(s.listaCompra).values({ texto, cantidad: f.decimal('cantidad'), unidad: f.texto('unidad'), precioEstimadoCent: precioCent });
 		return {};
+	}),
+	editar: accion(async ({ request, locals }) => {
+		const f = leer(await request.formData());
+		await locals.db
+			.update(s.listaCompra)
+			.set({ texto: f.obligatorio('texto', 'qué comprar'), cantidad: f.decimal('cantidad'), unidad: f.texto('unidad'), precioEstimadoCent: f.euros('precioEstimado') })
+			.where(eq(s.listaCompra.id, f.id('id')));
+		return { mensaje: 'Guardado' };
 	}),
 	comprado: accion(async ({ request, locals }) => {
 		const fd = await request.formData();

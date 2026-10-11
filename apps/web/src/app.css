@@ -190,6 +190,10 @@
 	.chip {
 		@apply inline-flex h-6 items-center gap-1.5 rounded-full border border-borde bg-superficie-2 px-2.5 text-xs font-medium whitespace-nowrap;
 	}
+	/* Al llegar desde un enlace (#pend-12, #tarea-3…), la tarjeta se ilumina un momento */
+	.destino:target {
+		animation: destacar 1.6s ease-out;
+	}
 	.punto {
 		@apply inline-block h-2 w-2 shrink-0 rounded-full;
 	}
@@ -299,5 +303,15 @@
 	*::after {
 		animation-duration: 0.01ms !important;
 		transition-duration: 0.01ms !important;
+	}
+}
+
+@keyframes destacar {
+	0%,
+	40% {
+		box-shadow: 0 0 0 2px var(--acento);
+	}
+	100% {
+		box-shadow: var(--sombra);
 	}
 }

@@ -3,7 +3,8 @@
 	import { invalidateAll } from '$app/navigation';
 	import LeerTicket from '$comp/LeerTicket.svelte';
 	import { subirArchivo } from '$lib/imagenes';
-	import { eurosInput, notasTicket, type TicketLeido } from '@novaz/core';
+	import { euros, eurosInput, notasTicket, type TicketLeido } from '@novaz/core';
+	import type { ItemCompra } from '@novaz/core/schema';
 	import Cabecera from '$comp/Cabecera.svelte';
 	import Hoja from '$comp/Hoja.svelte';
 	import { avisar } from '$lib/avisos.svelte';
@@ -22,6 +23,32 @@
 	);
 	const compradosManual = $derived(data.manual.filter((i) => i.comprado));
 	const total = $derived(revision.length + reponer.length + pendientesManual.length + ligados.reduce((t, o) => t + o.items.length, 0));
+
+	interface Fila {
+		texto: string;
+		detalle: string;
+		precio: number | null;
+		href: string | null;
+		icono: 'rev' | 'stock' | 'manual';
+		compra: Compra;
+		borrable?: number;
+		editar?: ItemCompra;
+	}
+	const suma = (xs: { precio: number | null }[]) => xs.reduce((t, x) => t + (x.precio ?? 0), 0);
+	const todas = $derived([
+		...data.automaticos.map((i) => i.precioEstimadoCent),
+		...data.manual.filter((i) => !i.comprado).map((i) => i.precioEstimadoCent)
+	]);
+	const totalEstimado = $derived(todas.reduce((t: number, p) => t + (p ?? 0), 0));
+	const sinPrecio = $derived(todas.filter((p) => !p).length);
+
+	// Editar lo apuntado a mano (nombre, cantidad, precio estimado)
+	let hEditar = $state(false);
+	let editando = $state<ItemCompra | null>(null);
+	function editar(i: ItemCompra) {
+		editando = i;
+		hEditar = true;
+	}
 
 	// Hoja «comprado»
 	interface Compra {
@@ -90,7 +117,7 @@
 <Cabecera antetitulo="Taller" titulo="Lista de la compra" />
 
 <form method="POST" action="?/anadir" use:enhance={enviar()} class="mb-5 flex gap-2">
-	<input name="texto" class="input flex-1" placeholder="Añadir: lija de 400, pintura…" required />
+	<input name="texto" class="input flex-1" placeholder="Añadir: lija de 400 · 6 €" required />
 	<input name="cantidad" class="input w-20" inputmode="decimal" placeholder="Cant." />
 	<button class="btn btn-acento btn-icono h-11 w-11 shrink-0" aria-label="Añadir"><Plus size={20} /></button>
 </form>
@@ -99,54 +126,73 @@
 	<div class="vacio flex flex-col items-center gap-2"><ShoppingCart size={28} class="text-texto-3" />Nada que comprar. Aquí aparecerán solas las piezas de las revisiones que se acercan y lo que baje de su mínimo.</div>
 {:else}
 	<div class="mb-4 flex items-center justify-between gap-2">
-		<p class="etiqueta">{total} {total === 1 ? 'cosa' : 'cosas'} por comprar</p>
+		<p class="etiqueta">
+			{total} {total === 1 ? 'cosa' : 'cosas'} por comprar{#if totalEstimado}{' · '}≈ <span class="cifra text-sm text-texto">{euros(totalEstimado, { redondo: true })}</span>{/if}{#if sinPrecio && totalEstimado}{' '}<span class="normal-case tracking-normal">({sinPrecio} sin precio)</span>{/if}
+		</p>
 		{#if total}<button class="btn h-8 text-xs" onclick={compartir}><Share2 size={14} /> Enviar la lista</button>{/if}
 	</div>
 
-	{#snippet fila(texto: string, detalle: string, c: Compra, icono: 'rev' | 'stock' | 'manual', borrable?: number)}
+	{#snippet fila(f: Fila)}
 		<li class="flex items-center gap-3 px-3 py-2.5">
 			<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-superficie-3 text-texto-3">
-				{#if icono === 'rev'}<Wrench size={16} />{:else if icono === 'stock'}<Package size={16} />{:else}<ShoppingCart size={16} />{/if}
+				{#if f.icono === 'rev'}<Wrench size={16} />{:else if f.icono === 'stock'}<Package size={16} />{:else}<ShoppingCart size={16} />{/if}
 			</span>
-			<span class="min-w-0 flex-1">
-				<span class="block truncate text-sm font-medium">{texto}</span>
-				{#if detalle}<span class="block truncate text-xs text-texto-3">{detalle}</span>{/if}
-			</span>
-			{#if borrable}<button class="btn btn-fantasma btn-icono h-9 w-9" onclick={() => accion('?/borrar', { id: borrable })} aria-label="Quitar"><Trash2 size={15} /></button>{/if}
-			<button class="btn h-9 px-3 text-xs" onclick={() => abrir(c)}><Check size={15} /> Comprado</button>
+			<!-- Tocar: ir al origen (mejora, avería, tarea, revisión…) o, si lo apuntaste aquí, editarlo -->
+			{#if f.href}
+				<a href={f.href} class="min-w-0 flex-1 hover:text-acento">
+					<span class="block truncate text-sm font-medium">{f.texto}</span>
+					{#if f.detalle}<span class="block truncate text-xs text-texto-3">{f.detalle}</span>{/if}
+				</a>
+			{:else}
+				<button class="min-w-0 flex-1 text-left hover:text-acento" onclick={() => f.editar && editar(f.editar)}>
+					<span class="block truncate text-sm font-medium">{f.texto}</span>
+					<span class="block truncate text-xs text-texto-3">{f.detalle || 'Toca para editar o poner precio'}</span>
+				</button>
+			{/if}
+			{#if f.precio}<span class="cifra shrink-0 text-sm text-texto-2">≈ {euros(f.precio, { redondo: true })}</span>{/if}
+			{#if f.borrable}<button class="btn btn-fantasma btn-icono h-9 w-9" onclick={() => accion('?/borrar', { id: f.borrable! })} aria-label="Quitar"><Trash2 size={15} /></button>{/if}
+			<button class="btn h-9 px-3 text-xs" onclick={() => abrir(f.compra)} aria-label="Comprado: {f.texto}"><Check size={15} /> <span class="hidden sm:inline">Comprado</span></button>
 		</li>
+	{/snippet}
+	{#snippet cabecera(titulo: string, items: { precio: number | null }[], href?: string, detalle?: string, presupuesto?: number | null)}
+		<div class="mb-2 flex items-baseline justify-between gap-3">
+			{#if href}<a {href} class="flex min-w-0 items-baseline gap-2 hover:text-texto"><span class="etiqueta truncate">{titulo}</span><span class="shrink-0 text-xs text-texto-3">{detalle} →</span></a>{:else}<p class="etiqueta">{titulo}</p>{/if}
+			<span class="shrink-0 text-xs text-texto-3">
+				{#if suma(items)}≈ <span class="cifra text-sm text-texto-2">{euros(suma(items), { redondo: true })}</span>{/if}{#if presupuesto}{' · '}presupuesto {euros(presupuesto, { redondo: true })}{/if}
+			</span>
+		</div>
 	{/snippet}
 
 	<div class="flex flex-col gap-5">
 		{#if revision.length}
 			<section>
-				<p class="etiqueta mb-2">Para las próximas revisiones</p>
+				{@render cabecera('Para las próximas revisiones', revision.map((i) => ({ precio: i.precioEstimadoCent })))}
 				<ul class="tarjeta lista-filas">
-					{#each revision as i (i.clave)}{@render fila(i.texto, i.detalle, { texto: i.texto, articuloId: i.articuloId, vehiculoId: i.vehiculoId, itemId: null, unidad: i.unidad }, 'rev')}{/each}
+					{#each revision as i (i.clave)}{@render fila({ texto: i.texto, detalle: i.detalle, precio: i.precioEstimadoCent, href: i.href, icono: 'rev', compra: { texto: i.texto, articuloId: i.articuloId, vehiculoId: i.vehiculoId, itemId: null, unidad: i.unidad } })}{/each}
 				</ul>
 			</section>
 		{/if}
 		{#if reponer.length}
 			<section>
-				<p class="etiqueta mb-2">Por reponer</p>
+				{@render cabecera('Por reponer', reponer.map((i) => ({ precio: i.precioEstimadoCent })))}
 				<ul class="tarjeta lista-filas">
-					{#each reponer as i (i.clave)}{@render fila(i.texto, i.detalle, { texto: i.texto, articuloId: i.articuloId, vehiculoId: null, itemId: null, unidad: i.unidad }, 'stock')}{/each}
+					{#each reponer as i (i.clave)}{@render fila({ texto: i.texto, detalle: i.detalle, precio: i.precioEstimadoCent, href: i.href, icono: 'stock', compra: { texto: i.texto, articuloId: i.articuloId, vehiculoId: null, itemId: null, unidad: i.unidad } })}{/each}
 				</ul>
 			</section>
 		{/if}
 		{#each ligados as o (o.clave)}
 			<section>
-				<a href={o.href} class="mb-2 flex items-baseline gap-2 hover:text-texto"><span class="etiqueta">Para: {o.titulo}</span><span class="text-xs text-texto-3">{o.detalle} →</span></a>
+				{@render cabecera(`Para: ${o.titulo}`, o.items.map((i) => ({ precio: i.precioEstimadoCent })), o.href, o.detalle, o.presupuesto)}
 				<ul class="tarjeta lista-filas">
-					{#each o.items as i (i.id)}{@render fila(i.texto, '', { texto: i.texto, articuloId: i.articuloId, vehiculoId: i.vehiculoId, itemId: i.id, unidad: i.unidad, destino: o.detalle === 'El local' ? `la tarea «${o.titulo}»` : `${o.detalle.replace(' · avería', '')} (${o.titulo})` }, 'manual', i.id)}{/each}
+					{#each o.items as i (i.id)}{@render fila({ texto: i.texto, detalle: i.cantidad ? `${i.cantidad.toLocaleString('es-ES')} ${i.unidad ?? ''}` : '', precio: i.precioEstimadoCent, href: o.href, icono: 'manual', borrable: i.id, compra: { texto: i.texto, articuloId: i.articuloId, vehiculoId: i.vehiculoId, itemId: i.id, unidad: i.unidad, destino: o.detalle === 'El local' ? `la tarea «${o.titulo}»` : `${o.detalle.split(' · ')[0]} (${o.titulo})` } })}{/each}
 				</ul>
 			</section>
 		{/each}
 		{#if pendientesManual.length}
 			<section>
-				<p class="etiqueta mb-2">Apuntado a mano</p>
+				{@render cabecera('Apuntado a mano', pendientesManual.map((i) => ({ precio: i.precioEstimadoCent })))}
 				<ul class="tarjeta lista-filas">
-					{#each pendientesManual as i (i.id)}{@render fila(i.texto, i.cantidad ? `${i.cantidad.toLocaleString('es-ES')} ${i.unidad ?? ''}` : '', { texto: i.texto, articuloId: i.articuloId, vehiculoId: i.vehiculoId, itemId: i.id, unidad: i.unidad }, 'manual', i.id)}{/each}
+					{#each pendientesManual as i (i.id)}{@render fila({ texto: i.texto, detalle: i.cantidad ? `${i.cantidad.toLocaleString('es-ES')} ${i.unidad ?? ''}` : '', precio: i.precioEstimadoCent, href: null, editar: i, icono: 'manual', borrable: i.id, compra: { texto: i.texto, articuloId: i.articuloId, vehiculoId: i.vehiculoId, itemId: i.id, unidad: i.unidad } })}{/each}
 				</ul>
 			</section>
 		{/if}
@@ -195,5 +241,22 @@
 			<p class="text-xs text-texto-3">Con importe, el gasto se apunta solo en la contabilidad.</p>
 			<button class="btn btn-acento h-12">Guardar</button>
 		</form>
+	{/if}
+</Hoja>
+
+<Hoja bind:abierta={hEditar} titulo="Editar">
+	{#if editando}
+		{#key editando.id}
+			<form method="POST" action="?/editar" use:enhance={enviar({ alTerminar: () => (hEditar = false) })} class="flex flex-col gap-4">
+				<input type="hidden" name="id" value={editando.id} />
+				<label class="campo"><span>Qué</span><input name="texto" class="input" required value={editando.texto} /></label>
+				<div class="grid grid-cols-3 gap-3">
+					<label class="campo"><span>Cantidad</span><input name="cantidad" class="input" inputmode="decimal" value={editando.cantidad ?? ''} /></label>
+					<label class="campo"><span>Unidad</span><input name="unidad" class="input" value={editando.unidad ?? ''} placeholder="ud" /></label>
+					<label class="campo"><span>Precio (€)</span><input name="precioEstimado" class="input" inputmode="decimal" value={eurosInput(editando.precioEstimadoCent)} placeholder="≈" /></label>
+				</div>
+				<button class="btn btn-acento h-11">Guardar</button>
+			</form>
+		{/key}
 	{/if}
 </Hoja>

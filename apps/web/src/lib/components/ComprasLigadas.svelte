@@ -13,7 +13,7 @@
 			<ShoppingCart size={13} />{faltan ? `Comprar ${faltan}` : 'Todo comprado'}
 		</span>
 		{#each items as i (i.id)}
-			<span class="chip h-6 px-2 {i.comprado ? 'text-texto-3 line-through' : ''}">{#if i.comprado}<Check size={11} />{/if}{i.texto}</span>
+			<span class="chip h-auto min-h-6 max-w-full px-2 py-0.5 text-left whitespace-normal {i.comprado ? 'text-texto-3 line-through' : ''}">{#if i.comprado}<Check size={11} />{/if}{i.texto}</span>
 		{/each}
 	</a>
 {/if}

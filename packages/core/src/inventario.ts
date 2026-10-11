@@ -186,3 +186,23 @@ export function ordenarTareasLocal<T extends { prioridad: string; fechaLimite: s
 			(a.fechaLimite ?? '9999').localeCompare(b.fechaLimite ?? '9999')
 	);
 }
+
+// ─── Precio estimado en las líneas «Para comprar» ───────────────────────────
+
+const PRECIO_FINAL = /^(.*?)\s*(?:[-–—·:|]|\bpor\b)?\s*(?:≈\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d{1,6}(?:[.,]\d{1,2})?)\s*(?:€|eur(?:os)?)\s*$/i;
+
+/** «Kit Bilstein B12 · 750 €» → { texto: 'Kit Bilstein B12', precioCent: 75000 }. Sin precio al final, se queda como está. */
+export function separarPrecio(linea: string): { texto: string; precioCent: number | null } {
+	const t = linea.trim();
+	const m = t.match(PRECIO_FINAL);
+	if (!m || !m[1].trim()) return { texto: t, precioCent: null };
+	const n = Number(m[2].replace(/\.(?=\d{3}\b)/g, '').replace(',', '.'));
+	return Number.isFinite(n) && n > 0 ? { texto: m[1].trim(), precioCent: Math.round(n * 100) } : { texto: t, precioCent: null };
+}
+
+/** La línea para volver a editarla: «Kit Bilstein B12 · 750 €». */
+export function lineaConPrecio(texto: string, precioCent: number | null): string {
+	if (!precioCent) return texto;
+	const n = precioCent / 100;
+	return `${texto} · ${Number.isInteger(n) ? n : n.toFixed(2).replace('.', ',')} €`;
+}

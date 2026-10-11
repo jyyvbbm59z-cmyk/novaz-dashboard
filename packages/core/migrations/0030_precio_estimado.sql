@@ -1,0 +1,1 @@
+ALTER TABLE `lista_compra` ADD `precio_estimado_cent` integer;
