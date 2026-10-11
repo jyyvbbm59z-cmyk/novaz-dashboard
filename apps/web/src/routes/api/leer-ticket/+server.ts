@@ -34,7 +34,7 @@ export const POST = async ({ request, platform, locals }) => {
 				}
 			],
 			response_format: { type: 'json_schema', json_schema: ESQUEMA_TICKET },
-			max_tokens: 400,
+			max_tokens: 1500,
 			temperature: 0
 		} as never)) as { response?: unknown };
 		respuesta = r?.response;

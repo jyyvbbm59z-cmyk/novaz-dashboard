@@ -5,7 +5,7 @@
 	import { avisar } from '$lib/avisos.svelte';
 	import { enviar } from '$lib/enviar';
 	import { subirArchivo } from '$lib/imagenes';
-	import { CUENTAS_INMOVILIZADO, desglosarIva, ETIQUETA_PAGO, euros, eurosInput, parsearEuros, TIPOS_IVA, type TicketLeido } from '@novaz/core';
+	import { CUENTAS_INMOVILIZADO, desglosarIva, ETIQUETA_PAGO, euros, eurosInput, parsearEuros, TIPOS_IVA, notasTicket, type TicketLeido } from '@novaz/core';
 	import type { Adjunto, Categoria, Cuenta, FormaPago, Inmovilizado, Movimiento, TipoMovimiento } from '@novaz/core/schema';
 	import Galeria from '$comp/Galeria.svelte';
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
@@ -50,7 +50,8 @@
 		};
 		if (t.importeCent != null) importe = eurosInput(t.importeCent);
 		campo('fecha', t.fecha);
-		campo('concepto', t.combustible && t.litros ? `Repostaje ${t.litros.toLocaleString('es-ES')} L` : t.concepto);
+		campo('concepto', t.combustible && t.litros ? `Repostaje ${t.litros.toLocaleString('es-ES')} L` : (t.concepto ?? t.lineas[0]?.descripcion ?? null));
+		campo('notas', notasTicket(t));
 		campo('proveedor', t.proveedor);
 		if (t.combustible) {
 			const c = categorias.find((x) => x.tipo === 'gasto' && /combust/i.test(x.nombre));

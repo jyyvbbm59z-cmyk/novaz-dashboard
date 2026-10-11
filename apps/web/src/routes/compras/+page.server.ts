@@ -72,6 +72,10 @@ async function comprar(locals: App.Locals, fd: FormData): Promise<number | null>
 		datos.set('tipo', 'gasto');
 		datos.set('importe', fd.get('importe') as string);
 		datos.set('concepto', f.obligatorio('texto', 'qué'));
+		const fecha = f.fecha('fecha');
+		if (fecha) datos.set('fecha', fecha);
+		const notas = f.texto('notas');
+		if (notas) datos.set('notas', notas);
 		if (cat) datos.set('categoriaId', String(cat.id));
 		const proveedor = f.texto('proveedor');
 		if (proveedor) datos.set('proveedor', proveedor);

@@ -6,7 +6,7 @@
 	import { avisar } from '$lib/avisos.svelte';
 	import { enviar } from '$lib/enviar';
 	import { subirArchivo } from '$lib/imagenes';
-	import { eurosInput, parsearEuros, type TicketLeido } from '@novaz/core';
+	import { eurosInput, notasTicket, parsearEuros, type TicketLeido } from '@novaz/core';
 
 	let {
 		accion = '?/repostaje',
@@ -31,6 +31,7 @@
 	let importe = $state('');
 	let fecha = $state((() => hoy)());
 	let gasolinera = $state('');
+	let notas = $state('');
 	let fotoTicket = $state<File | null>(null);
 
 	// Ticket de la gasolinera leído con la IA
@@ -40,6 +41,7 @@
 		else if (t.litros && t.precioLitro) importe = (t.litros * t.precioLitro).toFixed(2).replace('.', ',');
 		if (t.fecha) fecha = t.fecha;
 		if (t.proveedor) gasolinera = t.proveedor;
+		notas = notasTicket(t);
 		fotoTicket = foto;
 	}
 	async function guardado(d: Record<string, unknown>) {
@@ -50,6 +52,7 @@
 		litros = '';
 		importe = '';
 		gasolinera = '';
+		notas = '';
 		fotoTicket = null;
 		alGuardar?.();
 	}
@@ -61,7 +64,9 @@
 
 <form method="POST" action={accion} use:enhance={enviar({ alTerminar: guardado })} class="flex flex-col gap-4">
 	<input type="hidden" name="vehiculoId" value={vehiculoId} />
+	<input type="hidden" name="notas" value={notas} />
 	<LeerTicket alLeer={rellenar} />
+	{#if notas}<pre class="max-h-32 overflow-y-auto rounded-lg bg-superficie-2 p-2.5 font-sans text-xs whitespace-pre-wrap text-texto-2">{notas}</pre>{/if}
 	<div class="grid grid-cols-2 gap-3">
 		<label class="campo"><span>Litros *</span><input name="litros" bind:value={litros} class="input cifra h-12 text-2xl" inputmode="decimal" required placeholder="0,00" /></label>
 		<label class="campo"><span>Importe (€) *</span><input name="importe" bind:value={importe} class="input cifra h-12 text-2xl" inputmode="decimal" required placeholder="0,00" /></label>

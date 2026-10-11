@@ -3,7 +3,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import LeerTicket from '$comp/LeerTicket.svelte';
 	import { subirArchivo } from '$lib/imagenes';
-	import { eurosInput, type TicketLeido } from '@novaz/core';
+	import { eurosInput, notasTicket, type TicketLeido } from '@novaz/core';
 	import Cabecera from '$comp/Cabecera.svelte';
 	import Hoja from '$comp/Hoja.svelte';
 	import { avisar } from '$lib/avisos.svelte';
@@ -39,10 +39,14 @@
 	// Lo comprado no va al inventario salvo que lo pidas (herramientas y consumibles que gastas mucho)
 	let importeCompra = $state('');
 	let tiendaCompra = $state('');
+	let fechaCompra = $state('');
+	let notasCompra = $state('');
 	let fotoTicket = $state<File | null>(null);
 	function rellenar(t: TicketLeido, foto: File) {
 		if (t.importeCent != null) importeCompra = eurosInput(t.importeCent);
 		if (t.proveedor) tiendaCompra = t.proveedor;
+		if (t.fecha) fechaCompra = t.fecha;
+		notasCompra = notasTicket(t);
 		fotoTicket = foto;
 	}
 	async function comprado(d: Record<string, unknown>) {
@@ -56,6 +60,8 @@
 		compra = c;
 		importeCompra = '';
 		tiendaCompra = '';
+		fechaCompra = data.hoy;
+		notasCompra = '';
 		fotoTicket = null;
 		alInventario = false;
 		hCompra = true;
@@ -160,6 +166,8 @@
 	{#if compra}
 		<form method="POST" action="?/comprado" use:enhance={enviar({ alTerminar: comprado })} class="flex flex-col gap-4">
 			<LeerTicket alLeer={rellenar} />
+			<input type="hidden" name="notas" value={notasCompra} />
+			{#if notasCompra}<pre class="max-h-40 overflow-y-auto rounded-lg bg-superficie-2 p-2.5 font-sans text-xs whitespace-pre-wrap text-texto-2">{notasCompra}</pre>{/if}
 			<input type="hidden" name="texto" value={compra.texto} />
 			{#if compra.articuloId}<input type="hidden" name="articuloId" value={compra.articuloId} />{/if}
 			{#if compra.vehiculoId}<input type="hidden" name="vehiculoId" value={compra.vehiculoId} />{/if}
@@ -169,6 +177,7 @@
 				<label class="campo"><span>Unidad</span><select name="unidad" class="input">{#each ['ud', 'L', 'ml', 'kg', 'g', 'm', 'juego'] as u (u)}<option selected={(compra.unidad ?? 'ud') === u}>{u}</option>{/each}</select></label>
 				<label class="campo"><span>Importe total (€)</span><input name="importe" class="input" inputmode="decimal" bind:value={importeCompra} placeholder="Opcional" /></label>
 				<label class="campo"><span>Tienda</span><input name="proveedor" class="input" bind:value={tiendaCompra} /></label>
+				<label class="campo"><span>Fecha</span><input type="date" name="fecha" class="input" bind:value={fechaCompra} /></label>
 			</div>
 			{#if !compra.articuloId}
 				<label class="flex items-start gap-3 text-sm">

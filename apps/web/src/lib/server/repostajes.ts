@@ -29,6 +29,8 @@ export async function guardarRepostaje(locals: App.Locals, fd: FormData) {
 	if (gasolinera) datos.set('proveedor', gasolinera);
 	const pago = f.texto('pago');
 	if (pago) datos.set('pago', pago);
+	const notas = f.texto('notas');
+	if (notas) datos.set('notas', notas);
 	const movimientoId = await guardarMovimiento(locals, datos, { vehiculoId });
 
 	const [r] = await locals.db

@@ -98,6 +98,8 @@ export async function registrarStock(locals: Locals, fd: FormData, cantidadActua
 		if (proveedor) datos.set('proveedor', proveedor);
 		const pago = f.texto('pago');
 		if (pago) datos.set('pago', pago);
+		const notas = f.texto('notas');
+		if (notas) datos.set('notas', notas);
 		movimientoId = await guardarMovimiento(locals, datos, { vehiculoId: a.vehiculoIds.length === 1 ? a.vehiculoIds[0] : null });
 		// Guarda el último precio unitario
 		await locals.db.update(s.articulos).set({ valorCent: Math.round(importe / cantidad), fechaCompra: fecha }).where(eq(s.articulos.id, articuloId));
