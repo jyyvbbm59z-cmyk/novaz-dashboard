@@ -2,6 +2,7 @@
 	// Hoja modal: panel inferior en móvil, diálogo centrado en escritorio.
 	import { X } from '@lucide/svelte';
 	import type { Snippet } from 'svelte';
+	import { hojaAbierta, hojaCerrada } from '$lib/uso';
 
 	let {
 		abierta = $bindable(false),
@@ -11,6 +12,16 @@
 	}: { abierta?: boolean; titulo: string; ancho?: string; children: Snippet } = $props();
 
 	let dlg: HTMLDialogElement;
+
+	// Métricas de uso: cuándo se abre y si se cierra guardando o sin guardar
+	let tituloAbierta: string | null = null;
+	$effect(() => {
+		if (abierta && tituloAbierta == null) hojaAbierta((tituloAbierta = titulo));
+		else if (!abierta && tituloAbierta != null) {
+			hojaCerrada(tituloAbierta);
+			tituloAbierta = null;
+		}
+	});
 
 	$effect(() => {
 		if (abierta && !dlg.open) dlg.showModal();

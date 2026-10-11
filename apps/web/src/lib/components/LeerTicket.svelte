@@ -2,7 +2,8 @@
 	// Botón «Leer ticket con foto»: la IA rellena importe, fecha, comercio, IVA y litros.
 	import { avisar } from '$lib/avisos.svelte';
 	import { fotoParaLeer } from '$lib/imagenes';
-	import type { TicketLeido } from '@novaz/core';
+	import { eurosInput, type TicketLeido } from '@novaz/core';
+	import { registrar, ticketLeido } from '$lib/uso';
 	import { Camera, Images, LoaderCircle, ScanText } from '@lucide/svelte';
 
 	let { alLeer }: { alLeer: (t: TicketLeido, foto: File) => void } = $props();
@@ -14,6 +15,7 @@
 		const f = (e.currentTarget as HTMLInputElement).files?.[0];
 		if (!f) return;
 		leyendo = true;
+		const desde = performance.now();
 		try {
 			const foto = await fotoParaLeer(f);
 			const fd = new FormData();
@@ -21,9 +23,12 @@
 			const r = await fetch('/api/leer-ticket', { method: 'POST', body: fd });
 			if (!r.ok) throw new Error(((await r.json().catch(() => null)) as { message?: string } | null)?.message ?? 'No he podido leer el ticket');
 			const t = (await r.json()) as TicketLeido;
+			registrar({ evento: 'ticket_ok', duracionMs: Math.round(performance.now() - desde), datos: { lineas: t.lineas?.length ?? 0, combustible: t.combustible } });
+			ticketLeido({ importe: t.importeCent != null ? eurosInput(t.importeCent) : null, fecha: t.fecha, proveedor: t.proveedor });
 			alLeer(t, foto);
 			avisar('Ticket leído: revisa los datos antes de guardar');
 		} catch (err) {
+			registrar({ evento: 'ticket_error', duracionMs: Math.round(performance.now() - desde), datos: { mensaje: (err as Error).message.slice(0, 160) } });
 			avisar((err as Error).message, 'error', 5000);
 		} finally {
 			leyendo = false;

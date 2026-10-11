@@ -39,6 +39,8 @@ export async function avisosDelDia(env: Env, ahora = new Date()) {
 	// Operaciones mensuales (aportación, alquiler…) aunque nadie abra la app
 	const creados = await materializarRecurrentes(db, hoy);
 	if (creados) console.log(`Recurrentes apuntados: ${creados}`);
+	// Las métricas de uso se guardan 180 días
+	await env.DB.prepare("DELETE FROM uso WHERE momento < datetime('now', '-180 days')").run().catch(() => {});
 	// Precio del combustible del día (para el coste de uso de cada vehículo)
 	let precios = ajustes.precioCombustible;
 	try {

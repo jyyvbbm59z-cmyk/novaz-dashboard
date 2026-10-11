@@ -1,6 +1,8 @@
 <script lang="ts">
 	import '../app.css';
-	import { onNavigate } from '$app/navigation';
+	import { afterNavigate, onNavigate } from '$app/navigation';
+	import { registrar } from '$lib/uso';
+	import { normalizarRuta } from '@novaz/core';
 	import { navigating, page } from '$app/state';
 	import Avisos from '$comp/Avisos.svelte';
 	import Buscador from '$comp/Buscador.svelte';
@@ -13,6 +15,11 @@
 	let altoCabecera = $state(0);
 
 	$effect(() => configurarMomentos(data.ajustes));
+
+	// Métricas de uso: cada página que se visita
+	afterNavigate(({ to }) => {
+		if (to?.url) registrar({ evento: 'vista', ruta: normalizarRuta(to.url.pathname, to.url.search) });
+	});
 
 	// Transición suave solo al cambiar de sección (Flota → Dinero…). Dentro de una sección
 	// (pestañas, subpáginas) no se anima nada: la barra de pestañas no debe moverse.

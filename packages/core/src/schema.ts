@@ -546,6 +546,28 @@ export const repostajes = sqliteTable(
 	(t) => [index('repostajes_vehiculo_idx').on(t.vehiculoId, t.fecha)]
 );
 
+// ─── Uso de la app (métricas propias, para ver dónde hay fricción) ────────────
+
+export const uso = sqliteTable(
+	'uso',
+	{
+		id: id(),
+		momento: text('momento').notNull().default(sql`(datetime('now'))`),
+		/** Pestaña del navegador (para seguir un recorrido). */
+		sesion: text('sesion'),
+		/** Ruta normalizada: /flota/[id]?pestana=papeles */
+		ruta: text('ruta'),
+		/** vista, hoja_abierta, hoja_completada, hoja_abandonada, envio_ok, envio_error, accion_ok, accion_error, ticket_ok, ticket_error, ticket_revisado, error_js */
+		evento: text('evento').notNull(),
+		/** Qué: el título de la hoja, la acción del formulario… */
+		nombre: text('nombre'),
+		duracionMs: integer('duracion_ms'),
+		datos: text('datos', { mode: 'json' }).$type<Record<string, unknown>>(),
+		movil: bool('movil')
+	},
+	(t) => [index('uso_momento_idx').on(t.momento), index('uso_evento_idx').on(t.evento, t.momento)]
+);
+
 // ─── Local ────────────────────────────────────────────────────────────────────
 
 export const ESTADOS_TAREA_LOCAL = ['pendiente', 'en_curso', 'hecha', 'descartada'] as const;

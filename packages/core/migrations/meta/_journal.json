@@ -218,6 +218,13 @@
       "when": 1791716332786,
       "tag": "0030_precio_estimado",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1791718505729,
+      "tag": "0031_uso",
+      "breakpoints": true
     }
   ]
 }

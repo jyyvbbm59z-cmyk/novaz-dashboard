@@ -9,7 +9,8 @@
 		['/ajustes/mantenimiento', 'Mantenimiento'],
 		['/ajustes/plantillas', 'Plantillas de obra'],
 		['/ajustes/categorias', 'Categorías'],
-		['/ajustes/estados', 'Estados']
+		['/ajustes/estados', 'Estados'],
+		['/ajustes/uso', 'Uso de la app']
 	];
 </script>
 
