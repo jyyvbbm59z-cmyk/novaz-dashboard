@@ -253,6 +253,13 @@
       "when": 1791740407607,
       "tag": "0035_contenedores",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1791744083803,
+      "tag": "0036_armario_diagnosis",
+      "breakpoints": true
     }
   ]
 }
