@@ -1,7 +1,7 @@
 // El local por zonas: muebles en el plano y dónde está cada artículo.
 import { huella, MUEBLES, siguienteCodigoMueble, zonaEnPunto } from '@novaz/core';
 import * as s from '@novaz/core/schema';
-import { TIPOS_MUEBLE, type TipoMueble } from '@novaz/core/schema';
+import { TIPOS_ARTICULO, TIPOS_MUEBLE, type TipoArticulo, type TipoMueble } from '@novaz/core/schema';
 import { and, asc, eq, gt, inArray, ne } from 'drizzle-orm';
 import { ErrorFormulario, leer } from './form';
 
@@ -118,4 +118,39 @@ export async function sitioDeFormulario(db: Locals['db'], fd: FormData) {
 		}
 	}
 	return { muebleId: null, nivel: null, zonaId: f.idOpcional('zonaId') };
+}
+
+/**
+ * Alta de golpe de lo que hay en un sitio (de una foto o una lista): lo nuevo se crea con su cantidad
+ * y lo que ya estaba en el inventario (moverId) se mueve aquí.
+ */
+export async function altaEnSitio(
+	locals: Locals,
+	objetos: { nombre: string; marca: string | null; cantidad: number; tipo: string; categoria: string | null; moverId?: number | null }[],
+	sitio: { muebleId: number | null; nivel: number | null; zonaId: number | null }
+) {
+	const mover = objetos.flatMap((o) => (o.moverId ? [o.moverId] : []));
+	const nuevos = objetos.filter((o) => !o.moverId && o.nombre.trim());
+	await ubicarArticulos(locals, mover, sitio);
+	let zonaId = sitio.zonaId;
+	if (sitio.muebleId) zonaId = (await locals.db.select({ z: s.muebles.zonaId }).from(s.muebles).where(eq(s.muebles.id, sitio.muebleId)).get())?.z ?? null;
+	for (let i = 0; i < nuevos.length; i += 20) {
+		const lote = nuevos.slice(i, i + 20);
+		const creados = await locals.db
+			.insert(s.articulos)
+			.values(
+				lote.map((o) => ({
+					tipo: (TIPOS_ARTICULO.includes(o.tipo as TipoArticulo) ? o.tipo : 'herramienta') as TipoArticulo,
+					nombre: o.nombre.trim().slice(0, 120),
+					marca: o.marca?.trim() || null,
+					categoria: o.categoria?.trim() || null,
+					muebleId: sitio.muebleId,
+					nivel: sitio.muebleId ? sitio.nivel : null,
+					zonaId
+				}))
+			)
+			.returning({ id: s.articulos.id });
+		await locals.db.insert(s.stock).values(creados.map((c, k) => ({ articuloId: c.id, fecha: locals.hoy, cantidad: Math.max(lote[k].cantidad, 0) || 1, motivo: 'alta' as const })));
+	}
+	return { creados: nuevos.length, movidos: mover.length };
 }

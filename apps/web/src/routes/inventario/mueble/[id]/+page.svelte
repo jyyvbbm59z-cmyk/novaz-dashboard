@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import ArticuloDetalle from '$comp/ArticuloDetalle.svelte';
+	import AltaRapida from '$comp/AltaRapida.svelte';
 	import ArticuloForm from '$comp/ArticuloForm.svelte';
 	import Hoja from '$comp/Hoja.svelte';
 	import MuebleForm from '$comp/MuebleForm.svelte';
 	import PlanoLocal from '$comp/PlanoLocal.svelte';
 	import { accion } from '$lib/enviar';
 	import { buscarArticulos, codigoUbicacion, MUEBLES } from '@novaz/core';
-	import { ArrowLeft, Pencil, Plus, Printer, Search, Wrench } from '@lucide/svelte';
+	import { ArrowLeft, Camera, Pencil, Plus, Printer, Search, Wrench } from '@lucide/svelte';
 	import { tick } from 'svelte';
 
 	let { data } = $props();
@@ -31,7 +32,13 @@
 	let destino = $state<number | null>(null);
 	let filtro = $state('');
 	let elegidos = $state<number[]>([]);
-	let crear = $state(false);
+	let modoAlta = $state<'foto' | 'lista' | 'inventario' | 'nuevo'>('foto');
+	const MODOS = [
+		['foto', 'Foto'],
+		['lista', 'Lista'],
+		['inventario', 'Mover'],
+		['nuevo', 'Uno a uno']
+	] as const;
 	const candidatos = $derived.by(() => {
 		const otros = data.articulos.filter((a) => a.estado !== 'baja' && !(a.muebleId === m.id && a.nivel === destino));
 		const lista = filtro.trim().length > 1 ? buscarArticulos(filtro, otros, 40) : otros.filter((a) => !a.sitio.zonaId).concat(otros.filter((a) => a.sitio.zonaId));
@@ -41,7 +48,7 @@
 		destino = n;
 		filtro = '';
 		elegidos = [];
-		crear = false;
+		modoAlta = 'foto';
 		hAnadir = true;
 	}
 	async function meter() {
@@ -73,7 +80,7 @@
 			</div>
 		</header>
 		<div class="flex flex-wrap gap-2">
-			<button class="btn btn-acento h-9" onclick={() => abrirAnadir(null)}><Plus size={16} /> Añadir aquí</button>
+			<button class="btn btn-acento h-9" onclick={() => abrirAnadir(m.niveles > 1 ? 1 : null)}><Camera size={16} /> {aqui.length ? 'Añadir aquí' : 'Inventariar balda a balda'}</button>
 			<button class="btn h-9" onclick={() => (hEditar = true)}><Pencil size={15} /> Editar</button>
 			<a href="/inventario/etiquetas?mueble={m.id}" class="btn h-9"><Printer size={15} /> Etiquetas</a>
 		</div>
@@ -119,11 +126,28 @@
 </div>
 
 <Hoja bind:abierta={hAnadir} titulo="Añadir a {codigoUbicacion(zona, m, destino)}">
-	{#if crear}
+	<div class="mb-3 grid grid-cols-4 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
+		{#each MODOS as [v, txt] (v)}
+			<button type="button" class="rounded-md py-1.5 text-xs font-semibold sm:text-sm {modoAlta === v ? 'bg-superficie-3 text-texto shadow-sm' : 'text-texto-3'}" onclick={() => (modoAlta = v)}>{txt}</button>
+		{/each}
+	</div>
+	{#if modoAlta === 'foto' || modoAlta === 'lista'}
+		{#key modoAlta}
+			<AltaRapida
+				modo={modoAlta}
+				muebleId={m.id}
+				bind:nivel={destino}
+				niveles={m.niveles}
+				codigo={(n) => codigoUbicacion(zona, m, n) ?? m.codigo}
+				{nombreNivel}
+				articulos={data.articulos}
+				alTerminar={() => (hAnadir = false)}
+			/>
+		{/key}
+	{:else if modoAlta === 'nuevo'}
 		<ArticuloForm tipoInicial="herramienta" sitio={{ muebleId: m.id, nivel: destino, zonaId: m.zonaId }} categorias={data.categoriasInv} ubicaciones={data.ubicaciones} vehiculos={data.vehiculosMenu} hoy={data.hoy} alGuardar={() => (hAnadir = false)} />
 	{:else}
 		<div class="flex flex-col gap-3">
-			<button class="btn h-11" onclick={() => (crear = true)}><Plus size={16} /> Algo nuevo (aún no está en el inventario)</button>
 			<label class="relative">
 				<Search size={15} class="absolute top-1/2 left-3 -translate-y-1/2 text-texto-3" />
 				<input bind:value={filtro} class="input h-10 pl-9" placeholder="Buscar en el inventario…" />
@@ -141,7 +165,7 @@
 						</label>
 					</li>
 				{:else}
-					<li class="px-3 py-3 text-sm text-texto-3">Nada por aquí. Crea uno nuevo.</li>
+					<li class="px-3 py-3 text-sm text-texto-3">Nada por aquí.</li>
 				{/each}
 			</ul>
 			<button class="btn btn-acento h-12" disabled={!elegidos.length} onclick={meter}>{elegidos.length ? `Guardar ${elegidos.length} en ${codigoUbicacion(zona, m, destino)}` : 'Marca lo que guardas aquí'}</button>

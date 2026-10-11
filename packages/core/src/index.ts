@@ -22,3 +22,4 @@ export * from './mejoras';
 export * from './uso';
 export * from './bot';
 export * from './ubicaciones';
+export * from './altaRapida';

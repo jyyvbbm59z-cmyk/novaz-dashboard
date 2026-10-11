@@ -1,5 +1,5 @@
 // Workers AI: leer tickets, entender mensajes del bot y transcribir notas de voz.
-import { ESQUEMA_INTENCION, ESQUEMA_TICKET, extraerJson, normalizarIntencion, normalizarTicket, PROMPT_TICKET, promptInterprete, type Intencion, type TicketLeido, type VehiculoBot } from '@novaz/core';
+import { ESQUEMA_BALDA, ESQUEMA_INTENCION, ESQUEMA_TICKET, normalizarObjetos, PROMPT_BALDA, type ObjetoDetectado, extraerJson, normalizarIntencion, normalizarTicket, PROMPT_TICKET, promptInterprete, type Intencion, type TicketLeido, type VehiculoBot } from '@novaz/core';
 
 /** Modelo multimodal (visión + texto) con salida JSON. */
 const MODELO = '@cf/meta/llama-4-scout-17b-16e-instruct';
@@ -52,4 +52,24 @@ export async function interpretarConIa(ai: Ai, texto: string, vehiculos: Vehicul
 export async function transcribir(ai: Ai, audio: ArrayBuffer): Promise<string> {
 	const r = await correr(ai, MODELO_VOZ, { audio: base64(audio), language: 'es', task: 'transcribe' });
 	return String(r?.text ?? '').trim();
+}
+
+/** Foto de una balda, cajón o panel → los objetos que hay (para darlos de alta de golpe). */
+export async function leerBalda(ai: Ai, imagen: { mime: string; bytes: ArrayBuffer }): Promise<ObjetoDetectado[]> {
+	const r = await correr(ai, MODELO, {
+		messages: [
+			{ role: 'system', content: PROMPT_BALDA },
+			{
+				role: 'user',
+				content: [
+					{ type: 'text', text: 'Haz el inventario de esta foto y devuelve el JSON.' },
+					{ type: 'image_url', image_url: { url: `data:${imagen.mime};base64,${base64(imagen.bytes)}` } }
+				]
+			}
+		],
+		response_format: { type: 'json_schema', json_schema: ESQUEMA_BALDA },
+		max_tokens: 2500,
+		temperature: 0.1
+	});
+	return normalizarObjetos(extraerJson(r?.response));
 }
