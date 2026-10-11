@@ -18,7 +18,8 @@ async function estadoBot(env: App.Platform['env'] | undefined, origen: string) {
 			llamarTelegram<{ url?: string; last_error_message?: string; last_error_date?: number; pending_update_count?: number }>(env, 'getWebhookInfo'),
 			new Promise<never>((_, no) => setTimeout(() => no(new Error('Telegram no responde')), 3000))
 		]);
-		const reciente = info.last_error_date && Date.now() / 1000 - info.last_error_date < 86400;
+		// Telegram guarda el último error aunque ya entregue bien: solo cuenta si hay mensajes atascados o es de hace nada
+		const reciente = Boolean(info.last_error_date) && ((info.pending_update_count ?? 0) > 0 || Date.now() / 1000 - info.last_error_date! < 300);
 		return { conectado: info.url === `${origen}/api/telegram`, otraUrl: info.url && info.url !== `${origen}/api/telegram` ? info.url : null, error: reciente ? (info.last_error_message ?? null) : null, pendientes: info.pending_update_count ?? 0 };
 	} catch (e) {
 		return { conectado: false, otraUrl: null, error: (e as Error).message, pendientes: 0 };
