@@ -17,10 +17,10 @@
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import VencimientoForm from '$comp/VencimientoForm.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { diasEntre, euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad } from '@novaz/core';
+	import { diasEntre, euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad, REVISION_PRE_ITV, type RevisionMejora } from '@novaz/core';
 	import FacturaForm from '$comp/FacturaForm.svelte';
 	import type { Entrada, Movimiento, Pendiente, Vencimiento } from '@novaz/core/schema';
-	import { Check, CircleAlert, Download, FileText, Fuel, Gauge, ListChecks, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
+	import { Check, CircleAlert, Download, FileText, Fuel, Gauge, Scale, ListChecks, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
 	import { Paperclip } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -93,7 +93,27 @@
 		media: { texto: 'Pronto', color: 'var(--urgente)' },
 		baja: { texto: 'Cuando se pueda', color: 'var(--texto-3)' }
 	};
+	// Mejora hecha: lo que se aplicará al mantenimiento (el usuario elige)
+	let extras = $state<{ revisiones: { r: RevisionMejora; si: boolean }[]; tareas: { t: string; si: boolean }[]; medida: string | null; medidaSi: boolean }>({ revisiones: [], tareas: [], medida: null, medidaSi: false });
+	const extrasJson = $derived(
+		JSON.stringify({ revisiones: extras.revisiones.filter((x) => x.si).map((x) => x.r), tareas: extras.tareas.filter((x) => x.si).map((x) => x.t), medida: extras.medidaSi ? extras.medida : null })
+	);
+	let tipoPendiente = $state<'averia' | 'mejora'>('averia');
+	let sesionPlanes = $state<number[]>([]);
+	function registrarSesion() {
+		if (!data.sesion) return;
+		entradaEdit = null;
+		pendResolver = null;
+		planHecho = null;
+		sesionPlanes = [...data.sesion.tocan, ...data.sesion.adelantar].map((x) => x.planId);
+		hEntrada = true;
+	}
 	function resolver(p: Pendiente) {
+		const m = data.mejoras[p.id];
+		extras = m
+			? { revisiones: m.revisiones.map((r) => ({ r, si: true })), tareas: m.tareas.map((t) => ({ t, si: true })), medida: m.medidaNeumatico, medidaSi: Boolean(m.medidaNeumatico) }
+			: { revisiones: [], tareas: [], medida: null, medidaSi: false };
+		sesionPlanes = [];
 		entradaEdit = null;
 		planHecho = null;
 		pendResolver = p;
@@ -102,6 +122,7 @@
 
 	function nuevaEntrada(plan: number | null = null) {
 		entradaEdit = null;
+		sesionPlanes = [];
 		planHecho = plan;
 		hEntrada = true;
 	}
@@ -235,7 +256,7 @@
 	{#if enUso}<button class="btn h-auto flex-col gap-1 px-1 py-2 sm:h-10 sm:flex-row sm:px-4 sm:py-0" onclick={() => (hRepostaje = true)}><Fuel size={18} /><span class="text-[0.68rem] sm:text-sm">Repostar</span></button>{/if}
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => (hKm = true)}><Gauge size={18} /><span class="text-xs sm:text-sm">Km</span></button>
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((gastoEdit = null), (hGasto = true))}><ReceiptText size={18} /><span class="text-xs sm:text-sm">Gasto</span></button>
-	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((pendEdit = null), (hPendiente = true))}><CircleAlert size={18} /><span class="text-xs sm:text-sm">Avería</span></button>
+	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((pendEdit = null), (tipoPendiente = 'averia'), (hPendiente = true))}><CircleAlert size={18} /><span class="text-xs sm:text-sm">Avería</span></button>
 	<a href="/flota/{v.id}/editar" class="btn hidden sm:inline-flex sm:ml-auto"><Pencil size={16} /> Editar</a>
 </div>
 
@@ -255,32 +276,48 @@
 
 <div class="mt-5 min-h-[70dvh]">
 	{#if pestana === 'historial'}
-		{#if data.porReparar.length}
-			<section class="mb-7">
-				<p class="etiqueta mb-2 flex items-center gap-2"><CircleAlert size={13} /> Por reparar · {data.porReparar.length}</p>
+		<!-- Pendiente: averías y mejoras -->
+		<section class="mb-7">
+			<div class="mb-2 flex items-center justify-between gap-2">
+				<p class="etiqueta flex items-center gap-2"><CircleAlert size={13} /> Pendiente{data.porReparar.length ? ` · ${data.porReparar.length}` : ''}</p>
+				<button class="text-xs font-semibold text-acento hover:underline" onclick={() => ((pendEdit = null), (tipoPendiente = 'mejora'), (hPendiente = true))}>＋ Planificar una mejora</button>
+			</div>
+			{#if data.porReparar.length}
 				<div class="flex flex-col gap-2">
 					{#each data.porReparar as p (p.id)}
-						<article class="tarjeta flex items-start gap-3 p-3.5" style="border-left: 3px solid {PRIORIDAD[p.prioridad].color}">
-							<div class="min-w-0 flex-1">
+						{@const m = data.mejoras[p.id]}
+						<article class="tarjeta p-3.5" style="border-left: 3px solid {p.tipo === 'mejora' ? 'var(--pronto)' : PRIORIDAD[p.prioridad].color}">
+							<div class="flex items-start gap-3">
+								<div class="min-w-0 flex-1">
 								<p class="font-semibold">{p.titulo}</p>
 								<p class="text-xs text-texto-3">
-									<span style="color: {PRIORIDAD[p.prioridad].color}">{PRIORIDAD[p.prioridad].texto}</span> · visto el {fechaLarga(p.fechaDetectado)}{p.kmDetectado != null ? ` a ${p.kmDetectado.toLocaleString('es-ES')} km` : ''}
+									{#if p.tipo === 'mejora'}<span class="font-semibold text-pronto">Mejora</span>{p.presupuestoCent ? ` · presupuesto ${euros(p.presupuestoCent)}` : ''}{:else if p.detalle?.startsWith('Después de la mejora')}<span class="font-semibold text-pronto">Tras la mejora</span>{:else}<span style="color: {PRIORIDAD[p.prioridad].color}">{PRIORIDAD[p.prioridad].texto}</span> · visto el {fechaLarga(p.fechaDetectado)}{p.kmDetectado != null ? ` a ${p.kmDetectado.toLocaleString('es-ES')} km` : ''}{/if}
 								</p>
+								</div>
+								<div class="flex shrink-0 items-center gap-1">
+									<button class="btn btn-acento h-9 px-3" onclick={() => resolver(p)} aria-label={p.tipo === 'mejora' ? 'Hecha' : 'Reparado'}><Check size={16} /> <span class="hidden sm:inline">{p.tipo === 'mejora' ? 'Hecha' : 'Reparado'}</span></button>
+									<button class="btn btn-fantasma btn-icono h-9 w-9" onclick={() => ((pendEdit = p), (hPendiente = true))} aria-label="Editar"><Pencil size={14} /></button>
+									<button class="btn btn-fantasma btn-icono h-9 w-9" onclick={() => confirm(`¿Descartar «${p.titulo}»?`) && accion('?/descartarPendiente', { id: p.id })} aria-label="Descartar"><X size={15} /></button>
+								</div>
+							</div>
 								{#if p.detalle}<p class="mt-1 text-sm whitespace-pre-line text-texto-2">{p.detalle}</p>{/if}
+								{#if m && (m.avisos.length || m.tareas.length || m.revisiones.length)}
+									<div class="mt-2 flex flex-col gap-1.5 rounded-lg bg-superficie-2 p-2.5 text-xs">
+										{#each m.avisos as a, i (i)}<p class="flex gap-2 text-texto-2"><Scale size={13} class="mt-0.5 shrink-0 text-texto-3" />{a}</p>{/each}
+										{#if m.tareas.length}<p class="text-texto-3"><span class="font-semibold text-texto-2">Después:</span> {m.tareas.join(' · ')}</p>{/if}
+										{#if m.revisiones.length}<p class="text-texto-3"><span class="font-semibold text-texto-2">Mantenimiento nuevo:</span> {m.revisiones.map((r) => `${r.nombre} (${textoPeriodicidad(r)})`).join(' · ')}</p>{/if}
+									</div>
+								{/if}
 								<ComprasLigadas items={data.comprasPend.filter((c) => c.pendienteId === p.id)} />
 								{#if data.adjuntosPend[p.id]?.length}<div class="mt-2 max-w-xs"><Galeria adjuntos={data.adjuntosPend[p.id]} columnas="grid-cols-4" /></div>{/if}
 								<div class="mt-1.5"><SubirArchivos entidad="pendiente" entidadId={p.id} vehiculoId={v.id} camara texto="Foto" clase="inline-flex items-center gap-1.5 text-xs text-texto-3 hover:text-texto [&_svg]:size-3.5" /></div>
-							</div>
-							<div class="flex shrink-0 items-center gap-1">
-								<button class="btn btn-acento h-9 px-3" onclick={() => resolver(p)}><Check size={16} /> <span class="hidden sm:inline">Reparado</span></button>
-								<button class="btn btn-fantasma btn-icono h-9 w-9" onclick={() => ((pendEdit = p), (hPendiente = true))} aria-label="Editar"><Pencil size={14} /></button>
-								<button class="btn btn-fantasma btn-icono h-9 w-9" onclick={() => confirm(`¿Descartar «${p.titulo}»? (no se arreglará)`) && accion('?/descartarPendiente', { id: p.id })} aria-label="Descartar"><X size={15} /></button>
-							</div>
 						</article>
 					{/each}
 				</div>
-			</section>
-		{/if}
+			{:else}
+				<p class="text-sm text-texto-3">Nada pendiente: ni averías ni mejoras planificadas.</p>
+			{/if}
+		</section>
 		{#if data.entradas.length}
 			<div class="mb-4 flex items-center justify-between gap-2">
 				<p class="etiqueta">{facturando ? 'Marca las operaciones a facturar' : 'Historial'}</p>
@@ -403,6 +440,25 @@
 			{/if}
 		</div>
 	{:else if pestana === 'mantenimiento'}
+		{#if data.sesion}
+			{@const se = data.sesion}
+			<section id="sesion" class="tarjeta mb-4 border-acento/40 p-4">
+				<p class="etiqueta mb-1">Sesión de taller recomendada · {fechaLarga(se.fecha)}</p>
+				<p class="text-sm text-texto-2">Junta en una sola sesión lo que toca con lo que vence pronto: una vez a desmontar, una compra.</p>
+				<ul class="mt-3 flex flex-col gap-1.5 text-sm">
+					{#each se.tocan as t (t.planId)}<li class="flex gap-2"><span class="punto mt-1.5" style="background: var(--urgente)"></span><span><strong>{t.titulo}</strong> <span class="text-texto-3">· toca</span></span></li>{/each}
+					{#each se.adelantar as t (t.planId)}<li class="flex gap-2"><span class="punto mt-1.5" style="background: var(--pronto)"></span><span><strong>{t.titulo}</strong> <span class="text-texto-3">· se adelanta ({t.cuando})</span></span></li>{/each}
+				</ul>
+				{#if se.antesDeItv}
+					<details class="mt-3 text-sm">
+						<summary class="cursor-pointer font-medium">{se.antesDeItv}</summary>
+						<ul class="mt-2 flex flex-col gap-1 pl-4 text-texto-2">{#each REVISION_PRE_ITV as r (r)}<li class="list-disc">{r}</li>{/each}</ul>
+					</details>
+				{/if}
+				{#if se.piezas.length}<p class="mt-3 text-xs text-texto-3"><span class="font-semibold text-texto-2">Piezas que harán falta:</span> {se.piezas.join(', ')}</p>{/if}
+				{#if se.tocan.length || se.adelantar.length}<button class="btn btn-acento mt-3 h-10" onclick={registrarSesion}><Check size={16} /> Registrar la sesión</button>{/if}
+			</section>
+		{/if}
 		{#if data.plantillas.length}
 			{@const sugerida = data.plantillas.find((p) => p.id === data.plantillaSugerida)}
 			<div class="tarjeta mb-4 flex flex-wrap items-center gap-3 border-acento/40 p-4">
@@ -774,11 +830,26 @@
 </Hoja>
 
 <!-- Hojas -->
-<Hoja bind:abierta={hEntrada} titulo={entradaEdit ? 'Editar entrada' : pendResolver ? 'Reparado' : planHecho ? 'Mantenimiento hecho' : 'Nueva entrada'}>
+<Hoja bind:abierta={hEntrada} titulo={entradaEdit ? 'Editar entrada' : pendResolver ? (pendResolver.tipo === 'mejora' ? 'Mejora hecha' : 'Reparado') : sesionPlanes.length ? 'Sesión de taller' : planHecho ? 'Mantenimiento hecho' : 'Nueva entrada'}>
+	{#if pendResolver?.tipo === 'mejora' && !entradaEdit && (extras.revisiones.length || extras.tareas.length || extras.medida)}
+		<fieldset class="mb-5 flex flex-col gap-2 rounded-lg border border-borde p-3 text-sm">
+			<legend class="etiqueta px-1">Al guardar, actualizar el mantenimiento</legend>
+			{#each extras.revisiones as x (x.r.nombre)}
+				<label class="flex items-start gap-2.5"><input type="checkbox" bind:checked={x.si} class="mt-0.5 h-4 w-4 accent-[var(--acento)]" /><span>Revisión nueva: <strong>{x.r.nombre}</strong> <span class="text-texto-3">({textoPeriodicidad(x.r)}, empieza a contar hoy)</span></span></label>
+			{/each}
+			{#each extras.tareas as x (x.t)}
+				<label class="flex items-start gap-2.5"><input type="checkbox" bind:checked={x.si} class="mt-0.5 h-4 w-4 accent-[var(--acento)]" /><span>Pendiente: {x.t}</span></label>
+			{/each}
+			{#if extras.medida}
+				<label class="flex items-start gap-2.5"><input type="checkbox" bind:checked={extras.medidaSi} class="mt-0.5 h-4 w-4 accent-[var(--acento)]" /><span>Poner en la ficha la medida de neumático <strong>{extras.medida}</strong></span></label>
+			{/if}
+		</fieldset>
+	{/if}
+	{#key `${entradaEdit?.id}-${pendResolver?.id}-${planHecho}-${sesionPlanes.join(',')}`}
 	<EntradaForm
 		accion={pendResolver && !entradaEdit ? '?/resolver' : planHecho && !entradaEdit ? '?/hecho' : '?/entrada'}
 		tituloInicial={pendResolver?.titulo ?? ''}
-		ocultos={pendResolver && !entradaEdit ? { pendienteId: pendResolver.id } : {}}
+		ocultos={pendResolver && !entradaEdit ? { pendienteId: pendResolver.id, ...(pendResolver.tipo === 'mejora' ? { extras: extrasJson } : {}) } : {}}
 		vehiculoId={v.id}
 		hoy={data.hoy}
 		km={data.km}
@@ -791,15 +862,16 @@
 		checklistInicial={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.checklist ?? null) : null}
 		adjuntosExistentes={entradaEdit ? (data.entradas.find((x) => x.id === entradaEdit!.id)?.adjuntos ?? []) : []}
 		gastosExistentes={entradaEdit ? data.movimientos.filter((m) => m.entradaId === entradaEdit!.id && m.tipo === 'gasto').sort((a, b) => a.id - b.id) : []}
-		claseInicial={pendResolver ? 'reparacion' : planHecho ? 'mantenimiento' : activa ? 'diario' : 'nota'}
+		claseInicial={pendResolver ? (pendResolver.tipo === 'mejora' ? 'mejora' : 'reparacion') : planHecho || sesionPlanes.length ? 'mantenimiento' : activa ? 'diario' : 'nota'}
 		planInicial={planHecho}
-		planesIniciales={entradaEdit?.planes.map((p) => p.id) ?? []}
-		alGuardar={() => ((hEntrada = false), (pendResolver = null))}
+		planesIniciales={entradaEdit?.planes.map((p) => p.id) ?? (sesionPlanes.length ? sesionPlanes : pendResolver ? (data.mejoras[pendResolver.id]?.cubiertos ?? []) : [])}
+		alGuardar={() => ((hEntrada = false), (pendResolver = null), (sesionPlanes = []))}
 	/>
+	{/key}
 </Hoja>
 
-<Hoja bind:abierta={hPendiente} titulo={pendEdit ? 'Editar avería' : 'Apuntar avería o trabajo pendiente'}>
-	<PendienteForm vehiculoId={v.id} hoy={data.hoy} km={data.km} pendiente={pendEdit} compras={pendEdit ? data.comprasPend.filter((c) => c.pendienteId === pendEdit!.id).map((c) => c.texto) : []} adjuntos={pendEdit ? (data.adjuntosPend[pendEdit.id] ?? []) : []} alGuardar={() => (hPendiente = false)} />
+<Hoja bind:abierta={hPendiente} titulo={pendEdit ? (pendEdit.tipo === 'mejora' ? 'Editar mejora' : 'Editar avería') : tipoPendiente === 'mejora' ? 'Planificar una mejora' : 'Apuntar una avería'}>
+	{#key `${pendEdit?.id}-${tipoPendiente}`}<PendienteForm tipoInicial={tipoPendiente} vehiculoId={v.id} hoy={data.hoy} km={data.km} pendiente={pendEdit} compras={pendEdit ? data.comprasPend.filter((c) => c.pendienteId === pendEdit!.id).map((c) => c.texto) : []} adjuntos={pendEdit ? (data.adjuntosPend[pendEdit.id] ?? []) : []} alGuardar={() => (hPendiente = false)} />{/key}
 </Hoja>
 
 <Hoja bind:abierta={hPapel} titulo={papel?.tipo.nombre ?? ''}>

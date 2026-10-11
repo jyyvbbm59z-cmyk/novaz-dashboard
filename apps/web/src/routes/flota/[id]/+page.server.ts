@@ -6,6 +6,10 @@ import {
 	metricasKm,
 	costesVehiculo,
 	costeUsoMensual,
+	analizarMejora,
+	planesCubiertos,
+	sesionesRecomendadas,
+	cargarAlertas,
 	consumoReal,
 	combustibleDe,
 	planAplica,
@@ -146,6 +150,20 @@ export const load = async ({ params, locals }) => {
 	const gastos = movs.filter((x) => x.m.tipo === 'gasto');
 
 	// Coste de uso al mes: combustible con el precio de hoy + papeles anualizados + mantenimiento repartido
+	// Mejoras: qué implican (normativa, revisiones nuevas, tareas) y qué planes del vehículo dejan hechos
+	const planesDelVeh = planes.filter((p) => planAplica(p, v, propios) || (p.vehiculoId === v.id && p.activo));
+	const mejoras = Object.fromEntries(
+		porReparar
+			.filter((p) => p.tipo === 'mejora')
+			.map((p) => {
+				const texto = `${p.titulo} ${p.detalle ?? ''}`;
+				return [p.id, { ...analizarMejora(texto, v), cubiertos: planesCubiertos(texto, planesDelVeh) }];
+			})
+	);
+	// Sesión de taller recomendada: juntar lo que toca con lo que vence pronto
+	const sesion =
+		sesionesRecomendadas(await cargarAlertas(db, { hoy, urgenteDias: ajustes.urgenteDias, vehiculoId: v.id, incluirOk: true }), planes, hoy).find((x) => x.vehiculoId === v.id) ?? null;
+
 	const tipoVeh = await db.select({ nombre: s.tiposVehiculo.nombre }).from(s.tiposVehiculo).where(eq(s.tiposVehiculo.id, v.tipoId)).get();
 	// Las motos no tienen campo «Combustible»: si no se dice otra cosa, gasolina
 	const tipoComb = combustibleDe(v.campos.combustible) ?? (/moto/i.test(tipoVeh?.nombre ?? '') ? 'gasolina' : null);
@@ -177,6 +195,8 @@ export const load = async ({ params, locals }) => {
 		metricas,
 		costes,
 		usoMes,
+		mejoras,
+		sesion,
 		combustibleInfo,
 		repostajes,
 		consumo: { real, ficha: Number(v.campos.consumo) || null },

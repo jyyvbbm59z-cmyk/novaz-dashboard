@@ -17,3 +17,5 @@ export * from './combustible';
 export * from './taller';
 export * from './informe';
 export * from './ticket';
+export * from './agenda';
+export * from './mejoras';

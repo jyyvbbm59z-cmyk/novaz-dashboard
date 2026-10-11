@@ -1,5 +1,5 @@
 // Operaciones de escritura compartidas por varias páginas (ficha, captura rápida, restauración…).
-import { desglosarIva, expandirIncluidos, sumarMeses } from '@novaz/core';
+import { CODIGO_MEJORA, desglosarIva, expandirIncluidos, sumarMeses, type RevisionMejora } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { CLASES_ENTRADA, FORMAS_PAGO, PRIORIDADES, TIPOS_MOVIMIENTO, type ClaseEntrada, type FormaPago, type Prioridad, type TipoMovimiento } from '@novaz/core/schema';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -323,8 +323,10 @@ export async function guardarPendiente(locals: Locals, vehiculoId: number, fd: F
 	const prioridad = f.texto('prioridad');
 	const valores = {
 		vehiculoId,
-		titulo: f.obligatorio('titulo', 'qué hay que reparar'),
+		titulo: f.obligatorio('titulo', 'qué hay que hacer'),
 		detalle: f.texto('detalle'),
+		tipo: (f.texto('tipo') === 'mejora' ? 'mejora' : 'averia') as 'mejora' | 'averia',
+		presupuestoCent: f.euros('presupuesto'),
 		prioridad: (PRIORIDADES.includes(prioridad as Prioridad) ? prioridad : 'media') as Prioridad,
 		fechaDetectado: f.fecha('fechaDetectado') ?? locals.hoy,
 		kmDetectado: f.entero('km')
@@ -341,14 +343,42 @@ export async function guardarPendiente(locals: Locals, vehiculoId: number, fd: F
 	return pendienteId!;
 }
 
+/**
+ * Lo que cambia en el mantenimiento al hacer una mejora (lo que eligió el usuario): revisiones nuevas que empiezan
+ * a contar desde esta entrada, tareas de después (alinear, reapretar…) y la medida de neumático en la ficha.
+ */
+async function aplicarMejora(locals: Locals, vehiculoId: number, titulo: string, entradaId: number, extrasJson: string) {
+	let extras: { revisiones?: RevisionMejora[]; tareas?: string[]; medida?: string | null } = {};
+	try {
+		extras = extrasJson ? JSON.parse(extrasJson) : {};
+	} catch {
+		return;
+	}
+	for (const r of extras.revisiones ?? []) {
+		const [plan] = await locals.db
+			.insert(s.planesMantenimiento)
+			.values({ codigo: CODIGO_MEJORA, nombre: r.nombre, cadaKm: r.cadaKm, cadaMeses: r.cadaMeses, tareas: r.tareas, vehiculoId, avisoKm: 500, avisoDias: 30, orden: 50, notas: `Desde la mejora «${titulo}»` })
+			.returning({ id: s.planesMantenimiento.id });
+		await locals.db.insert(s.entradasPlanes).values({ entradaId, planId: plan.id }).onConflictDoNothing();
+	}
+	const tareas = (extras.tareas ?? []).filter(Boolean);
+	if (tareas.length)
+		await locals.db.insert(s.pendientes).values(tareas.map((t) => ({ vehiculoId, titulo: t, detalle: `Después de la mejora «${titulo}»`, prioridad: 'media' as const, fechaDetectado: locals.hoy })));
+	if (extras.medida) {
+		const v = await locals.db.select({ campos: s.vehiculos.campos }).from(s.vehiculos).where(eq(s.vehiculos.id, vehiculoId)).get();
+		if (v) await locals.db.update(s.vehiculos).set({ campos: { ...v.campos, neumaticos: extras.medida } }).where(eq(s.vehiculos.id, vehiculoId));
+	}
+}
+
 /** Cierra un pendiente creando la entrada de reparación (con su gasto, si lo hay). */
 export async function resolverPendiente(locals: Locals, vehiculoId: number, fd: FormData, bucket?: R2Bucket) {
 	const pendienteId = leer(fd).id('pendienteId');
 	const p = await locals.db.select().from(s.pendientes).where(and(eq(s.pendientes.id, pendienteId), eq(s.pendientes.vehiculoId, vehiculoId))).get();
 	if (!p) throw new ErrorFormulario('Pendiente no encontrado');
-	if (!fd.get('clase')) fd.set('clase', 'reparacion');
+	if (!fd.get('clase')) fd.set('clase', p.tipo === 'mejora' ? 'mejora' : 'reparacion');
 	if (!fd.get('titulo')) fd.set('titulo', p.titulo);
 	const r = await guardarEntrada(locals, vehiculoId, fd, bucket);
+	if (p.tipo === 'mejora') await aplicarMejora(locals, vehiculoId, p.titulo, r.entradaId, String(fd.get('extras') ?? ''));
 	const entrada = await locals.db.select({ fecha: s.entradas.fecha }).from(s.entradas).where(eq(s.entradas.id, r.entradaId)).get();
 	await locals.db
 		.update(s.pendientes)

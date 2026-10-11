@@ -1,7 +1,7 @@
 import * as s from '@novaz/core/schema';
 import { and, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
 import { avanceRestauraciones } from '$lib/server/datos';
-import { cargarAlertas, diasEntre, estadoTaller, textoDias, type Nivel } from '@novaz/core';
+import { cargarAlertas, diasEntre, estadoTaller, sesionesRecomendadas, textoDias, type Nivel } from '@novaz/core';
 import { libros } from '$lib/server/contabilidad';
 
 /** Una cosa que hacer, venga de donde venga (papeles, revisiones, averías, el local, la compra). */
@@ -38,7 +38,7 @@ export const load = async ({ locals }) => {
 			.where(and(eq(s.movimientos.tipo, 'gasto'), gte(s.movimientos.fecha, `${anio}-01-01`), lte(s.movimientos.fecha, hoy), isNull(s.movimientos.cuadreSaldoCent))),
 		libros(locals)
 	]);
-	const t = await estadoTaller(db, hoy, alertas);
+	const [t, planes] = await Promise.all([estadoTaller(db, hoy, alertas), db.select().from(s.planesMantenimiento).where(eq(s.planesMantenimiento.activo, true))]);
 
 	// Todo lo pendiente en una sola lista, de lo más urgente a lo menos
 	const asuntos: Asunto[] = [];
@@ -49,8 +49,8 @@ export const load = async ({ locals }) => {
 			clave: a.clave,
 			nivel: a.nivel,
 			titulo: a.titulo,
-			contexto: a.tipo === 'pendiente' ? `${a.vehiculo} · avería` : a.vehiculo,
-			cuando: a.tipo === 'vencimiento' && a.dias != null ? textoDias(a.dias) : a.tipo === 'pendiente' ? (a.nivel === 'urgente' ? 'urgente' : 'por reparar') : a.detalle,
+			contexto: a.tipo === 'pendiente' ? `${a.vehiculo} · ${a.detalle === 'Tras la mejora' ? 'tras la mejora' : 'avería'}` : a.vehiculo,
+			cuando: a.tipo === 'vencimiento' && a.dias != null ? textoDias(a.dias) : a.tipo === 'pendiente' ? (a.nivel === 'urgente' ? 'urgente' : a.detalle === 'Tras la mejora' ? 'pendiente' : 'por reparar') : a.detalle,
 			href: `/flota/${a.vehiculoId}?pestana=${pestana}`,
 			orden: a.dias ?? 999
 		});
@@ -69,6 +69,17 @@ export const load = async ({ locals }) => {
 			orden: dias ?? 999
 		});
 	}
+	// Sesiones de taller recomendadas: juntar lo que toca con lo que vence pronto
+	for (const se of sesionesRecomendadas(alertas, planes, hoy))
+		asuntos.push({
+			clave: `sesion:${se.vehiculoId}`,
+			nivel: 'pronto',
+			titulo: se.tocan.length ? `Sesión de taller: ${se.tocan.length + se.adelantar.length} revisiones juntas` : 'Revisión antes de la ITV',
+			contexto: `${se.vehiculo} · ${[...se.tocan, ...se.adelantar].map((x) => x.titulo.split(' · ')[0]).join(' + ') || 'luces, neumáticos, frenos…'}`,
+			cuando: textoDias(diasEntre(hoy, se.fecha)),
+			href: `/flota/${se.vehiculoId}?pestana=mantenimiento#sesion`,
+			orden: diasEntre(hoy, se.fecha)
+		});
 	if (t.listaCompra.length)
 		asuntos.push({
 			clave: 'compras',

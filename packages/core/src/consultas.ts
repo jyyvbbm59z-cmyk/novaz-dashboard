@@ -184,6 +184,7 @@ export async function cargarAlertas(
 	const NIVEL_PRIORIDAD: Record<string, Nivel> = { alta: 'urgente', media: 'pronto', baja: 'ok' };
 	for (const p of pends) {
 		const veh = porId.get(p.vehiculoId)!;
+		const tras = p.detalle?.startsWith('Después de la mejora');
 		alertas.push({
 			clave: `pend:${p.id}`,
 			tipo: 'pendiente',
@@ -191,8 +192,14 @@ export async function cargarAlertas(
 			vehiculo: veh.alias,
 			matricula: veh.matricula,
 			titulo: p.titulo,
-			detalle: `Por reparar · visto el ${fechaLarga(p.fechaDetectado)}${p.kmDetectado != null ? ` a ${p.kmDetectado.toLocaleString('es-ES')} km` : ''}`,
-			nivel: NIVEL_PRIORIDAD[p.prioridad] ?? 'pronto',
+			detalle:
+				p.tipo === 'mejora'
+					? 'Mejora planificada'
+					: tras
+						? 'Tras la mejora'
+						: `Por reparar · visto el ${fechaLarga(p.fechaDetectado)}${p.kmDetectado != null ? ` a ${p.kmDetectado.toLocaleString('es-ES')} km` : ''}`,
+			// Una mejora planificada es un deseo, no una urgencia: no avisa (sigue en la ficha)
+			nivel: p.tipo === 'mejora' ? 'ok' : (NIVEL_PRIORIDAD[p.prioridad] ?? 'pronto'),
 			dias: null,
 			kmRestantes: null,
 			avisosDias: [],

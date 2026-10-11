@@ -1,4 +1,4 @@
-import { planAplica, PLANTILLAS_REVISION } from '@novaz/core';
+import { CODIGO_MEJORA, planAplica, PLANTILLAS_REVISION } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 import { ErrorFormulario } from './form';
@@ -17,7 +17,7 @@ export async function aplicarPlantilla(locals: App.Locals, vehiculoId: number, p
 	if (!v) throw new ErrorFormulario('Vehículo no encontrado');
 
 	const todos = await db.select().from(s.planesMantenimiento);
-	if (todos.some((p) => p.vehiculoId === vehiculoId && p.activo))
+	if (todos.some((p) => p.vehiculoId === vehiculoId && p.activo && p.codigo !== CODIGO_MEJORA))
 		throw new ErrorFormulario('Este vehículo ya tiene revisiones propias. Edítalas o bórralas en Ajustes → Mantenimiento.');
 	const antiguos = todos.filter((p) => planAplica(p, v));
 

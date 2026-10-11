@@ -234,7 +234,7 @@ export const tareas = sqliteTable(
 
 // ─── Historial ────────────────────────────────────────────────────────────────
 
-export const CLASES_ENTRADA = ['mantenimiento', 'reparacion', 'diario', 'nota'] as const;
+export const CLASES_ENTRADA = ['mantenimiento', 'reparacion', 'mejora', 'diario', 'nota'] as const;
 export type ClaseEntrada = (typeof CLASES_ENTRADA)[number];
 
 export const entradas = sqliteTable(
@@ -290,6 +290,9 @@ export const pendientes = sqliteTable(
 			.references(() => vehiculos.id, { onDelete: 'cascade' }),
 		titulo: text('titulo').notNull(),
 		detalle: text('detalle'),
+		/** Avería (algo roto) o mejora (algo que quieres hacerle: ruedas, suspensión…). */
+		tipo: text('tipo', { enum: ['averia', 'mejora'] }).notNull().default('averia'),
+		presupuestoCent: integer('presupuesto_cent'),
 		prioridad: text('prioridad', { enum: PRIORIDADES }).notNull().default('media'),
 		fechaDetectado: text('fecha_detectado').notNull(),
 		kmDetectado: integer('km_detectado'),

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { accion } from '$lib/enviar';
 	import { euros } from '@novaz/core';
-	import { ArrowRight, Check, CircleCheck, Landmark } from '@lucide/svelte';
+	import { ArrowRight, CalendarDays, Check, CircleCheck, Landmark } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -20,7 +20,10 @@
 
 <header class="mb-5">
 	<p class="etiqueta first-letter:uppercase">{fecha}</p>
-	<h1 class="titulo-pagina">Hoy</h1>
+	<div class="flex items-end justify-between gap-3">
+		<h1 class="titulo-pagina">Hoy</h1>
+		<a href="/agenda" class="btn h-9 text-sm"><CalendarDays size={16} /> Agenda</a>
+	</div>
 	<p class="mt-1 text-sm text-texto-2">
 		{#if atencion}<strong class="text-texto">{atencion} {atencion === 1 ? 'asunto requiere' : 'asuntos requieren'} atención</strong> · {/if}{data.asuntos.length
 			? `${data.asuntos.length} ${data.asuntos.length === 1 ? 'cosa pendiente' : 'cosas pendientes'}`

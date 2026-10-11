@@ -6,7 +6,7 @@
 	import Buscador from '$comp/Buscador.svelte';
 	import Logo from '$comp/Logo.svelte';
 	import { configurarMomentos } from '$lib/momentos';
-	import { Boxes, BookOpenText, CarFront, House, Plus, Search, Settings, ShoppingCart, Users, Warehouse, Wrench } from '@lucide/svelte';
+	import { Boxes, BookOpenText, CalendarDays, CarFront, House, Plus, Search, Settings, ShoppingCart, Users, Warehouse, Wrench } from '@lucide/svelte';
 
 	let { data, children } = $props();
 	let buscando = $state(false);
@@ -82,7 +82,7 @@
 		areaActiva && areaActiva.paginas.length > 1 && areaActiva.paginas.some((p) => ruta === p.href || (p.href === '/inventario' && dentro(p.href))) ? areaActiva : null
 	);
 	const barraMovil = $derived([
-		{ href: '/', texto: 'Inicio', icono: House, on: ruta === '/' },
+		{ href: '/', texto: 'Inicio', icono: House, on: ruta === '/' || dentro('/agenda') },
 		{ href: '/flota', texto: 'Vehículos', icono: CarFront, on: areaActiva === AREAS[0] },
 		null,
 		{ href: '/local', texto: 'Taller', icono: Warehouse, on: areaActiva === AREAS[1] },
@@ -132,7 +132,10 @@
 					{/if}
 				</a>
 			{/snippet}
-			<div class="flex flex-col gap-0.5">{@render enlace({ href: '/', texto: 'Inicio', icono: House }, ruta === '/')}</div>
+			<div class="flex flex-col gap-0.5">
+				{@render enlace({ href: '/', texto: 'Inicio', icono: House }, ruta === '/')}
+				{@render enlace({ href: '/agenda', texto: 'Agenda', icono: CalendarDays }, dentro('/agenda'))}
+			</div>
 			{#each AREAS as a (a.titulo)}
 				<div class="flex flex-col gap-0.5">
 					{#if a.paginas.length > 1}<p class="mb-1 px-3 text-[0.62rem] font-semibold tracking-[0.16em] text-texto-3/80 uppercase">{a.titulo}</p>{/if}

@@ -18,6 +18,7 @@
 		pendiente = null,
 		adjuntos = [],
 		compras = [],
+		tipoInicial = 'averia',
 		alGuardar
 	}: {
 		accion?: string;
@@ -28,6 +29,7 @@
 		adjuntos?: Adjunto[];
 		/** Lo que ya está apuntado para comprar. */
 		compras?: string[];
+		tipoInicial?: 'averia' | 'mejora';
 		alGuardar?: () => void;
 	} = $props();
 
@@ -37,6 +39,7 @@
 		['baja', 'Sin prisa', 'var(--texto-3)']
 	];
 	let fotos = $state<File[]>([]);
+	let tipo = $state<'averia' | 'mejora'>((() => pendiente?.tipo ?? tipoInicial)());
 
 	const alTerminar = async (datos: Record<string, unknown>) => {
 		const id = Number(datos.pendienteId);
@@ -60,7 +63,24 @@
 <form method="POST" action={accion} use:enhance={enviar({ alTerminar })} class="flex flex-col gap-4">
 	{#if pendiente}<input type="hidden" name="id" value={pendiente.id} />{/if}
 	<input type="hidden" name="vehiculoId" value={vehiculoId} />
-	<label class="campo"><span>¿Qué hay que reparar? *</span><input name="titulo" class="input h-12" required value={pendiente?.titulo ?? ''} placeholder="Fuga de aceite en el motor de arranque" /></label>
+	<input type="hidden" name="tipo" value={tipo} />
+	<div class="grid grid-cols-2 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
+		{#each [['averia', 'Avería'], ['mejora', 'Mejora']] as [v, t] (v)}
+			<button type="button" class="rounded-md py-1.5 text-sm font-semibold {tipo === v ? 'bg-superficie-3 text-texto shadow-sm' : 'text-texto-3'}" onclick={() => (tipo = v as typeof tipo)}>{t}</button>
+		{/each}
+	</div>
+	<label class="campo"
+		><span>{tipo === 'mejora' ? '¿Qué mejora quieres hacerle? *' : '¿Qué hay que reparar? *'}</span><input
+			name="titulo"
+			class="input h-12"
+			required
+			value={pendiente?.titulo ?? ''}
+			placeholder={tipo === 'mejora' ? 'Ruedas de 17", amortiguadores deportivos…' : 'Fuga de aceite en el motor de arranque'}
+		/></label
+	>
+	{#if tipo === 'mejora'}
+		<label class="campo"><span>Presupuesto (€)</span><input name="presupuesto" class="input" inputmode="decimal" value={pendiente?.presupuestoCent ? (pendiente.presupuestoCent / 100).toFixed(2).replace('.', ',') : ''} placeholder="Opcional" /></label>
+	{/if}
 	<fieldset class="grid grid-cols-3 gap-2">
 		{#each PRIORIDAD as [v, t, c] (v)}
 			<label class="cursor-pointer rounded-lg border border-borde bg-superficie-2 p-2.5 text-center text-sm font-semibold has-[:checked]:border-acento has-[:checked]:bg-acento/10">
@@ -69,7 +89,7 @@
 		{/each}
 	</fieldset>
 	<div class="grid grid-cols-2 gap-3">
-		<label class="campo"><span>Visto el</span><input type="date" name="fechaDetectado" class="input" value={pendiente?.fechaDetectado ?? hoy} /></label>
+		<label class="campo"><span>{tipo === 'mejora' ? 'Apuntada el' : 'Visto el'}</span><input type="date" name="fechaDetectado" class="input" value={pendiente?.fechaDetectado ?? hoy} /></label>
 		<label class="campo"><span>Km</span><input name="km" class="input" inputmode="numeric" value={pendiente?.kmDetectado ?? km ?? ''} /></label>
 	</div>
 	<label class="campo"><span>Detalles</span><textarea name="detalle" class="input" rows="3" placeholder="Dónde está, qué pieza hace falta, referencias…">{pendiente?.detalle ?? ''}</textarea></label>

@@ -166,8 +166,11 @@ export function planAplica(
 }
 
 /** ¿Tiene el vehículo planes propios activos? */
-export const tienePlanesPropios = (planes: { vehiculoId: number | null; activo: boolean }[], vehiculoId: number) =>
-	planes.some((p) => p.activo && p.vehiculoId === vehiculoId);
+/** Código de las revisiones que añade una mejora (neumáticos, suspensión…): se suman, no sustituyen al plan del tipo. */
+export const CODIGO_MEJORA = 'Mejora';
+
+export const tienePlanesPropios = (planes: { vehiculoId: number | null; activo: boolean; codigo?: string | null }[], vehiculoId: number) =>
+	planes.some((p) => p.activo && p.vehiculoId === vehiculoId && p.codigo !== CODIGO_MEJORA);
 
 export function tipoVencimientoAplica(tipo: { tiposVehiculoIds: number[]; activo: boolean }, tipoVehiculoId: number): boolean {
 	return tipo.activo && (tipo.tiposVehiculoIds.length === 0 || tipo.tiposVehiculoIds.includes(tipoVehiculoId));
