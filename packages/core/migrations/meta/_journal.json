@@ -281,6 +281,13 @@
       "when": 1791797349964,
       "tag": "0039_manual_bandit",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1791797725067,
+      "tag": "0040_bandit_plan_manual",
+      "breakpoints": true
     }
   ]
 }

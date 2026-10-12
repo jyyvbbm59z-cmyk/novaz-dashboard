@@ -81,8 +81,7 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 				avisoKm: 500,
 				avisoDias: 30,
 				tareas: [
-					'Cambiar aceite de motor (3,5 L con cambio de filtro)',
-					'Cambiar filtro de aceite (el manual lo pide cada 18.000 km / 18 meses; aquí con cada aceite)',
+					'Cambiar aceite de motor: 10W-40 API SF/SG, 3,3 L (3,5 L si toca filtro)',
 					'Filtro de aire: inspeccionar y soplar por dentro',
 					'Bujías: inspeccionar',
 					'Ralentí y holgura del cable del acelerador',
@@ -92,7 +91,8 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 					'Neumáticos: desgaste (mínimo delantera 1,6 mm · trasera 2,0 mm)',
 					'Cadena, piñón y corona: desgaste',
 					'Manguitos y filtro de gasolina: inspeccionar',
-					'Apriete de la tornillería del chasis'
+					'Apriete de la tornillería del chasis',
+					'Engrasar puntos de lubricación: manetas, pedales, reposapiés y caballetes (p. 2-3)'
 				],
 				incluye: ['I1'],
 				heredaDe: ['aceite'],
@@ -110,7 +110,7 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 					'Holgura de válvulas',
 					'Cambiar bujías',
 					'Cambiar filtro de gasolina',
-					'Cambiar filtro de aire (el manual lo pide cada 18.000 km / 18 meses; aquí cada año)',
+					'Filtro de aire: inspeccionar y soplar por dentro',
 					'Sincronizar carburadores',
 					'Sistema PAIR (aire secundario)',
 					'Dirección: holgura y rodamientos',
@@ -147,6 +147,32 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 				incluye: [],
 				heredaDe: [],
 				notas: 'Manual: latiguillos y manguitos de gasolina cada 4 años.'
+			},
+			{
+				codigo: 'F1',
+				nombre: 'Filtro de aceite',
+				cadaDias: null,
+				cadaMeses: 18,
+				cadaKm: 18000,
+				avisoKm: 1000,
+				avisoDias: 30,
+				tareas: ['Cambiar filtro de aceite original Suzuki de moto: junta untada, contacto + 2 vueltas con la llave 09915-40610'],
+				incluye: [],
+				heredaDe: ['aceite'],
+				notas: 'Manual: cada 18.000 km o 18 meses, junto con el cambio de aceite (p. 2-9).'
+			},
+			{
+				codigo: 'F2',
+				nombre: 'Filtro de aire',
+				cadaDias: null,
+				cadaMeses: 18,
+				cadaKm: 18000,
+				avisoKm: 1000,
+				avisoDias: 30,
+				tareas: ['Cambiar el filtro de aire (marca «*» hacia arriba) y vaciar el tubo de drenaje'],
+				incluye: [],
+				heredaDe: [],
+				notas: 'Manual: cada 18.000 km o 18 meses; se revisa en cada servicio (p. 2-7).'
 			}
 		]
 	},

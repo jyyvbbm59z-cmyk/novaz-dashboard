@@ -41,12 +41,11 @@ describe('ficha técnica', () => {
 	});
 });
 
-import { readFileSync } from 'node:fs';
+import manualBandit from '../../../docs/manuales/suzuki-gsf600-bandit.novaz-ficha.json';
 
 describe('manual de la Bandit', () => {
 	it('el JSON del manual se importa entero', () => {
-		const raw = JSON.parse(readFileSync(new URL('../../../docs/manuales/suzuki-gsf600-bandit.novaz-ficha.json', import.meta.url), 'utf8'));
-		const r = leerFichaJSON(raw);
+		const r = leerFichaJSON(manualBandit);
 		expect(r.avisos).toEqual([]);
 		expect(r.datos.length).toBe(93);
 		expect(r.procedimientos.length).toBe(8);
