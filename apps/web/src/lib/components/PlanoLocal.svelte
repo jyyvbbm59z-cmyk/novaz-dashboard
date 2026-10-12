@@ -56,7 +56,18 @@
 	} = $props();
 
 	const yF = (x: number) => P.fachada.izq.y + ((P.fachada.der.y - P.fachada.izq.y) * x) / P.ancho;
-	const C = P.cuarto;
+	/** Altura de la etiqueta de una zona: arriba a la izquierda, pero sin tapar ningún mueble. */
+	function etiquetaZona(z: Rect & { nombre: string }, lx: number) {
+		const arriba = Math.max(z.y, yF(z.x + 0.3)) + 0.78;
+		const derecha = lx + (compacto ? 0.3 : 0.45 + z.nombre.length * 0.15);
+		let ly = arriba;
+		for (const h of muebles.map(huella).sort((a, b) => a.y - b.y))
+			if (derecha > h.x && lx - 0.3 < h.x + h.ancho && ly + 0.3 > h.y && ly - 0.3 < h.y + h.alto) ly = h.y + h.alto + 0.45;
+		// Si no cabe sin tapar nada, arriba como siempre
+		return ly > z.y + z.alto - 0.35 ? arriba : ly;
+	}
+		const C = P.cuarto;
+	const PE = P.puertaElectronica;
 	const interior = `M0 ${yF(0)} L${P.ancho} ${yF(P.ancho)} L${P.ancho} ${P.fondo} L0 ${P.fondo} Z M${C.x} ${C.y} h${C.ancho} v${C.alto} h${-C.ancho} Z`;
 	const muros = [
 		`M${P.entrada.desde} ${yF(P.entrada.desde)} L0 ${yF(0)} L0 ${P.fondo} L${P.puertaFondo.desde} ${P.fondo}`,
@@ -164,7 +175,7 @@
 	</g>
 	{#each zonas as z (z.id)}
 		{@const lx = z.x + 0.62}
-		{@const ly = Math.max(z.y, yF(z.x + 0.3)) + 0.78}
+		{@const ly = etiquetaZona(z, lx)}
 		<g class="pointer-events-none">
 			<circle cx={lx} cy={ly} r="0.26" fill={z.color} />
 			<text x={lx} y={ly + 0.11} text-anchor="middle" class="letra-zona">{z.codigo}</text>
@@ -177,6 +188,9 @@
 		{#each muros as d (d)}<path {d} fill="none" stroke="var(--texto-2)" stroke-width={P.muro} stroke-linejoin="miter" />{/each}
 		<line x1={P.entrada.desde} y1={yF(P.entrada.desde)} x2={P.entrada.hasta} y2={yF(P.entrada.hasta)} stroke="var(--texto-3)" stroke-width="0.05" stroke-dasharray="0.15 0.1" />
 		{#each [...P.pilares, ...P.pilastras] as p, i (i)}<rect x={p.x} y={p.y} width={p.ancho} height={p.alto} fill="var(--texto-2)" />{/each}
+		<!-- Tabiques del cuarto de electrónica y su puerta -->
+		{#each P.tabiques as w, i (i)}<line x1={w.x1} y1={w.y1} x2={w.x2} y2={w.y2} stroke="var(--texto-2)" stroke-width="0.1" stroke-linecap="square" />{/each}
+		<path d="M{PE.hasta} {PE.y} A{PE.hasta - PE.desde} {PE.hasta - PE.desde} 0 0 1 {PE.desde} {PE.y + (PE.hasta - PE.desde)}" fill="none" stroke="var(--texto-3)" stroke-width="0.025" />
 		<path d="M{P.puertaFondo.desde} {P.fondo} A{P.puertaFondo.hasta - P.puertaFondo.desde} {P.puertaFondo.hasta - P.puertaFondo.desde} 0 0 0 {P.puertaFondo.hasta} {P.fondo - (P.puertaFondo.hasta - P.puertaFondo.desde)}" fill="none" stroke="var(--texto-3)" stroke-width="0.025" />
 		{#if !compacto}
 			<text x={(P.entrada.desde + P.entrada.hasta) / 2} y={yF(2) - 0.32} text-anchor="middle" class="cota">ENTRADA · 3,00 m</text>

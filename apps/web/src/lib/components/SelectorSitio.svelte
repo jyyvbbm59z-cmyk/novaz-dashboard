@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Dónde está un artículo: zona → mueble → balda/cajón, con su código («D·E2·3»). Envía muebleId, nivel y zonaId.
+	// Dónde está un artículo: zona → mueble → balda/cajón, con su código («Z1·E2·3»). Envía muebleId, nivel y zonaId.
 	import { codigoUbicacion, CONTENEDORES, MUEBLES, ordenLetra } from '@novaz/core';
 	import type { Contenedor, Mueble, Zona } from '@novaz/core/schema';
 

@@ -459,7 +459,7 @@ export type EstadoHerramienta = (typeof ESTADOS_HERRAMIENTA)[number];
 /** Una zona del local dibujada en el plano (metros, con el origen en la esquina interior izquierda de la fachada). */
 export const zonas = sqliteTable('zonas', {
 	id: id(),
-	/** Letra que la identifica en los códigos de ubicación («D·E2·3»). */
+	/** Código corto que la identifica en los códigos de ubicación («Z1·E2·3»). */
 	codigo: text('codigo').notNull().unique(),
 	nombre: text('nombre').notNull(),
 	color: text('color').notNull().default('#7c8aa0'),

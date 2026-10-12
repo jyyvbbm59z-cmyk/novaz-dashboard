@@ -3,7 +3,7 @@
 	// el plano entero con el mueble señalado → una luz sale de la persiana y recorre el camino mientras la cámara la sigue
 	// y se acerca → el mueble se despliega desde su sitio en el plano → una luz cae flotando hasta la balda y se posa
 	// (con física de muelle) → el nombre aparece letra a letra.
-	import { cajaCamara, codigoUbicacion, CONTENEDORES, huella, MUEBLES, PLANO_LOCAL as P, VISTA_PLANO, type Camara } from '@novaz/core';
+	import { caminoEnLocal, cajaCamara, codigoUbicacion, CONTENEDORES, huella, MUEBLES, VISTA_PLANO, type Camara } from '@novaz/core';
 	import type { Contenedor, Mueble, Zona } from '@novaz/core/schema';
 	import { ArrowRight, RotateCcw, X } from '@lucide/svelte';
 	import { prefersReducedMotion, Spring } from 'svelte/motion';
@@ -41,21 +41,8 @@
 	const nivel = $derived(mueble && articulo.nivel && articulo.nivel <= mueble.niveles ? articulo.nivel : null);
 	const contenedor = $derived(contenedores.find((c) => c.id === articulo.contenedorId) ?? null);
 
-	// ─── El camino: de la persiana al mueble, con las esquinas redondeadas ─────
-	const yF = (x: number) => P.fachada.izq.y + ((P.fachada.der.y - P.fachada.izq.y) * x) / P.ancho;
-	function esquinas(): Pt[] {
-		if (!destino) return [];
-		const ex = (P.entrada.desde + P.entrada.hasta) / 2;
-		const inicio = { x: ex, y: yF(ex) + 0.25 };
-		const c = { x: destino.x + destino.ancho / 2, y: destino.y + destino.alto / 2 };
-		if (c.y > P.fondo) {
-			const px = (P.puertaFondo.desde + P.puertaFondo.hasta) / 2;
-			return [inicio, { x: ex, y: P.fondo - 0.6 }, { x: px, y: P.fondo - 0.6 }, { x: px, y: c.y }];
-		}
-		if (!mueble) return [inicio, { x: ex, y: c.y }, c];
-		const borde = destino.x > ex ? destino.x - 0.14 : destino.x + destino.ancho + 0.14;
-		return [inicio, { x: ex, y: c.y }, { x: borde, y: c.y }];
-	}
+	// ─── El camino: de la persiana al mueble por los pasillos, con las esquinas redondeadas ─────
+	const esquinas = (): Pt[] => (destino ? caminoEnLocal(destino, { mueble: !!mueble, zona }) : []);
 	/** Polilínea → curva muestreada (arcos suaves en cada giro). */
 	function suavizar(pts: Pt[], radio = 0.8): Pt[] {
 		if (pts.length < 3) return pts;

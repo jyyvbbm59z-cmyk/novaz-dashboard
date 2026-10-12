@@ -201,7 +201,7 @@
 				</ul>
 			</section>
 			<p class="text-xs text-texto-3">
-				Cada sitio tiene un código: <span class="font-mono font-semibold text-texto-2">D·E2·3</span> es la zona D, la estantería E2, la balda 3. Imprime las etiquetas con QR y pégalas: al escanearlas ves qué hay dentro.
+				Cada sitio tiene un código: <span class="font-mono font-semibold text-texto-2">Z1·E2·3</span> es la zona Z1, la estantería E2, la balda 3. Imprime las etiquetas con QR y pégalas: al escanearlas ves qué hay dentro.
 			</p>
 		{/if}
 	</div>

@@ -1,5 +1,5 @@
 // Dónde está cada cosa en el local: plano a escala, zonas, muebles con baldas/cajones y códigos de ubicación
-// al estilo de un almacén aeronáutico: «D·E2·3» = zona D, estantería E2, balda 3.
+// al estilo de un almacén aeronáutico: «Z1·E2·3» = zona Z1, estantería E2, balda 3.
 import type { TipoContenedor, TipoMueble } from './schema';
 
 // ─── El plano del local (metros) ─────────────────────────────────────────────
@@ -43,6 +43,13 @@ export const PLANO_LOCAL = {
 	puertaFondo: { desde: 4.83, hasta: 5.52 },
 	/** Cuarto trasero: 3,40 × 1,25 m. */
 	cuarto: { x: 3.83, y: 15.18, ancho: 3.4, alto: 1.25 } as Rect,
+	/** Tabiques del cuarto de electrónica (al fondo a la izquierda), con su puerta hacia Z1. */
+	tabiques: [
+		{ x1: 0.15, y1: 11.7, x2: 2.6, y2: 11.7 },
+		{ x1: 3.45, y1: 11.7, x2: 3.62, y2: 11.7 },
+		{ x1: 3.82, y1: 11.9, x2: 3.82, y2: 14.96 }
+	],
+	puertaElectronica: { desde: 2.6, hasta: 3.45, y: 11.7 },
 	muro: 0.2
 } as const;
 
@@ -64,15 +71,18 @@ export function cajaCamara(r: Rect | null, cerca = 1): Camara {
 	return { x: r.x + r.ancho / 2 - w / 2, y: r.y + r.alto / 2 - h / 2, w, h };
 }
 
-/** Las zonas con las que arranca el local (se pueden cambiar). Izquierda: la calle de vehículos desde la persiana; derecha: el taller. */
+/**
+ * Las zonas del local (según el croquis): delante la entrada y pintura y madera; en medio Z1 y Z2;
+ * al fondo el cuarto de electrónica (con tabiques) y limpieza. Se pueden cambiar desde la app.
+ */
 export const ZONAS_INICIALES: (Rect & { codigo: string; nombre: string; color: string; notas: string })[] = [
-	{ codigo: 'A', nombre: 'Bahía delantera', color: '#4f86c6', x: 0, y: 0, ancho: 3.62, alto: 7.96, notas: 'Vehículo en trabajo, junto a la entrada' },
-	{ codigo: 'B', nombre: 'Bahía del fondo', color: '#5aa17f', x: 0, y: 7.96, ancho: 3.62, alto: 7.0, notas: 'Restauraciones largas' },
-	{ codigo: 'C', nombre: 'Banco de trabajo', color: '#d08c3a', x: 3.62, y: 0, ancho: 3.61, alto: 4.39, notas: 'Banco, tornillo y lo que se usa a diario' },
-	{ codigo: 'D', nombre: 'Herramientas', color: '#c45d5d', x: 3.62, y: 4.39, ancho: 3.61, alto: 3.97, notas: 'Paneles y cajoneras, a mano de las dos bahías' },
-	{ codigo: 'E', nombre: 'Almacén', color: '#8a6fbf', x: 3.62, y: 8.36, ancho: 3.61, alto: 3.54, notas: 'Recambios y piezas desmontadas' },
-	{ codigo: 'F', nombre: 'Limpieza y pintura', color: '#3fa6a6', x: 3.62, y: 11.9, ancho: 3.61, alto: 3.06, notas: 'Junto a la puerta del fondo (ventila)' },
-	{ codigo: 'G', nombre: 'Cuarto trasero', color: '#9a8f6a', x: 3.83, y: 15.18, ancho: 3.4, alto: 1.25, notas: 'Consumibles y químicos' }
+	{ codigo: 'EN', nombre: 'Entrada', color: '#4f86c6', x: 0, y: 0, ancho: 3.82, alto: 4.59, notas: 'Junto a la persiana' },
+	{ codigo: 'PM', nombre: 'Pintura y madera', color: '#d08c3a', x: 3.82, y: 0, ancho: 3.41, alto: 4.59, notas: '' },
+	{ codigo: 'Z1', nombre: 'Z1', color: '#5aa17f', x: 0, y: 4.59, ancho: 3.82, alto: 7.11, notas: '' },
+	{ codigo: 'Z2', nombre: 'Z2', color: '#c45d5d', x: 3.82, y: 4.59, ancho: 3.41, alto: 7.11, notas: '' },
+	{ codigo: 'EL', nombre: 'Electrónica', color: '#8a6fbf', x: 0, y: 11.7, ancho: 3.82, alto: 3.26, notas: 'Cuarto con tabiques' },
+	{ codigo: 'LI', nombre: 'Limpieza', color: '#3fa6a6', x: 3.82, y: 11.7, ancho: 3.41, alto: 3.26, notas: '' },
+	{ codigo: 'CT', nombre: 'Cuarto trasero', color: '#9a8f6a', x: 3.83, y: 15.18, ancho: 3.4, alto: 1.25, notas: 'Consumibles y químicos' }
 ];
 
 // ─── Muebles ─────────────────────────────────────────────────────────────────
@@ -106,6 +116,58 @@ export function zonaEnPunto<Z extends Rect & { id: number }>(x: number, y: numbe
 	return dentro.sort((a, b) => a.ancho * a.alto - b.ancho * b.alto)[0] ?? null;
 }
 
+// ─── El camino desde la persiana ─────────────────────────────────────────────
+
+export interface Pt {
+	x: number;
+	y: number;
+}
+
+/** Fachada inclinada: su Y en cada X. */
+export const yFachada = (x: number) => PLANO_LOCAL.fachada.izq.y + ((PLANO_LOCAL.fachada.der.y - PLANO_LOCAL.fachada.izq.y) * x) / PLANO_LOCAL.ancho;
+
+/** Desde dónde se coge algo de un mueble: el lado que da a su zona (no el de la pared). */
+export function frenteMueble(m: Rect, zona: Rect | null): Pt {
+	const P = PLANO_LOCAL;
+	const z = zona ?? { x: 0, y: 0, ancho: P.ancho, alto: P.fondo };
+	const cz = { x: z.x + z.ancho / 2, y: z.y + z.alto / 2 };
+	const cx = m.x + m.ancho / 2;
+	const cy = m.y + m.alto / 2;
+	const lados = [
+		{ x: m.x - 0.35, y: cy },
+		{ x: m.x + m.ancho + 0.35, y: cy },
+		{ x: cx, y: m.y - 0.35 },
+		{ x: cx, y: m.y + m.alto + 0.35 }
+	].filter((p) => p.x > 0.1 && p.x < P.ancho - 0.1 && p.y > yFachada(p.x) + 0.1 && p.y < P.fondo - 0.1);
+	return lados.sort((a, b) => Math.hypot(a.x - cz.x, a.y - cz.y) - Math.hypot(b.x - cz.x, b.y - cz.y))[0] ?? { x: cx, y: cy };
+}
+
+/**
+ * Por dónde se llega desde la persiana, en tramos rectos por los pasillos y sin atravesar tabiques:
+ * por la izquierda (bajando desde la entrada), por la derecha (cruzando por delante y bajando hasta la puerta del fondo)
+ * o hasta electrónica (por su puerta).
+ */
+export function caminoEnLocal(destino: Rect, opts: { mueble: boolean; zona?: Rect | null }): Pt[] {
+	const P = PLANO_LOCAL;
+	const ex = (P.entrada.desde + P.entrada.hasta) / 2;
+	const inicio = { x: ex, y: yFachada(ex) + 0.25 };
+	const cruce = 2.6;
+	const derecha = (P.puertaFondo.desde + P.puertaFondo.hasta) / 2;
+	const c = { x: destino.x + destino.ancho / 2, y: destino.y + destino.alto / 2 };
+	let pts: Pt[];
+	if (c.y > P.fondo) pts = [inicio, { x: ex, y: cruce }, { x: derecha, y: cruce }, { x: derecha, y: c.y }];
+	else {
+		const t = opts.mueble ? frenteMueble(destino, opts.zona ?? null) : c;
+		const pe = P.puertaElectronica;
+		const puerta = (pe.desde + pe.hasta) / 2;
+		if (t.x < P.pilares[0].x && t.y > pe.y) pts = [inicio, { x: ex, y: pe.y - 1.25 }, { x: puerta, y: pe.y - 1.25 }, { x: puerta, y: t.y }, t];
+		else if (t.x < P.pilares[0].x || t.y < cruce + 0.6) pts = [inicio, { x: ex, y: t.y }, t];
+		else pts = [inicio, { x: ex, y: cruce }, { x: derecha, y: cruce }, { x: derecha, y: t.y }, t];
+	}
+	// Fuera los tramos de longitud cero
+	return pts.filter((p, i) => i === 0 || Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y) > 0.01);
+}
+
 // ─── Códigos y descripción ───────────────────────────────────────────────────
 
 export function codigoUbicacion(
@@ -136,7 +198,7 @@ type MuebleMin = { id: number; codigo: string; nombre: string; tipo: TipoMueble;
 type ContenedorMin = { id: number; letra: string; nombre: string; tipo: TipoContenedor };
 
 export interface UbicacionDescrita {
-	/** «D·E2·3», «D·E2·3·B», o null si no está ubicado en el plano. */
+	/** «Z1·E2·3», «Z1·E2·3·B», o null si no está ubicado en el plano. */
 	codigo: string | null;
 	/** «Herramientas · Estantería E2 · balda 3 · Cubo B (electricidad)». */
 	texto: string | null;

@@ -6,7 +6,7 @@
 
 	let { data } = $props();
 	const herramientas = $derived(data.articulos.filter((a) => a.tipo === 'herramienta' && a.estado !== 'baja'));
-	// Recorrido mueble a mueble («D·E2»); lo que no está en el plano, por su texto
+	// Recorrido mueble a mueble («Z1·E2»); lo que no está en el plano, por su texto
 	const grupoDe = (a: (typeof herramientas)[number]) => (a.sitio.codigo ? a.sitio.codigo.split('·').slice(0, 2).join('·') : `~${a.ubicacion ?? 'Sin ubicar'}`);
 	const titulo = (k: string, a: (typeof herramientas)[number]) => {
 		if (k.startsWith('~')) return k.slice(1);
