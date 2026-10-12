@@ -302,6 +302,13 @@
       "when": 1791817591584,
       "tag": "0042_manual_marbella",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1791818092428,
+      "tag": "0043_marbella_pendientes",
+      "breakpoints": true
     }
   ]
 }
