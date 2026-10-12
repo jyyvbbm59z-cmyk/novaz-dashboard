@@ -351,6 +351,13 @@
       "when": 1791828126828,
       "tag": "0049_contenedores_rejilla",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1791829471622,
+      "tag": "0050_armario_a1_foto",
+      "breakpoints": true
     }
   ]
 }
