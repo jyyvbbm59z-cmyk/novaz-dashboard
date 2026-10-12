@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { interpretarReglas } from '../src/bot';
-import { buscarArticulos, caminoEnLocal, leerDestino, leerQueMover, codigoUbicacion, describirUbicacion, encajar, huecoLibre, huella, rejillaBalda, sePisan, limpiarDisposicion, nivelesMueble, nombreNivel, PLANO_LOCAL, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES, type Pt } from '../src/ubicaciones';
+import { buscarArticulos, caminoEnLocal, leerDestino, leerQueMover, nivelValido, numerosNivel, codigoUbicacion, describirUbicacion, encajar, huecoLibre, huella, rejillaBalda, sePisan, limpiarDisposicion, nivelesMueble, nombreNivel, PLANO_LOCAL, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES, type Pt } from '../src/ubicaciones';
 
 const zonas = ZONAS_INICIALES.map((z, i) => ({ ...z, id: i + 1 }));
 
@@ -181,5 +181,22 @@ describe('el bot entiende mover', () => {
 		expect(interpretarReglas('Mueve la caja de aceites a la E3, balda 2', [])).toEqual({ tipo: 'mover', que: 'caja de aceites', destino: 'la E3, balda 2' });
 		expect(interpretarReglas('He llevado la mochila al armario', [])).toMatchObject({ tipo: 'mover', que: 'mochila' });
 		expect(interpretarReglas('He puesto aceite al Ibiza', [{ id: 1, alias: 'Ibiza', marca: 'SEAT', modelo: 'Ibiza', matricula: null }]).tipo).not.toBe('mover');
+	});
+});
+
+describe('balda 0 (encima)', () => {
+	const armario = { id: 2, codigo: 'A1', nombre: 'Armario', tipo: 'armario' as const, niveles: 5, zonaId: 2 };
+	it('estanterías y armarios la tienen; carros no', () => {
+		expect(numerosNivel(armario)).toEqual([0, 1, 2, 3, 4, 5]);
+		expect(numerosNivel({ tipo: 'carro', niveles: 3 })).toEqual([1, 2, 3]);
+		expect(nivelValido(armario, 0)).toBe(true);
+		expect(nivelValido({ tipo: 'carro', niveles: 3 }, 0)).toBe(false);
+		expect(nombreNivel(armario, 0)).toBe('balda 0 (encima)');
+	});
+	it('código, descripción y destino', () => {
+		expect(codigoUbicacion({ codigo: 'PM' }, { codigo: 'A1' }, 0)).toBe('PM·A1·0');
+		expect(describirUbicacion({ zonaId: 2, muebleId: 2, nivel: 0 }, zonas, [armario]).texto).toBe('Pintura y madera · Armario A1 · balda 0 (encima)');
+		expect(leerDestino('encima del A1', [armario])).toEqual({ muebleId: 2, nivel: 0, columna: null });
+		expect(leerDestino('A1 balda 0', [armario])?.nivel).toBe(0);
 	});
 });

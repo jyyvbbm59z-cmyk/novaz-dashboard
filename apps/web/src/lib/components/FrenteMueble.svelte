@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Un mueble visto de frente con sus baldas, cajones o filas, y lo que hay en cada una.
 	// Puede encender una balda (la de lo que buscas) y poner encima el nombre.
-	import { conRejilla, CONTENEDORES, nivelesMueble, nombreDeNivel, nombreNivel as nombreDe, ordenLetra, rejillaBalda, REJILLA } from '@novaz/core';
+	import { conRejilla, CONTENEDORES, tieneEncima, nivelesMueble, nombreDeNivel, nombreNivel as nombreDe, ordenLetra, rejillaBalda, REJILLA } from '@novaz/core';
 	import type { Mueble, TipoContenedor } from '@novaz/core/schema';
 
 	let {
@@ -44,6 +44,7 @@
 	const raskog = $derived(mueble.tipo === 'carro' && nombreDeNivel(mueble) === 'cesta');
 	const H = $derived(raskog ? 0.78 : Math.max(ALTO[mueble.tipo] ?? 1, ['carro', 'cajonera'].includes(mueble.tipo) ? unidades * 0.085 + 0.16 : 0));
 	const n = $derived(Math.max(mueble.niveles, 0));
+	const encima = $derived(tieneEncima(mueble.tipo));
 	const fs = $derived(Math.max(W, H) / 20);
 	const g = 0.04; // grosor de tableros
 
@@ -57,7 +58,10 @@
 		abierto?: boolean;
 		/** Empieza otra pieza: se dibuja la separación encima. */
 		aparte?: boolean;
+		/** La balda 0: encima del mueble. */
+		encima?: boolean;
 	}
+	const ENCIMA = 0.26;
 	const SEP = 0.05;
 	/** Dónde cae cada nivel en el frente, según el tipo de mueble y cómo se numera. */
 	const huecos = $derived.by((): Hueco[] => {
@@ -69,6 +73,8 @@
 			return Array.from({ length: n }, (_, i) => ({ nivel: i + 1, x: g + i * w, y: 0.08, w, h: 0.22 }));
 		}
 		const niv = nivelesMueble(mueble);
+		// Balda 0: lo de encima del mueble (estanterías y armarios), por fuera, arriba del todo
+		const cero: Hueco[] = encima ? [{ nivel: 0, x: 0, y: -ENCIMA, w: W, h: ENCIMA - 0.015, encima: true }] : [];
 		if (raskog) {
 			// Cada cesta: 12 cm de honda, repartidas entre arriba y el bastidor
 			const hc = 0.12;
@@ -80,18 +86,20 @@
 		const total = Math.max(...niv.map((x) => x.desde + x.alto), 1);
 		const filasAparte = [...new Set(niv.filter((x) => x.aparte).map((x) => x.fila))];
 		const u = (H - g * 2 - (t === 'carro' ? 0.12 : 0) - filasAparte.length * SEP) / total;
-		return niv.map((x) => {
+		return [...cero, ...niv.map((x) => {
 			const w = (W - g * 2) / x.cols;
 			const sep = filasAparte.filter((f) => f <= x.fila).length * SEP;
 			return { nivel: x.numero, x: g + x.col * w, y: g + x.desde * u + sep, w, h: x.alto * u, abierto: x.hueco, aparte: x.aparte && x.col === 0 };
-		});
+		})];
 	});
 	// Rectángulo de la luz: interpolado entre el nivel de antes y el de después
 	const focoRect = $derived.by(() => {
 		if (foco == null || !huecos.length) return null;
-		const f = Math.min(Math.max(foco, 1), huecos.length);
-		const a = huecos[Math.floor(f) - 1];
-		const b = huecos[Math.min(Math.ceil(f), huecos.length) - 1];
+		// Los niveles son seguidos (0 o 1, 2, 3…): la luz pasa de uno al siguiente
+		const base = huecos[0].nivel;
+		const f = Math.min(Math.max(foco, base), base + huecos.length - 1);
+		const a = huecos[Math.floor(f) - base];
+		const b = huecos[Math.min(Math.ceil(f), base + huecos.length - 1) - base];
 		const k = f - Math.floor(f);
 		const mezcla = (p: number, q: number) => p + (q - p) * k;
 		return { x: mezcla(a.x, b.x), y: mezcla(a.y, b.y), w: mezcla(a.w, b.w), h: mezcla(a.h, b.h) };
@@ -103,24 +111,52 @@
 		return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 	};
 	const nombreNivel = (k: number) => nombreDe(mueble, k);
+	/**
+	 * El nombre de un contenedor lo más grande que quepa: en una línea o partido en dos por el espacio más centrado.
+	 * null si no tiene nombre (entonces se ve su letra).
+	 */
+	function rotulo(nombre: string, ancho: number, alto: number, max = 0.085) {
+		const n = nombre.trim();
+		if (!n || ancho <= 0 || alto <= 0) return null;
+		const cabe = (lineas: string[]) => Math.min(alto / (lineas.length * 1.25), ancho / (Math.max(...lineas.map((l) => l.length)) * 0.58), max);
+		let mejor = { lineas: [n], tam: cabe([n]) };
+		const espacios = [...n.matchAll(/ /g)].map((m) => m.index!);
+		if (espacios.length) {
+			const corte = espacios.reduce((a, b) => (Math.abs(b - n.length / 2) < Math.abs(a - n.length / 2) ? b : a));
+			const dos = [n.slice(0, corte), n.slice(corte + 1)];
+			if (cabe(dos) > mejor.tam) mejor = { lineas: dos, tam: cabe(dos) };
+		}
+		// Si ni así se lee, se recorta con «…»
+		if (mejor.tam < 0.022) {
+			const max = Math.max(3, Math.floor(ancho / (0.022 * 0.58)));
+			return { lineas: [n.length > max ? `${n.slice(0, max - 1)}…` : n], tam: 0.022 };
+		}
+		return mejor;
+	}
 	/** Estanterías y armarios: cada balda en 3 tercios × 3 alturas para colocar cajas. */
 	const rejilla = $derived(conRejilla(mueble.tipo));
 </script>
 
-{#snippet caja(c: (typeof contenedores)[number], bx: number, y0: number, bw: number, hb: number, encendida: boolean)}
-	{@const fl = Math.min(bw * 0.5, hb * 0.38, 0.1)}
+{#snippet caja(c: (typeof contenedores)[number], bx: number, y0: number, bw: number, hb: number, encendida: boolean, tamBalda: number)}
 	{@const asa = c.tipo === 'maletin' || c.tipo === 'mochila' ? Math.min(hb * 0.12, 0.03) : 0}
+	{@const r = rotulo(c.nombre, bw - 0.03, hb - asa - 0.03, tamBalda)}
+	{@const fl = Math.min(bw * 0.5, hb * 0.38, 0.1)}
+	{@const fc = Math.min(Math.max(r?.tam ?? 0, 0.02) * 0.6, 0.032)}
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<g class="contenedor {encendida ? 'cont-on' : ''} {alTocarContenedor ? 'cursor-pointer' : ''}" onclick={(e) => { if (alTocarContenedor) { e.stopPropagation(); alTocarContenedor(c.id); } }}>
 		<rect x={bx} y={y0 + asa} width={bw} height={hb - asa} rx={c.tipo === 'mochila' ? Math.min(bw, hb) * 0.28 : c.tipo === 'cubo' || c.tipo === 'bolsa' ? 0.025 : 0.01} class="caja" />
 		{#if asa}<rect x={bx + bw * 0.32} y={y0} width={bw * 0.36} height={asa * 1.4} rx={asa * 0.7} fill="none" class="asa" />{/if}
-		{#if c.tipo === 'mochila'}<rect x={bx + bw * 0.22} y={y0 + hb * 0.55} width={bw * 0.56} height={hb * 0.3} rx="0.012" fill="none" class="asa" />{/if}
-		<text x={bx + bw / 2} y={y0 + hb * 0.5 + fl * 0.35} text-anchor="middle" class="letra-caja" font-size={fl}>{c.letra}</text>
-		{#if bw > 0.18 && hb > 0.07 && c.nombre}
-			{@const fn = Math.min(fl * 0.42, 0.042)}
-			<text x={bx + bw / 2} y={y0 + hb * 0.88} text-anchor="middle" class="cuenta-caja" font-size={fn}>{recortar(`${c.nombre}${cuentaContenedor[c.id] ? ` · ${cuentaContenedor[c.id]}` : ''}`, bw - 0.03, fn)}</text>
-		{:else if bw > 0.07 && cuentaContenedor[c.id]}
-			<text x={bx + bw / 2} y={y0 + hb * 0.88} text-anchor="middle" class="cuenta-caja" font-size={Math.min(fl * 0.45, 0.04)}>{cuentaContenedor[c.id]}</text>
+		{#if r}
+			<!-- Lo que manda es el nombre; la letra, pequeña en la esquina -->
+			{@const cy = y0 + asa + (hb - asa) / 2}
+			<text x={bx + bw / 2} y={cy - ((r.lineas.length - 1) * r.tam * 1.1) / 2 + r.tam * 0.35} text-anchor="middle" class="nombre-caja" font-size={r.tam}>
+				{#each r.lineas as l, k (k)}<tspan x={bx + bw / 2} dy={k ? r.tam * 1.1 : 0}>{l}</tspan>{/each}
+			</text>
+			<text x={bx + 0.012} y={y0 + asa + fc + 0.008} class="letra-esquina" font-size={fc}>{c.letra}</text>
+			{#if cuentaContenedor[c.id] && bw > 0.08}<text x={bx + bw - 0.012} y={y0 + hb - 0.01} text-anchor="end" class="cuenta-caja" font-size={fc * 0.9}>{cuentaContenedor[c.id]}</text>{/if}
+		{:else}
+			<text x={bx + bw / 2} y={y0 + hb * 0.5 + fl * 0.35} text-anchor="middle" class="letra-caja" font-size={fl}>{c.letra}</text>
+			{#if bw > 0.07 && cuentaContenedor[c.id]}<text x={bx + bw / 2} y={y0 + hb * 0.88} text-anchor="middle" class="cuenta-caja" font-size={Math.min(fl * 0.45, 0.04)}>{cuentaContenedor[c.id]}</text>{/if}
 		{/if}
 		{#if encendida}
 			<rect x={bx} y={y0} width={bw} height={hb} rx="0.02" class="aro" />
@@ -130,7 +166,7 @@
 	</g>
 {/snippet}
 
-<svg viewBox="-0.12 -0.12 {W + 0.24} {H + 0.24}" class="frente block {clase || 'h-auto w-full'}" role="img" aria-label="{mueble.nombre} {mueble.codigo} visto de frente">
+<svg viewBox="-0.12 {-0.12 - (encima ? ENCIMA : 0)} {W + 0.24} {H + 0.24 + (encima ? ENCIMA : 0)}" class="frente block {clase || 'h-auto w-full'}" role="img" aria-label="{mueble.nombre} {mueble.codigo} visto de frente">
 	<defs>
 		<radialGradient id="foco-luz" cx="0.5" cy="0.5" r="0.7">
 			<stop offset="0" stop-color="var(--acento)" stop-opacity="0.45" />
@@ -187,9 +223,13 @@
 				<path d="M{h.x} {h.y} L{h.x + h.w} {h.y} L{h.x + h.w} {h.y + h.h - 0.035} Q{h.x + h.w} {h.y + h.h} {h.x + h.w - 0.035} {h.y + h.h} L{h.x + 0.035} {h.y + h.h} Q{h.x} {h.y + h.h} {h.x} {h.y + h.h - 0.035} Z" class="cesta" />
 				<rect x={h.x - 0.004} y={h.y - 0.004} width={h.w + 0.008} height="0.014" rx="0.007" class="borde-cesta" />
 			{:else}
-			<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class={h.abierto ? 'abierto' : cajon ? 'cajon' : 'balda-fondo'} />
+			<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class={h.encima ? 'encima' : h.abierto ? 'abierto' : cajon ? 'cajon' : 'balda-fondo'} />
 			{/if}
-			{#if !cajon && !raskog && mueble.tipo !== 'panel'}<rect x={h.x - g} y={h.y + h.h - 0.005} width={h.w + g * 2} height={g} class="tablero" />{/if}
+			<!-- Baldas en tercios: guías suaves, al fondo de todo -->
+			{#if rejilla && !h.abierto}
+				{#each [1, 2] as k (k)}<line x1={h.x + 0.03 + ((h.w - 0.06) * k) / REJILLA.columnas} y1={h.y + h.h * 0.14} x2={h.x + 0.03 + ((h.w - 0.06) * k) / REJILLA.columnas} y2={h.y + h.h - 0.015} class="guia" />{/each}
+			{/if}
+			{#if !cajon && !raskog && !h.encima && mueble.tipo !== 'panel'}<rect x={h.x - g} y={h.y + h.h - 0.005} width={h.w + g * 2} height={g} class="tablero" />{/if}
 			{#if cajon && !h.abierto && !cs.length}<rect x={h.x + h.w / 2 - Math.min(0.12, h.w / 4)} y={h.y + Math.min(0.05, h.h * 0.2)} width={Math.min(0.24, h.w / 2)} height="0.02" rx="0.01" class="tirador" />{/if}
 			<text x={h.x + 0.04} y={h.y + tam * 1.15 + (cajon && !cs.length ? Math.min(0.05, h.h * 0.2) : 0.01)} class="num" font-size={tam * 0.85}>{h.nivel}</text>
 			{#if on && destacado}
@@ -204,10 +244,6 @@
 				<text x={h.x + h.w / 2} y={yTexto + tam * 0.4} text-anchor="middle" class="cosas" font-size={tam * 0.8}>{recortar((cs.length ? `Suelto (${cosas.length}): ` : '') + cosas.slice(0, 2).join(' · ') + (cosas.length > 2 && !cs.length ? ` +${cosas.length - 2}` : ''), h.w - 0.1, tam * 0.8)}</text>
 			{/if}
 
-			<!-- Baldas en tercios: guías suaves para colocar cajas -->
-			{#if rejilla && !h.abierto}
-				{#each [1, 2] as k (k)}<line x1={h.x + 0.03 + ((h.w - 0.06) * k) / REJILLA.columnas} y1={h.y + h.h * 0.14} x2={h.x + 0.03 + ((h.w - 0.06) * k) / REJILLA.columnas} y2={h.y + h.h - 0.015} class="guia" />{/each}
-			{/if}
 			<!-- Contenedores de la balda: en su sitio de la rejilla o, si no lo tienen, de izquierda a derecha -->
 			{#if cs.length}
 				{@const rej = rejilla ? rejillaBalda(cs) : null}
@@ -216,16 +252,19 @@
 					{@const cw = (h.w - 0.06) / REJILLA.columnas}
 					{@const ybot = h.y + h.h - 0.012}
 					{@const uh = (ybot - (h.y + h.h * 0.14)) / REJILLA.alturas}
+					<!-- Todos los nombres de la balda, del mismo tamaño: el que le quepa al más justo -->
+					{@const tamBalda = Math.max(0.022, Math.min(...cs.map((c) => { const p = rej.get(c.id)!; const asa = c.tipo === 'maletin' || c.tipo === 'mochila' ? Math.min((p.alto * uh - 0.012) * 0.12, 0.03) : 0; return rotulo(c.nombre, p.ancho * cw - 0.042, p.alto * uh - 0.042 - asa)?.tam ?? 0.085; })))}
 					{#each cs as c (c.id)}
 						{@const p = rej.get(c.id)!}
-						{@render caja(c, x0 + (p.columna - 1) * cw + 0.006, ybot - (p.piso + p.alto) * uh + 0.006, p.ancho * cw - 0.012, p.alto * uh - 0.012, contOn?.id === c.id)}
+						{@render caja(c, x0 + (p.columna - 1) * cw + 0.006, ybot - (p.piso + p.alto) * uh + 0.006, p.ancho * cw - 0.012, p.alto * uh - 0.012, contOn?.id === c.id, tamBalda)}
 					{/each}
 				{:else}
 					{@const gap = Math.min(0.02, h.w * 0.012)}
 					{@const y0 = h.y + h.h * 0.36}
 					{@const hb = h.h * 0.56}
 					{@const bw = (h.w - 0.06 - gap * (cs.length - 1)) / cs.length}
-					{#each cs as c, k (c.id)}{@render caja(c, h.x + 0.03 + k * (bw + gap), y0, bw, hb, contOn?.id === c.id)}{/each}
+					{@const tamBalda = Math.max(0.022, Math.min(...cs.map((c) => rotulo(c.nombre, bw - 0.03, hb - 0.03)?.tam ?? 0.085)))}
+					{#each cs as c, k (c.id)}{@render caja(c, h.x + 0.03 + k * (bw + gap), y0, bw, hb, contOn?.id === c.id, tamBalda)}{/each}
 				{/if}
 			{/if}
 			{#if on && !contOn}
@@ -260,6 +299,17 @@
 	}
 	.balda-fondo {
 		fill: var(--superficie-2);
+	}
+	.nombre-caja {
+		font-weight: 700;
+		fill: var(--texto);
+		pointer-events: none;
+	}
+	.letra-esquina {
+		font-family: var(--font-mono);
+		font-weight: 800;
+		fill: var(--texto-3);
+		pointer-events: none;
 	}
 	.guia {
 		stroke: var(--borde);
@@ -298,6 +348,18 @@
 	}
 	.encendido .cesta {
 		fill: color-mix(in oklab, var(--acento) 30%, var(--superficie-3));
+	}
+	.encima {
+		fill: transparent;
+		stroke: var(--borde);
+		stroke-width: 0.008;
+		stroke-dasharray: 0.03 0.025;
+	}
+	.hueco:hover .encima {
+		fill: var(--superficie-2);
+	}
+	.encendido .encima {
+		fill: color-mix(in oklab, var(--acento) 22%, transparent);
 	}
 	.abierto {
 		fill: var(--fondo);

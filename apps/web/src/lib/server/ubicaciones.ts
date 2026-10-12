@@ -1,5 +1,5 @@
 // El local por zonas: muebles en el plano y dónde está cada artículo.
-import { ALTO_CONTENEDOR, codigoUbicacion, conRejilla, CONTENEDORES, encajar, huecoLibre, huella, limpiarDisposicion, MUEBLES, nivelesMueble, rejillaBalda, sePisan, type Celda, ordenLetra, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, type DisposicionMueble } from '@novaz/core';
+import { ALTO_CONTENEDOR, codigoUbicacion, nivelValido, conRejilla, CONTENEDORES, encajar, huecoLibre, huella, limpiarDisposicion, MUEBLES, nivelesMueble, rejillaBalda, sePisan, type Celda, ordenLetra, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, type DisposicionMueble } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { TIPOS_ARTICULO, TIPOS_CONTENEDOR, TIPOS_MUEBLE, type TipoArticulo, type TipoContenedor, type TipoMueble } from '@novaz/core/schema';
 import { and, asc, eq, gt, inArray, ne } from 'drizzle-orm';
@@ -124,9 +124,9 @@ async function resolverSitio(db: Locals['db'], sitio: Sitio) {
 	}
 	let zonaId = sitio.zonaId ?? null;
 	if (muebleId) {
-		const m = await db.select({ zonaId: s.muebles.zonaId, niveles: s.muebles.niveles }).from(s.muebles).where(eq(s.muebles.id, muebleId)).get();
+		const m = await db.select({ zonaId: s.muebles.zonaId, niveles: s.muebles.niveles, tipo: s.muebles.tipo }).from(s.muebles).where(eq(s.muebles.id, muebleId)).get();
 		if (!m) throw new ErrorFormulario('Ese mueble ya no existe');
-		if (nivel != null && (nivel < 1 || nivel > m.niveles)) throw new ErrorFormulario('Esa balda no existe');
+		if (nivel != null && !nivelValido(m, nivel)) throw new ErrorFormulario('Esa balda no existe');
 		zonaId = m.zonaId;
 	} else contenedorId = null;
 	return { muebleId, nivel: muebleId ? nivel : null, zonaId, contenedorId };
@@ -143,7 +143,7 @@ export async function sitioDeFormulario(db: Locals['db'], fd: FormData) {
 	const f = leer(fd);
 	const nivel = f.entero('nivel');
 	try {
-		return await resolverSitio(db, { muebleId: f.idOpcional('muebleId'), nivel: nivel && nivel >= 1 ? nivel : null, zonaId: f.idOpcional('zonaId'), contenedorId: f.idOpcional('contenedorId') });
+		return await resolverSitio(db, { muebleId: f.idOpcional('muebleId'), nivel: nivel != null && nivel >= 0 ? nivel : null, zonaId: f.idOpcional('zonaId'), contenedorId: f.idOpcional('contenedorId') });
 	} catch {
 		return { muebleId: null, nivel: null, zonaId: f.idOpcional('zonaId'), contenedorId: null };
 	}
@@ -170,12 +170,12 @@ export async function planearMovimiento(db: Locals['db'], id: number, destino: D
 	const plano = await cargarPlano(db);
 	const m = plano.muebles.find((x) => x.id === destino.muebleId);
 	if (!m) throw new ErrorFormulario('Ese mueble ya no existe');
-	const nivel = destino.nivel != null && destino.nivel >= 1 && destino.nivel <= m.niveles ? destino.nivel : null;
+	const nivel = nivelValido(m, destino.nivel) ? destino.nivel : null;
 	const hermanos = plano.contenedores.filter((h) => h.muebleId === m.id && h.nivel === nivel && h.id !== id);
 	const letra = hermanos.some((h) => h.letra === c.letra) ? siguienteLetra(hermanos.map((h) => h.letra)) : c.letra;
 	let celda: Celda | null = null;
 	let error: string | null = null;
-	if (nivel && conRejilla(m.tipo)) {
+	if (nivel != null && conRejilla(m.tipo)) {
 		const ocupadas = [...(rejillaBalda(hermanos, true) ?? new Map<number, Celda>()).values()];
 		const tam = { ancho: c.ancho ?? 1, alto: c.alto ?? ALTO_CONTENEDOR[c.tipo] };
 		if (destino.columna) {
@@ -207,7 +207,7 @@ export async function moverContenedor(locals: Locals, id: number, destino: Desti
 	const p = await planearMovimiento(db, id, destino);
 	if (p.error) throw new ErrorFormulario(p.error);
 	// Los de la balda de destino que aún no tenían sitio se quedan donde se ven
-	if (p.despues.nivel && conRejilla(p.mueble.tipo)) {
+	if (p.despues.nivel != null && conRejilla(p.mueble.tipo)) {
 		const auto = rejillaBalda(p.hermanos, true);
 		for (const h of p.hermanos) if (h.columna == null && auto?.get(h.id)) await db.update(s.contenedores).set(auto.get(h.id)!).where(eq(s.contenedores.id, h.id));
 	}
@@ -244,7 +244,7 @@ export async function guardarContenedor(locals: Locals, fd: FormData) {
 	const m = await db.select({ niveles: s.muebles.niveles, tipo: s.muebles.tipo }).from(s.muebles).where(eq(s.muebles.id, muebleId)).get();
 	if (!m) throw new ErrorFormulario('Ese mueble ya no existe');
 	const nivelCrudo = f.entero('nivel');
-	const nivel = nivelCrudo && nivelCrudo >= 1 && nivelCrudo <= m.niveles ? nivelCrudo : null;
+	const nivel = nivelValido(m, nivelCrudo) ? nivelCrudo : null;
 	const tipoCrudo = f.texto('tipo') as TipoContenedor;
 	const tipo = TIPOS_CONTENEDOR.includes(tipoCrudo) ? tipoCrudo : 'cubo';
 	const hermanos = (await db.select().from(s.contenedores).where(eq(s.contenedores.muebleId, muebleId))).filter((c) => c.nivel === nivel && c.id !== id);
@@ -252,7 +252,7 @@ export async function guardarContenedor(locals: Locals, fd: FormData) {
 	if (hermanos.some((c) => c.letra === letra)) throw new ErrorFormulario(`Ya hay un contenedor ${letra} en esa balda`);
 	// Su sitio en la rejilla de la balda (3 tercios × 3 alturas): el que se eligió o el primer hueco libre
 	let celda: Celda | null = null;
-	if (nivel && conRejilla(m.tipo)) {
+	if (nivel != null && conRejilla(m.tipo)) {
 		const ocupadas = rejillaBalda(hermanos) ?? new Map<number, Celda>();
 		const tam = { ancho: f.entero('ancho') ?? 1, alto: f.entero('alto') ?? ALTO_CONTENEDOR[tipo] };
 		const columna = f.entero('columna');

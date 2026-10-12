@@ -3,7 +3,7 @@
 	// el plano entero con el mueble señalado → una luz sale de la persiana y recorre el camino mientras la cámara la sigue
 	// y se acerca → el mueble se despliega desde su sitio en el plano → una luz cae flotando hasta la balda y se posa
 	// (con física de muelle) → el nombre aparece letra a letra.
-	import { caminoEnLocal, nombreNivel, cajaCamara, codigoUbicacion, CONTENEDORES, huella, MUEBLES, VISTA_PLANO, type Camara } from '@novaz/core';
+	import { caminoEnLocal, nivelValido, nombreNivel, cajaCamara, codigoUbicacion, CONTENEDORES, huella, MUEBLES, VISTA_PLANO, type Camara } from '@novaz/core';
 	import type { Contenedor, Mueble, Zona } from '@novaz/core/schema';
 	import { ArrowRight, RotateCcw, X } from '@lucide/svelte';
 	import { prefersReducedMotion, Spring } from 'svelte/motion';
@@ -41,7 +41,7 @@
 	const mueble = $derived(muebles.find((m) => m.id === articulo.muebleId) ?? null);
 	const zona = $derived(zonas.find((z) => z.id === (mueble ? mueble.zonaId : articulo.zonaId)) ?? null);
 	const destino = $derived(mueble ? huella(mueble) : zona);
-	const nivel = $derived(mueble && articulo.nivel && articulo.nivel <= mueble.niveles ? articulo.nivel : null);
+	const nivel = $derived(mueble && nivelValido(mueble, articulo.nivel) ? articulo.nivel : null);
 	const contenedor = $derived(contenedores.find((c) => c.id === articulo.contenedorId) ?? null);
 
 	// ─── El camino: de la persiana al mueble por los pasillos, con las esquinas redondeadas ─────
@@ -92,7 +92,8 @@
 	let capa = $state<HTMLElement>();
 
 	const final = $derived<Fase>(mueble ? (mueble.niveles > 0 ? 'balda' : 'llegada') : zona ? 'llegada' : 'mirar');
-	const camaraFinal = $derived(cajaCamara(destino));
+	// Acercarse, pero sin pasarse: se sigue viendo lo que hay alrededor del mueble
+	const camaraFinal = $derived(cajaCamara(destino, 0.6));
 	const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 	const suave = (k: number) => -(Math.cos(Math.PI * k) - 1) / 2;
 	const entradaSalida = (k: number) => (k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2);
@@ -112,7 +113,7 @@
 		cometa = null;
 		camara = camaraFinal;
 		verFoco = false;
-		if (nivel) foco.set(nivel, { instant: true });
+		if (nivel != null) foco.set(nivel, { instant: true });
 		fase = final;
 	}
 
@@ -171,7 +172,7 @@
 				{ duration: 780, easing: 'cubic-bezier(0.2, 0.85, 0.25, 1)', fill: 'both' }
 			);
 		}
-		if (!nivel) return void luego(800, () => (fase = 'balda'));
+		if (nivel == null) return void luego(800, () => (fase = 'balda'));
 		// La luz cae desde arriba y se posa en la balda (con su rebote natural)
 		luego(700, () => {
 			verFoco = true;
@@ -206,7 +207,7 @@
 		[
 			zona && { k: 'mirar' as Fase, t: `Zona ${zona.codigo} · ${zona.nombre}` },
 			mueble && { k: 'llegada' as Fase, t: `${mueble.nombre} ${mueble.codigo}` },
-			mueble && nivel && { k: 'balda' as Fase, t: nombreNivel(mueble, nivel) },
+			mueble && nivel != null && { k: 'balda' as Fase, t: nombreNivel(mueble, nivel) },
 			contenedor && { k: 'balda' as Fase, t: `${CONTENEDORES[contenedor.tipo]} ${contenedor.letra}${contenedor.nombre ? ` · ${contenedor.nombre}` : ''}` }
 		].filter(Boolean) as { k: Fase; t: string }[]
 	);

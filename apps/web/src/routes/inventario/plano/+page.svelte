@@ -26,7 +26,7 @@
 	const localizado = $derived(data.articulos.find((a) => a.id === verId) ?? null);
 	const contenido = $derived.by(() => {
 		const c: Record<number, string[]> = {};
-		if (localizado?.muebleId) for (const a of data.articulos) if (a.muebleId === localizado.muebleId && !a.contenedorId) (c[a.nivel ?? 0] ??= []).push(a.nombre);
+		if (localizado?.muebleId) for (const a of data.articulos) if (a.muebleId === localizado.muebleId && !a.contenedorId) (c[a.nivel ?? -1] ??= []).push(a.nombre);
 		return c;
 	});
 	const contenedoresDe = $derived(localizado?.muebleId ? data.plano.contenedores.filter((c) => c.muebleId === localizado.muebleId) : []);

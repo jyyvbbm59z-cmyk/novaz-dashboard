@@ -130,7 +130,7 @@ No encuentro «${esc(i.que)}» en el inventario ni entre las cajas.`, error: 'no
 	if (!destino) return { texto: `${cab}
 No sé qué mueble es «${esc(i.destino)}». Dímelo con su código (E3, A1, C2…).`, error: 'sin destino' };
 	const mueble = plano.muebles.find((m) => m.id === destino.muebleId)!;
-	if (!destino.nivel && nivelesMueble(mueble).length > 1)
+	if (destino.nivel == null && nivelesMueble(mueble).length > 1)
 		return { texto: `${cab}
 ¿En qué ${nombreDeNivel(mueble)} de ${esc(mueble.codigo)}? Dímelo así: <i>«${esc(i.que)} a ${esc(mueble.codigo)}, ${nombreDeNivel(mueble)} 2»</i>.`, error: 'sin nivel' };
 	if ('contenedor' in que) {

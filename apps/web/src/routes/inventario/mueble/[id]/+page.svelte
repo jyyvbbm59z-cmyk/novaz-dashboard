@@ -11,7 +11,7 @@
 	import RejillaSitio from '$comp/RejillaSitio.svelte';
 	import { goto } from '$app/navigation';
 	import { accion, enviar } from '$lib/enviar';
-	import { ALTO_CONTENEDOR, buscarArticulos, codigoUbicacion, conRejilla, CONTENEDORES, MUEBLES, nivelesMueble, nombreDeNivel, nombreNivel as nombreDe, pluralNivel, siguienteLetra } from '@novaz/core';
+	import { ALTO_CONTENEDOR, buscarArticulos, codigoUbicacion, conRejilla, CONTENEDORES, MUEBLES, nivelesMueble, nivelValido, numerosNivel, nombreDeNivel, nombreNivel as nombreDe, pluralNivel, siguienteLetra } from '@novaz/core';
 	import { TIPOS_CONTENEDOR, type Contenedor, type TipoContenedor } from '@novaz/core/schema';
 	import { ArrowLeft, ArrowRightLeft, Box, Camera, ChevronDown, Pencil, Plus, Printer, Search, Trash2, Wrench } from '@lucide/svelte';
 	import { tick, untrack } from 'svelte';
@@ -22,23 +22,27 @@
 	const def = $derived(MUEBLES[m.tipo]);
 	const aqui = $derived(data.articulos.filter((a) => a.muebleId === m.id));
 	const conts = $derived(data.plano.contenedores.filter((c) => c.muebleId === m.id));
-	const niveles = $derived(Array.from({ length: m.niveles }, (_, i) => i + 1));
-	const enNivel = (n: number | null) => aqui.filter((a) => !a.contenedorId && (n == null ? a.nivel == null || a.nivel > m.niveles : a.nivel === n));
+	// De arriba a abajo; estanterías y armarios, con la balda 0 (lo de encima)
+	const niveles = $derived(numerosNivel(m));
+	const enNivel = (n: number | null) => aqui.filter((a) => !a.contenedorId && (n == null ? !nivelValido(m, a.nivel) : a.nivel === n));
 	const contsDe = (n: number | null) => conts.filter((c) => c.nivel === n);
 	const enCont = (id: number) => aqui.filter((a) => a.contenedorId === id);
 	const cuentaContenedor = $derived(aqui.reduce<Record<number, number>>((c, a) => (a.contenedorId ? { ...c, [a.contenedorId]: (c[a.contenedorId] ?? 0) + 1 } : c), {}));
-	const marcado = $derived(Number(page.url.searchParams.get('nivel')) || null);
+	const marcado = $derived.by(() => {
+		const v = page.url.searchParams.get('nivel');
+		return v != null && v !== '' && Number.isInteger(Number(v)) ? Number(v) : null;
+	});
 	const contMarcado = $derived(Number(page.url.searchParams.get('cont')) || null);
 	const articuloMarcado = $derived(Number(page.url.searchParams.get('articulo')) || null);
 	// Para el dibujo: solo lo suelto en cada balda (lo de los contenedores va dentro de su caja)
-	const contenido = $derived(aqui.filter((a) => !a.contenedorId).reduce<Record<number, string[]>>((c, a) => ((c[a.nivel ?? 0] ??= []).push(a.nombre), c), {}));
+	const contenido = $derived(aqui.filter((a) => !a.contenedorId).reduce<Record<number, string[]>>((c, a) => ((c[a.nivel ?? -1] ??= []).push(a.nombre), c), {}));
 	const irA = (id: string) => document.getElementById(id)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
 	const nombreNivel = (n: number) => { const t = nombreDe(m, n); return t.charAt(0).toUpperCase() + t.slice(1); };
 	const codigo = (n: number | null, c?: Contenedor | null) => codigoUbicacion(zona, m, n, c) ?? m.codigo;
 	const nombreCont = (c: Contenedor) => `${CONTENEDORES[c.tipo]} ${c.letra}${c.nombre ? ` · ${c.nombre}` : ''}`;
 
 	$effect(() => {
-		const id = articuloMarcado ? `a-${articuloMarcado}` : contMarcado ? `c-${contMarcado}` : marcado ? `n-${marcado}` : null;
+		const id = articuloMarcado ? `a-${articuloMarcado}` : contMarcado ? `c-${contMarcado}` : marcado != null ? `n-${marcado}` : null;
 		if (id) tick().then(() => irA(id));
 	});
 
@@ -47,7 +51,7 @@
 		const lista: Destino[] = [];
 		const nivelesOSin = m.niveles > 0 ? niveles : [null];
 		for (const n of nivelesOSin) {
-			lista.push({ clave: `n${n}`, codigo: codigo(n), etiqueta: n ? nombreNivel(n).toLowerCase() : 'el mueble', nivel: n, contenedorId: null });
+			lista.push({ clave: `n${n}`, codigo: codigo(n), etiqueta: n != null ? nombreNivel(n).toLowerCase() : 'el mueble', nivel: n, contenedorId: null });
 			for (const c of contsDe(n)) lista.push({ clave: `c${c.id}`, codigo: codigo(n, c), etiqueta: `el ${CONTENEDORES[c.tipo].toLowerCase()} ${c.letra}`, nivel: n, contenedorId: c.id });
 		}
 		return lista;
@@ -129,7 +133,7 @@
 		hMover = true;
 	}
 	const mDest = $derived(data.plano.muebles.find((x) => x.id === destMueble) ?? m);
-	const nivelesDest = $derived(nivelesMueble(mDest));
+	const nivelesDest = $derived(numerosNivel(mDest).map((numero) => ({ numero, nombre: nombreDe(mDest, numero) })));
 	const vecinosDest = $derived(data.plano.contenedores.filter((x) => x.muebleId === mDest.id && x.nivel === destNivel && x.id !== contEditado?.id));
 	const letraDest = $derived(contEditado && vecinosDest.some((x) => x.letra === contEditado!.letra) ? siguienteLetra(vecinosDest.map((x) => x.letra)) : (contEditado?.letra ?? 'A'));
 	const zonaDest = $derived(data.plano.zonas.find((z) => z.id === mDest.zonaId));
@@ -219,10 +223,10 @@
 		{#snippet balda(n: number | null)}
 			{@const sueltos = enNivel(n)}
 			{@const cs = contsDe(n)}
-			<section id="n-{n}" class="tarjeta overflow-hidden {marcado === n && n ? 'border-acento' : ''}">
+			<section id="n-{n}" class="tarjeta overflow-hidden {marcado === n && n != null ? 'border-acento' : ''}">
 				<div class="flex items-center gap-3 border-b border-borde px-3 py-2">
-					<span class="font-mono text-sm font-bold">{n ? codigo(n) : m.codigo}</span>
-					<span class="min-w-0 flex-1 truncate text-xs text-texto-3">{n ? nombreNivel(n) : m.niveles ? 'Sin balda concreta' : 'En el mueble'}{n === 1 && def.ayudaNivel ? ` · ${def.ayudaNivel.toLowerCase()}` : ''}</span>
+					<span class="font-mono text-sm font-bold">{n != null ? codigo(n) : m.codigo}</span>
+					<span class="min-w-0 flex-1 truncate text-xs text-texto-3">{n != null ? nombreNivel(n) : m.niveles ? 'Sin balda concreta' : 'En el mueble'}{n === 1 && def.ayudaNivel ? ` · ${def.ayudaNivel.toLowerCase()}` : ''}</span>
 					<button class="text-xs font-semibold text-texto-3 hover:text-texto" onclick={() => abrirContenedor(n)}><Box size={12} class="inline" /> Contenedor</button>
 					<button class="text-xs font-semibold text-acento" onclick={() => abrirAnadir(n)}>+ Añadir</button>
 				</div>
@@ -375,7 +379,7 @@
 			<p class="text-sm text-texto-2">Ahora en <span class="font-mono font-bold text-texto">{codigo(c.nivel, c)}</span>{dentro ? ` · sus ${dentro} cosas van con él` : ''}.</p>
 			<label class="campo">
 				<span>Adónde</span>
-				<select class="input" bind:value={destMueble} onchange={() => ((destNivel = nivelesMueble(mDest).length ? 1 : null), (destCol = null))}>
+				<select class="input" bind:value={destMueble} onchange={() => ((destNivel = numerosNivel(mDest).includes(1) ? 1 : null), (destCol = null))}>
 					{#each data.plano.zonas as z (z.id)}
 						{@const ms = data.plano.muebles.filter((x) => x.zonaId === z.id)}
 						{#if ms.length}<optgroup label="{z.codigo} · {z.nombre}">{#each ms as x (x.id)}<option value={x.id}>{z.codigo}·{x.codigo} · {x.nombre}</option>{/each}</optgroup>{/if}
@@ -390,7 +394,7 @@
 					{/each}
 				</div>
 			{/if}
-			{#if conRejilla(mDest.tipo) && destNivel}
+			{#if conRejilla(mDest.tipo) && destNivel != null}
 				{#key `${mDest.id}-${destNivel}`}
 					<RejillaSitio vecinos={vecinosDest} letra={letraDest} bind:columna={destCol} bind:piso={destPiso} ancho={c.ancho ?? 1} alto={c.alto ?? ALTO_CONTENEDOR[c.tipo]} tamano={false} />
 				{/key}

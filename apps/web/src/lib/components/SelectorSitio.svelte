@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Dónde está un artículo: zona → mueble → balda/cajón, con su código («Z1·E2·3»). Envía muebleId, nivel y zonaId.
-	import { codigoUbicacion, CONTENEDORES, MUEBLES, nombreDeNivel, nombreNivel, ordenLetra } from '@novaz/core';
+	import { codigoUbicacion, CONTENEDORES, MUEBLES, nivelValido, nombreDeNivel, nombreNivel, numerosNivel, ordenLetra } from '@novaz/core';
 	import type { Contenedor, Mueble, Zona } from '@novaz/core/schema';
 
 	let {
@@ -36,7 +36,7 @@
 		muebleId = t === 'm' ? Number(id) : null;
 		zonaId = t === 'z' ? Number(id) : t === 'm' ? (muebles.find((m) => m.id === Number(id))?.zonaId ?? null) : null;
 		const m = muebles.find((x) => x.id === muebleId);
-		if (!m || !nivel || nivel > m.niveles) nivel = m && m.niveles === 1 ? 1 : null;
+		if (!m || !nivelValido(m, nivel)) nivel = m && numerosNivel(m).length === 1 ? numerosNivel(m)[0] : null;
 	}
 	const sinZona = $derived(muebles.filter((m) => !m.zonaId));
 </script>
@@ -61,10 +61,10 @@
 		</select>
 		{#if codigo}<span class="chip h-11 shrink-0 px-3 font-mono text-sm font-bold" style="border-color: {zona?.color}; color: var(--texto)">{codigo}</span>{/if}
 	</div>
-	{#if mueble && mueble.niveles > 1}
+	{#if mueble && numerosNivel(mueble).length > 1}
 		<div class="flex flex-wrap items-center gap-1.5">
 			<span class="text-xs text-texto-3 first-letter:uppercase">{nombreDeNivel(mueble)}:</span>
-			{#each Array.from({ length: mueble.niveles }, (_, i) => i + 1) as n (n)}
+			{#each numerosNivel(mueble) as n (n)}
 				<button type="button" class="chip h-8 min-w-8 justify-center px-2 font-mono {nivel === n ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" title={nombreNivel(mueble, n)} onclick={() => (nivel = nivel === n ? null : n)}>{n}</button>
 			{/each}
 			{#if MUEBLES[mueble.tipo].ayudaNivel}<span class="text-[0.68rem] text-texto-3">{MUEBLES[mueble.tipo].ayudaNivel}</span>{/if}

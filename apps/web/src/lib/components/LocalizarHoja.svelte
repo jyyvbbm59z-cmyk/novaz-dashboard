@@ -26,7 +26,7 @@
 	const ancha = new MediaQuery('min-width: 1024px');
 	const contenido = $derived.by(() => {
 		const c: Record<number, string[]> = {};
-		if (articulo?.muebleId) for (const a of articulos) if (a.muebleId === articulo.muebleId && !a.contenedorId) (c[a.nivel ?? 0] ??= []).push(a.nombre);
+		if (articulo?.muebleId) for (const a of articulos) if (a.muebleId === articulo.muebleId && !a.contenedorId) (c[a.nivel ?? -1] ??= []).push(a.nombre);
 		return c;
 	});
 	const contenedores = $derived(articulo?.muebleId ? plano.contenedores.filter((c) => c.muebleId === articulo.muebleId) : []);

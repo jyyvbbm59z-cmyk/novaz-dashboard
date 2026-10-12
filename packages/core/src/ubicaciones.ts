@@ -69,7 +69,9 @@ export function cajaCamara(r: Rect | null, cerca = 1): Camara {
 	else w = (h * VB.w) / VB.h;
 	const minW = 2.2 / cerca;
 	if (w < minW) ((h = (minW * VB.h) / VB.w), (w = minW));
-	return { x: r.x + r.ancho / 2 - w / 2, y: r.y + r.alto / 2 - h / 2, w, h };
+	// Sin salirse del plano: si el destino está pegado a una pared, la cámara se desplaza en vez de enseñar vacío
+	const dentro = (v: number, tam: number, min: number, total: number) => (tam >= total ? min + (total - tam) / 2 : Math.min(Math.max(v, min), min + total - tam));
+	return { x: dentro(r.x + r.ancho / 2 - w / 2, w, VB.x, VB.w), y: dentro(r.y + r.alto / 2 - h / 2, h, VB.y, VB.h), w, h };
 }
 
 /**
@@ -89,8 +91,8 @@ export const ZONAS_INICIALES: (Rect & { codigo: string; nombre: string; color: s
 // ─── Muebles ─────────────────────────────────────────────────────────────────
 
 export const MUEBLES: Record<TipoMueble, { nombre: string; prefijo: string; nivel: string; ancho: number; fondo: number; niveles: number; ayudaNivel: string }> = {
-	estanteria: { nombre: 'Estantería', prefijo: 'E', nivel: 'balda', ancho: 0.9, fondo: 0.4, niveles: 5, ayudaNivel: 'La balda 1 es la de arriba' },
-	armario: { nombre: 'Armario', prefijo: 'A', nivel: 'balda', ancho: 1.0, fondo: 0.5, niveles: 4, ayudaNivel: 'La balda 1 es la de arriba' },
+	estanteria: { nombre: 'Estantería', prefijo: 'E', nivel: 'balda', ancho: 0.9, fondo: 0.4, niveles: 5, ayudaNivel: 'La balda 1 es la de arriba; lo de encima, la 0' },
+	armario: { nombre: 'Armario', prefijo: 'A', nivel: 'balda', ancho: 1.0, fondo: 0.5, niveles: 4, ayudaNivel: 'La balda 1 es la de arriba; lo de encima, la 0' },
 	cajonera: { nombre: 'Cajonera', prefijo: 'C', nivel: 'cajón', ancho: 0.7, fondo: 0.46, niveles: 7, ayudaNivel: 'El cajón 1 es el de arriba' },
 	panel: { nombre: 'Panel de pared', prefijo: 'P', nivel: 'fila', ancho: 2.0, fondo: 0.25, niveles: 4, ayudaNivel: 'La fila 1 es la de arriba' },
 	banco: { nombre: 'Banco de trabajo', prefijo: 'B', nivel: 'cajón', ancho: 2.0, fondo: 0.75, niveles: 3, ayudaNivel: 'El cajón 1 es el de la izquierda' },
@@ -157,8 +159,18 @@ export function nivelesMueble(m: MuebleNiveles): NivelMueble[] {
 	return out;
 }
 
-/** El nombre de un nivel concreto («cajón 2 (central)», «balda 3», «hueco 9»). */
+/** Estanterías y armarios tienen balda 0: lo de encima, arriba del todo. */
+export const tieneEncima = (tipo: TipoMueble) => tipo === 'estanteria' || tipo === 'armario';
+/** El primer nivel que admite un mueble (0 si tiene encima). */
+export const nivelMinimo = (tipo: TipoMueble) => (tieneEncima(tipo) ? 0 : 1);
+/** ¿Existe ese nivel en el mueble? */
+export const nivelValido = (m: { tipo: TipoMueble; niveles: number }, n: number | null | undefined): n is number => n != null && Number.isInteger(n) && n >= nivelMinimo(m.tipo) && n <= m.niveles;
+/** Los números de nivel de un mueble, de arriba a abajo (con el 0 de encima si lo tiene). */
+export const numerosNivel = (m: MuebleNiveles & { niveles: number }) => [...(tieneEncima(m.tipo) ? [0] : []), ...nivelesMueble(m).map((n) => n.numero)];
+
+/** El nombre de un nivel concreto («cajón 2 (central)», «balda 3», «hueco 9», «balda 0 (encima)»). */
 export function nombreNivel(m: MuebleNiveles, numero: number): string {
+	if (numero === 0 && tieneEncima(m.tipo)) return `${nombreDeNivel(m)} 0 (encima)`;
 	return nivelesMueble(m).find((n) => n.numero === numero)?.nombre ?? `${nombreDeNivel(m)} ${numero}`;
 }
 
@@ -225,11 +237,12 @@ export function leerDestino(texto: string, muebles: { id: number; codigo: string
 	const niveles = nivelesMueble(m);
 	const num = t.match(/\b(?:balda|cajon|cesta|bandeja|fila|nivel|hueco|estante)\s*(?:n(?:umero|º|o)?\.?\s*)?(\d{1,2})\b/) ?? t.match(/\b[a-z]{1,2}\d{1,2}\s*[·.,-]?\s*(\d{1,2})\b/);
 	let nivel: number | null = num ? Number(num[1]) : null;
+	if (nivel == null && tieneEncima(m.tipo) && /\bencima\b/.test(t)) nivel = 0;
 	if (nivel == null && niveles.length) {
 		if (/\b(arriba del todo|la de arriba|el de arriba|arriba)\b/.test(t)) nivel = 1;
 		else if (/\b(abajo del todo|la de abajo|el de abajo|abajo|el suelo|al fondo)\b/.test(t)) nivel = niveles.length;
 	}
-	if (nivel != null && (nivel < 1 || nivel > niveles.length)) nivel = null;
+	if (nivel != null && (nivel < nivelMinimo(m.tipo) || nivel > niveles.length)) nivel = null;
 	const columna = /\bizquierd/.test(t) ? 1 : /\b(centr|medio)/.test(t) ? 2 : /\bderech/.test(t) ? 3 : null;
 	return { muebleId: m.id, nivel, columna };
 }
@@ -323,7 +336,7 @@ export function codigoUbicacion(
 	contenedor?: { letra: string } | null
 ): string | null {
 	if (!zona && !mueble) return null;
-	return [zona?.codigo, mueble?.codigo, mueble && nivel ? String(nivel) : null, mueble && contenedor ? contenedor.letra : null].filter(Boolean).join('·');
+	return [zona?.codigo, mueble?.codigo, mueble && nivel != null ? String(nivel) : null, mueble && contenedor ? contenedor.letra : null].filter((x) => x != null && x !== '').join('·');
 }
 
 // ─── Contenedores (cubos, maletines, cajas dentro de una balda) ──────────────
@@ -424,7 +437,7 @@ export function describirUbicacion(
 	const partes = [
 		zona?.nombre,
 		mueble ? `${mueble.nombre} ${mueble.codigo}` : null,
-		mueble && a.nivel ? nombreNivel(mueble, a.nivel) : null,
+		mueble && a.nivel != null ? nombreNivel(mueble, a.nivel) : null,
 		cont ? `${CONTENEDORES[cont.tipo]} ${cont.letra}${cont.nombre && cont.nombre !== CONTENEDORES[cont.tipo] ? ` (${cont.nombre})` : ''}` : null,
 		a.ubicacion
 	].filter(Boolean);
