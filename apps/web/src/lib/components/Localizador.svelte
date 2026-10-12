@@ -45,7 +45,7 @@
 	const contenedor = $derived(contenedores.find((c) => c.id === articulo.contenedorId) ?? null);
 
 	// ─── El camino: de la persiana al mueble por los pasillos, con las esquinas redondeadas ─────
-	const esquinas = (): Pt[] => (destino ? caminoEnLocal(destino, { mueble: !!mueble, zona }) : []);
+	const esquinas = (): Pt[] => (destino ? caminoEnLocal(destino, { mueble: !!mueble, zona, otros: muebles.filter((x) => x.id !== mueble?.id).map(huella) }) : []);
 	/** Polilínea → curva muestreada (arcos suaves en cada giro). */
 	function suavizar(pts: Pt[], radio = 0.8): Pt[] {
 		if (pts.length < 3) return pts;
@@ -237,14 +237,16 @@
 			{ruta}
 			progresoRuta={progreso}
 			{cometa}
-			ping={mueble && fase !== 'balda' && fase !== 'dentro' ? mueble.id : null}
+			ping={mueble && fase === 'llegada' ? mueble.id : null}
+			animando={fase === 'viaje'}
+			quieto={!!dentro}
 			zonaSeleccionada={zona?.id ?? null}
 			resaltados={mueble ? [mueble.id] : []}
 			{horizontal}
 			clase="max-h-[70dvh]"
 		/>
 		{#if dentro && mueble}
-			<div class="absolute inset-0 bg-superficie/85 backdrop-blur-sm" transition:fade={{ duration: prefersReducedMotion.current ? 0 : 500 }}></div>
+			<div class="absolute inset-0 bg-superficie/90" transition:fade={{ duration: prefersReducedMotion.current ? 0 : 500 }}></div>
 			<div bind:this={capa} class="absolute inset-0 flex items-center justify-center p-4" transition:fade={{ duration: 200 }}>
 				<FrenteMueble
 					{mueble}

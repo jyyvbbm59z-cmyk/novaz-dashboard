@@ -284,20 +284,30 @@ export interface Pt {
 /** Fachada inclinada: su Y en cada X. */
 export const yFachada = (x: number) => PLANO_LOCAL.fachada.izq.y + ((PLANO_LOCAL.fachada.der.y - PLANO_LOCAL.fachada.izq.y) * x) / PLANO_LOCAL.ancho;
 
-/** Desde dónde se coge algo de un mueble: el lado que da a su zona (no el de la pared). */
-export function frenteMueble(m: Rect, zona: Rect | null): Pt {
+/**
+ * Desde dónde se coge algo de un mueble: un lado que mire a su zona (mejor los largos: el frente, no el canto), que quede
+ * dentro del local y que no esté tapado por otro mueble pegado. Devuelve el punto de llegada (algo separado) y el del borde.
+ */
+export function frenteMueble(m: Rect, zona: Rect | null, otros: Rect[] = []): { llegada: Pt; borde: Pt } {
 	const P = PLANO_LOCAL;
 	const z = zona ?? { x: 0, y: 0, ancho: P.ancho, alto: P.fondo };
-	const cz = { x: z.x + z.ancho / 2, y: z.y + z.alto / 2 };
 	const cx = m.x + m.ancho / 2;
 	const cy = m.y + m.alto / 2;
+	const dx = z.x + z.ancho / 2 - cx;
+	const dy = z.y + z.alto / 2 - cy;
+	const d = Math.hypot(dx, dy) || 1;
 	const lados = [
-		{ x: m.x - 0.35, y: cy },
-		{ x: m.x + m.ancho + 0.35, y: cy },
-		{ x: cx, y: m.y - 0.35 },
-		{ x: cx, y: m.y + m.alto + 0.35 }
-	].filter((p) => p.x > 0.1 && p.x < P.ancho - 0.1 && p.y > yFachada(p.x) + 0.1 && p.y < P.fondo - 0.1);
-	return lados.sort((a, b) => Math.hypot(a.x - cz.x, a.y - cz.y) - Math.hypot(b.x - cz.x, b.y - cz.y))[0] ?? { x: cx, y: cy };
+		{ n: [-1, 0], largo: m.alto, borde: { x: m.x, y: cy } },
+		{ n: [1, 0], largo: m.alto, borde: { x: m.x + m.ancho, y: cy } },
+		{ n: [0, -1], largo: m.ancho, borde: { x: cx, y: m.y } },
+		{ n: [0, 1], largo: m.ancho, borde: { x: cx, y: m.y + m.alto } }
+	].map((l) => ({ ...l, llegada: { x: l.borde.x + l.n[0] * 0.35, y: l.borde.y + l.n[1] * 0.35 }, toque: { x: l.borde.x + l.n[0] * 0.05, y: l.borde.y + l.n[1] * 0.05 } }));
+	const dentroDe = (p: Pt, r: Rect) => p.x > r.x && p.x < r.x + r.ancho && p.y > r.y && p.y < r.y + r.alto;
+	const libre = (p: Pt) => p.x > 0.1 && p.x < P.ancho - 0.1 && p.y > yFachada(p.x) + 0.1 && p.y < P.fondo - 0.1 && !otros.some((o) => dentroDe(p, o));
+	const validos = lados.filter((l) => libre(l.llegada) && libre(l.toque));
+	const puntua = (l: (typeof lados)[number]) => ((l.n[0] * dx + l.n[1] * dy) / d) * l.largo;
+	const mejor = (validos.length ? validos : lados).sort((a, b) => puntua(b) - puntua(a))[0];
+	return { llegada: mejor.llegada, borde: mejor.toque };
 }
 
 /**
@@ -305,7 +315,7 @@ export function frenteMueble(m: Rect, zona: Rect | null): Pt {
  * por la izquierda (bajando desde la entrada), por la derecha (cruzando por delante y bajando hasta la puerta del baño)
  * o hasta electrónica (por limpieza y su puerta).
  */
-export function caminoEnLocal(destino: Rect, opts: { mueble: boolean; zona?: Rect | null }): Pt[] {
+export function caminoEnLocal(destino: Rect, opts: { mueble: boolean; zona?: Rect | null; otros?: Rect[] }): Pt[] {
 	const P = PLANO_LOCAL;
 	const ex = (P.entrada.desde + P.entrada.hasta) / 2;
 	const inicio = { x: ex, y: yFachada(ex) + 0.25 };
@@ -315,7 +325,8 @@ export function caminoEnLocal(destino: Rect, opts: { mueble: boolean; zona?: Rec
 	let pts: Pt[];
 	if (c.y > P.fondo) pts = [inicio, { x: ex, y: cruce }, { x: derecha, y: cruce }, { x: derecha, y: c.y }];
 	else {
-		const t = opts.mueble ? frenteMueble(destino, opts.zona ?? null) : c;
+		const frente = opts.mueble ? frenteMueble(destino, opts.zona ?? null, opts.otros ?? []) : null;
+		const t = frente?.llegada ?? c;
 		const pe = P.puertaElectronica;
 		const puerta = (pe.desde + pe.hasta) / 2;
 		// Electrónica: se entra desde limpieza
@@ -323,7 +334,12 @@ export function caminoEnLocal(destino: Rect, opts: { mueble: boolean; zona?: Rec
 		else if (t.x < P.pilares[0].x || t.y < cruce + 0.6) pts = [inicio, { x: ex, y: t.y }, t];
 		else pts = [inicio, { x: ex, y: cruce }, { x: derecha, y: cruce }, { x: derecha, y: t.y }, t];
 	}
-	// Fuera los tramos de longitud cero
+	// Que la línea acabe tocando el mueble (no a un palmo)
+	if (opts.mueble && c.y <= P.fondo) {
+		const f = frenteMueble(destino, opts.zona ?? null, opts.otros ?? []);
+		pts.push(f.borde);
+	}
+		// Fuera los tramos de longitud cero
 	return pts.filter((p, i) => i === 0 || Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y) > 0.01);
 }
 

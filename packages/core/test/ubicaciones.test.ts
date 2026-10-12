@@ -79,6 +79,18 @@ describe('camino desde la persiana', () => {
 			expect(Math.min(Math.abs(fin.x - h.x), Math.abs(fin.x - h.x - h.ancho), Math.abs(fin.y - h.y), Math.abs(fin.y - h.y - h.alto))).toBeLessThan(0.5);
 		}
 	});
+	it('a una estantería entre otras dos llega por el frente que da a su zona, no por el canto tapado', () => {
+		const e3 = huella({ x: 3.62, y: 8.55, ancho: 0.9, fondo: 0.4, girado: true });
+		const e2 = huella({ x: 3.62, y: 9.45, ancho: 0.9, fondo: 0.4, girado: true });
+		const e1 = huella({ x: 3.62, y: 10.35, ancho: 0.9, fondo: 0.4, girado: true });
+		const r = caminoEnLocal(e2, { mueble: true, zona: zona('Z2'), otros: [e3, e1] });
+		const fin = r.at(-1)!;
+		expect(fin.x).toBeGreaterThan(e2.x + e2.ancho);
+		expect(fin.x - (e2.x + e2.ancho)).toBeLessThan(0.1);
+		expect(fin.y).toBeGreaterThan(e2.y);
+		expect(fin.y).toBeLessThan(e2.y + e2.alto);
+		for (const p of r) for (const o of [e3, e1]) expect(p.x > o.x && p.x < o.x + o.ancho && p.y > o.y && p.y < o.y + o.alto).toBe(false);
+	});
 	it('a electrónica entra por su puerta; al baño, por la corredera del fondo', () => {
 		const r = caminoEnLocal(huella(muebles[0]), { mueble: true, zona: zona('EL') });
 		const pe = P.puertaElectronica;

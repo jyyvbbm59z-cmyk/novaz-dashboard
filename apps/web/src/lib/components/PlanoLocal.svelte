@@ -16,6 +16,8 @@
 		editable = false,
 		compacto = false,
 		horizontal = false,
+		animando = false,
+		quieto = false,
 		clase = '',
 		enfoque = null,
 		ruta = null,
@@ -39,6 +41,10 @@
 		compacto?: boolean;
 		/** Girado 90° (la entrada a la izquierda): para pantallas anchas. */
 		horizontal?: boolean;
+		/** Mientras la cámara viaja: se aligera el dibujo (sin rejilla ni discontinuas) para que vaya fluido. */
+		animando?: boolean;
+		/** Tapado por otra cosa (el mueble abierto encima): sin animaciones que no se ven. */
+		quieto?: boolean;
 		clase?: string;
 		/** Zona o mueble al que acercarse (con zoom animado); null = el local entero. */
 		enfoque?: Rect | null;
@@ -121,7 +127,12 @@
 	}
 	// En horizontal se gira el dibujo 90° a la izquierda: (x, y) del plano → (y, ancho − x) en pantalla
 	const giro = $derived(horizontal ? `translate(0 ${P.ancho}) rotate(-90)` : undefined);
-	const caja = (c: { x: number; y: number; w: number; h: number }) => (horizontal ? `${c.y} ${P.ancho - c.x - c.w} ${c.h} ${c.w}` : `${c.x} ${c.y} ${c.w} ${c.h}`);
+	/** Un rectángulo del plano en coordenadas de pantalla (girado si el plano va en horizontal). */
+	const enPantalla = (c: { x: number; y: number; w: number; h: number }) => (horizontal ? { x: c.y, y: P.ancho - c.x - c.w, w: c.h, h: c.w } : c);
+	const caja = (c: { x: number; y: number; w: number; h: number }) => {
+		const r = enPantalla(c);
+		return `${r.x} ${r.y} ${r.w} ${r.h}`;
+	};
 	/** Los textos se quedan derechos aunque el plano esté girado (vertical: el giro que lleven en vertical). */
 	const recto = (x: number, y: number, enVertical = 0) => {
 		const a = horizontal ? 90 : enVertical;
@@ -144,7 +155,7 @@
 <svg
 	bind:this={svg}
 	viewBox={caja(camara ?? vista.current)}
-	class="plano block h-auto w-full touch-none select-none {editable ? 'editando' : ''} {clase}"
+	class="plano block h-auto w-full touch-none select-none {editable ? 'editando' : ''} {animando ? 'animando' : ''} {clase}"
 	role="img"
 	aria-label="Plano del local"
 	onpointermove={mover}
@@ -169,7 +180,7 @@
 	<g bind:this={dibujo} transform={giro}>
 	<!-- Suelo con rejilla de 1 m -->
 	<path d={interior} fill="var(--superficie-2)" />
-	<path d={interior} fill="url(#rejilla)" />
+	{#if !animando}<path d={interior} fill="url(#rejilla)" />{/if}
 
 	<!-- Zonas -->
 	<g clip-path="url(#clip-local)">
@@ -185,7 +196,7 @@
 				stroke={z.color}
 				stroke-opacity="0.55"
 				stroke-width="0.03"
-				stroke-dasharray="0.12 0.08"
+				stroke-dasharray={animando ? undefined : '0.12 0.08'}
 				class="cursor-pointer"
 				onclick={(e) => tocarFondo(e, z.id)}
 			/>
@@ -226,9 +237,10 @@
 		{@const d = `M${ruta.map((p) => `${p.x.toFixed(3)} ${p.y.toFixed(3)}`).join(' L')}`}
 		{@const hecho = progresoRuta ?? 1}
 		<g class="pointer-events-none">
-			<path {d} pathLength="1" fill="none" stroke="var(--acento)" stroke-opacity="0.18" stroke-width="0.22" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1" stroke-dashoffset={1 - hecho} filter="url(#halo)" />
+			<!-- Halo sin filtro de desenfoque (el desenfoque obliga a recalcular cada fotograma) -->
+			<path {d} pathLength="1" fill="none" stroke="var(--acento)" stroke-opacity="0.12" stroke-width="0.26" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1" stroke-dashoffset={1 - hecho} />
 			<path {d} pathLength="1" fill="none" stroke="url(#rastro)" stroke-width="0.055" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1" stroke-dashoffset={1 - hecho} />
-			{#if hecho >= 1}<path {d} fill="none" stroke="var(--acento)" stroke-width="0.03" stroke-dasharray="0.04 0.26" stroke-linecap="round" class="ruta-flujo" />{/if}
+			{#if hecho >= 1 && !quieto}<path {d} fill="none" stroke="var(--acento)" stroke-width="0.03" stroke-dasharray="0.04 0.26" stroke-linecap="round" class="ruta-flujo" />{/if}
 			<circle cx={ruta[0].x} cy={ruta[0].y} r="0.07" fill="var(--acento)" opacity="0.7" />
 		</g>
 	{/if}
@@ -259,7 +271,7 @@
 				stroke={res ? 'var(--acento)' : seleccion === m.id ? 'var(--texto)' : color}
 				stroke-width={res || seleccion === m.id ? 0.07 : 0.03}
 			/>
-			{#if res}<rect x={h.x} y={h.y} width={h.ancho} height={h.alto} rx="0.04" fill="none" stroke="var(--acento)" stroke-width="0.05" class="pulso" />{/if}
+			{#if res && !quieto}<rect x={h.x} y={h.y} width={h.ancho} height={h.alto} rx="0.04" fill="none" stroke="var(--acento)" stroke-width="0.05" class="pulso" />{/if}
 			{#if ping === m.id}
 				<circle cx={h.x + h.ancho / 2} cy={h.y + h.alto / 2} r={Math.max(h.ancho, h.alto) * 0.9} fill="url(#luz)" class="respira" />
 				{#each [0, 0.8] as retraso (retraso)}
@@ -276,6 +288,9 @@
 </svg>
 
 <style>
+	.animando {
+		text-rendering: optimizeSpeed;
+	}
 	.plano {
 		--trama-plano: color-mix(in oklab, var(--texto) 9%, transparent);
 		font-family: var(--font-sans);
