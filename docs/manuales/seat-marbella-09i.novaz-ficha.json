@@ -1,0 +1,2245 @@
+{
+ "formato": "novaz-ficha",
+ "version": 1,
+ "vehiculo": "SEAT Marbella 0.9i SPI (028A, motor 08 NCB)",
+ "datos": [
+  {
+   "seccion": "otros",
+   "clave": "otr_version",
+   "nombre": "Versión",
+   "valor": "0.9 Cat, 899 cc, 41 CV (30 kW), inyección monopunto, catalizador y sonda lambda",
+   "fuente": "Fiabilidad A · ADAC, auto-data, ultimatespecs",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_codigo_de_motor",
+   "nombre": "Código de motor",
+   "valor": "08 NCB",
+   "detalle": "Confirmado en la ficha técnica del coche. Los 0.9 Cat anteriores llevaban el 09 NCB.",
+   "fuente": "Fiabilidad A · Ficha técnica del coche, auto-data, Catálogo Mann",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_tipo_y_variante",
+   "nombre": "Tipo y variante",
+   "valor": "Tipo 028 A1, variante 028 A3",
+   "fuente": "Fiabilidad A · Ficha técnica del coche",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_equivalente_fiat",
+   "nombre": "Equivalente Fiat",
+   "valor": "1170A1.046 (Fiat Panda 141 900 i.e., Cinquecento 900 i.e.)",
+   "detalle": "Misma cilindrada, cotas y tipo de taqués. Ninguna fuente dice literalmente «08 NCB = 1170A1.046».",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento), Catálogos de recambio",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_motor",
+   "nombre": "Motor",
+   "valor": "Gasolina, 4 cil. en línea, transversal delantero, 8 válvulas OHV (árbol de levas en bloque, varillas y balancines)",
+   "fuente": "Fiabilidad A · ultimatespecs, ADAC, Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_cilindrada",
+   "nombre": "Cilindrada",
+   "valor": "899",
+   "unidad": "cc",
+   "fuente": "Fiabilidad A · Ficha técnica del coche, ADAC, ultimatespecs",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_diametro_carrera",
+   "nombre": "Diámetro × carrera",
+   "valor": "65 × 67,7",
+   "unidad": "mm",
+   "detalle": "El 903 de carburación era 65 × 68 (SEAT-P).",
+   "fuente": "Fiabilidad A · ultimatespecs",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_compresion",
+   "nombre": "Compresión",
+   "valor": "8,8 : 1",
+   "detalle": "El libro alemán lo da para la versión catalizada. Los de carburación eran 8,5 : 1 (libro) o 9 : 1 (manual SEAT).",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), ultimatespecs",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_potencia",
+   "nombre": "Potencia",
+   "valor": "30 kW (41 CV) a 5800 rpm; potencia fiscal 8,23 CVF",
+   "detalle": "La ficha confirma los 30 kW y la potencia fiscal. Quattroruote da 5900 rpm.",
+   "fuente": "Fiabilidad A · Ficha técnica del coche, ADAC, ultimatespecs, Quattroruote",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_par_maximo",
+   "nombre": "Par máximo",
+   "valor": "60 N·m (6,1 mkp) a 2800 rpm",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), ADAC, ultimatespecs, Quattroruote",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_distribucion",
+   "nombre": "Distribución",
+   "valor": "Cadena (árbol de levas en bloque)",
+   "fuente": "Fiabilidad A · ADAC, Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_taques",
+   "nombre": "Taqués",
+   "valor": "Hidráulicos: no llevan reglaje de holgura",
+   "detalle": "Catálogos del Marbella 0.9 Cat y del 1170A1.046 los dan como hidráulicos. Comprobación en el coche: los balancines no llevan tornillo de reglaje con contratuerca.",
+   "fuente": "Fiabilidad A · Catálogos de recambio, Datos del 899 (Cinquecento)",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_alimentacion",
+   "nombre": "Alimentación",
+   "valor": "Inyección monopunto (SPI) Magneti Marelli, en lazo cerrado con sonda lambda: IAW 16S.S0 con inmovilizador (los 0.9 Cat anteriores llevaban la IAW 6F.SF)",
+   "detalle": "Sección 9: pineado e inmovilizador.",
+   "fuente": "Fiabilidad A · Comprobado en el coche, ecudiag, Desguaces, Ficha técnica del coche, ultimatespecs, ADAC",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_orden_de_encendido",
+   "nombre": "Orden de encendido",
+   "valor": "1-3-4-2",
+   "detalle": "Cilindro 1 en el lado de la distribución (convención Fiat): pendiente de confirmar en el 899.",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_encendido",
+   "nombre": "Encendido",
+   "valor": "Estático de chispa perdida, dos bobinas (1+4 y 2+3), sin delco",
+   "detalle": "En los SPI el agujero del delco de la culata va tapado.",
+   "fuente": "Fiabilidad B · Doc. Marelli IAW 16F, fiatforum",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_emisiones",
+   "nombre": "Emisiones",
+   "valor": "Euro 2",
+   "fuente": "Fiabilidad A · ADAC",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_combustible",
+   "nombre": "Combustible",
+   "valor": "Gasolina sin plomo 95 (Super)",
+   "fuente": "Fiabilidad A · ADAC",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_prestaciones",
+   "nombre": "Prestaciones",
+   "valor": "135 km/h, 0-100 en 19,2 s, 6,1 L/100 km mixto",
+   "fuente": "Fiabilidad A · ADAC, ultimatespecs",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_peso_en_vacio",
+   "nombre": "Peso en vacío",
+   "valor": "720",
+   "unidad": "kg",
+   "detalle": "Tara de la ficha técnica. ADAC y ultimatespecs dan 695 kg.",
+   "fuente": "Fiabilidad A · Ficha técnica del coche",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_mma",
+   "nombre": "MMA",
+   "valor": "1150",
+   "unidad": "kg",
+   "fuente": "Fiabilidad A · Ficha técnica del coche, ADAC",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_mma_por_eje",
+   "nombre": "MMA por eje",
+   "valor": "Delantero 580 · trasero 620",
+   "unidad": "kg",
+   "fuente": "Fiabilidad A · Ficha técnica del coche",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_remolque",
+   "nombre": "Remolque",
+   "valor": "375 sin freno · 750 con freno",
+   "unidad": "kg",
+   "fuente": "Fiabilidad A · Ficha técnica del coche",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_dimensiones",
+   "nombre": "Dimensiones",
+   "valor": "Largo 3475 · ancho 1500 · alto 1445 · batalla 2160 · vías 1256/1250 · voladizo trasero 641",
+   "unidad": "mm",
+   "detalle": "De la ficha técnica.",
+   "fuente": "Fiabilidad A · Ficha técnica del coche",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_suspension",
+   "nombre": "Suspensión",
+   "valor": "Delante McPherson con muelle helicoidal; detrás eje rígido tubular con dos ballestas longitudinales de dos hojas",
+   "fuente": "Fiabilidad A · ADAC, ultimatespecs, Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_direccion",
+   "nombre": "Dirección",
+   "valor": "Cremallera, 3,8 vueltas de tope a tope; recorrido de la cremallera 130 ± 1,5 mm",
+   "detalle": "El Bucheli da 3,8 vueltas; ultimatespecs y el manual del Panda, 3,4.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_diametro_de_giro",
+   "nombre": "Diámetro de giro",
+   "valor": "9,2",
+   "unidad": "m",
+   "detalle": "ultimatespecs da 9,3 m y ADAC 9,6 m.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_sistema_de_frenos",
+   "nombre": "Sistema de frenos",
+   "valor": "Delante disco macizo Ø 227 mm con pinza flotante; detrás tambor Ø 185 mm, autoajustables; regulador de presión trasero",
+   "detalle": "El dato anterior (228 mm) no coincide: el manual SEAT dice 227.",
+   "fuente": "Fiabilidad B · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "ruedas",
+   "clave": "neumatico_del",
+   "nombre": "Neumáticos y llanta",
+   "valor": "135 R13 (135/80 R13); opción homologada 145/70 R13. Llanta 4.00B × 13 (4,5\" según ultimatespecs)",
+   "detalle": "En la ficha, la línea de opciones está doblada y no se lee entera: puede haber más medidas homologadas.",
+   "fuente": "Fiabilidad A · Ficha técnica del coche, ADAC, ultimatespecs, Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "transmision",
+   "clave": "tra_cambio",
+   "nombre": "Cambio",
+   "valor": "Manual de 5 marchas + marcha atrás",
+   "detalle": "El Bucheli trae el procedimiento de la caja de 5 en las págs. 59-66. El manual del Panda y el Cinquecento son de 4 marchas.",
+   "fuente": "Fiabilidad A · ADAC, historiaseat, Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "transmision",
+   "clave": "tra_grupo_final",
+   "nombre": "Grupo final",
+   "valor": "4,500 (72:16)",
+   "detalle": "El 850 de 5 marchas llevaba 4,785 y las cajas de 4, 4,071.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), historiaseat, ultimatespecs",
+   "verificado": true
+  },
+  {
+   "seccion": "transmision",
+   "clave": "tra_relaciones",
+   "nombre": "Relaciones",
+   "valor": "1.ª 3,500 · 2.ª 1,952 · 3.ª 1,323 · 4.ª 0,972 · 5.ª 0,769 · MA 3,642",
+   "detalle": "Bucheli págs. 49 y 117-118, «900er 5-Gang».",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "transmision",
+   "clave": "tra_desarrollos",
+   "nombre": "Desarrollos",
+   "valor": "A 1000 rpm: 1.ª 6,5 · 2.ª 11,7 · 3.ª 17,3 · 4.ª 23,5 · 5.ª 29,8 km/h",
+   "detalle": "Calculado con grupo 4,500 y rueda 135/80 R13 (perímetro teórico 1,716 m). En la práctica, un 2-3 % menos. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Propuesta Novaz",
+   "verificado": false
+  },
+  {
+   "seccion": "transmision",
+   "clave": "tra_embrague",
+   "nombre": "Embrague",
+   "valor": "Monodisco en seco por cable; disco Ø 170/120 mm; pedal 15-20 mm por debajo del de freno",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "transmision",
+   "clave": "tra_palieres",
+   "nombre": "Palieres",
+   "valor": "Posición de los fuelles desde la cara frontal: derecho 107 ± 1, izquierdo 138 ± 1 · grasa NLGI 2",
+   "detalle": "Columna de la caja de 5 en la pág. 118 (con 4 marchas: 123/146 y grasa MoS2): confírmalo con el procedimiento del capítulo 9. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "transmision",
+   "clave": "tra_datos_de_montaje_del_cambio",
+   "nombre": "Datos de montaje del cambio",
+   "valor": "Rodamientos de agujas: montar a 110 °C · precarga de los rodamientos cónicos del diferencial 0,080",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "transmision",
+   "clave": "tra_cambio_del_aceite_de_la_caja",
+   "nombre": "Cambio del aceite de la caja",
+   "valor": "Cada 6-8 años",
+   "detalle": "Es la recomendación de una tienda, no del fabricante. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · autodoc",
+   "verificado": false
+  },
+  {
+   "seccion": "transmision",
+   "clave": "aceite_caja",
+   "nombre": "Aceite de la caja de cambios",
+   "valor": "SAE 80W-90 GL-4 (de origen ZC 80VV90) · 2,95 L",
+   "detalle": "No uses GL-5: es criterio de taller por los sincronizadores, no viene en las fuentes. Caja de 5. La de 4 lleva 2,15 L. El 2,40 L citado en un foro y en el manual del Panda era de la caja de 4: no vale para la tuya. Llena hasta el borde del tapón de nivel.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda, Datos del 899 (Cinquecento)",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "aceite_motor",
+   "nombre": "Aceite de motor",
+   "valor": "SAE 15W-40, API SG (el libro alemán pide SAE 20W-40)",
+   "detalle": "El 20W-40 era el grado de la época. Hoy un 15W-40 o 10W-40 API SG o superior cumple de sobra. Los taqués hidráulicos agradecen aceite limpio.",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Datos del 899 (Cinquecento), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "aceite_motor_litros",
+   "nombre": "Cantidad de aceite (con filtro)",
+   "valor": "3,6",
+   "unidad": "L",
+   "detalle": "RESUELTO: el libro alemán (versión KAT) y auto-data (Marbella 0.9 Cat) coinciden. El 3,75 L era del Cinquecento y el 3,88 L del Panda 903. Sin filtro: 3,4 L.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), auto-data",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "refrigerante",
+   "nombre": "Refrigerante",
+   "valor": "Agua + anticongelante al 50 %",
+   "fuente": "Fiabilidad B · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "refrigerante_litros",
+   "nombre": "Cantidad de refrigerante",
+   "valor": "5,2",
+   "unidad": "L",
+   "detalle": "Coinciden auto-data (Marbella 0.9 Cat) y el manual SEAT (Panda 45). El 4,8 L es del Cinquecento, que tiene otro radiador.",
+   "fuente": "Fiabilidad A · auto-data, Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "liquido_frenos",
+   "nombre": "Líquido de frenos",
+   "valor": "DOT 4, 0,37 L",
+   "detalle": "El manual del Panda pedía DOT 3 (0,33 L).",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_deposito_de_gasolina",
+   "nombre": "Depósito de gasolina",
+   "valor": "35, de ellos 7-8 de reserva",
+   "unidad": "L",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), ADAC, ultimatespecs, auto-data",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_lavaparabrisas",
+   "nombre": "Lavaparabrisas",
+   "valor": "Agua con un 3 % de detergente (2 L); en invierno, 50 % de anticongelante",
+   "fuente": "Fiabilidad B · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "bujias",
+   "nombre": "Bujías",
+   "valor": "Champion RN9YCC, separación 0,8 mm. Equivalentes: Bosch WR7D, Marelli F7LCR (0,7-0,8 mm)",
+   "detalle": "Las equivalencias son las del 903 KAT del Bucheli, con el mismo grado térmico.",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento), Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_reglaje_de_taques",
+   "nombre": "Reglaje de taqués",
+   "valor": "Hidráulicos: sin reglaje",
+   "detalle": "El 0,40/0,50 ± 0,05 mm venía del motor 1108 OHC (está en la misma ficha del foro). El 0,15/0,20 mm es del 843/903 de carburación (SEAT-P y FC-REGLAJE): solo vale si el coche lleva taqués mecánicos.",
+   "fuente": "Fiabilidad A · Catálogos de recambio, Datos del 899 (Cinquecento)",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_taques_mecanicos_solo_carburacion",
+   "nombre": "Taqués mecánicos (solo carburación)",
+   "valor": "ADM 0,15 · ESC 0,20 mm en frío (0,60 mm para comprobar el calado)",
+   "detalle": "Solo para Marbella con taqués mecánicos (843/903, incluido el 903 KAT de carburador electrónico del Bucheli). No aplica a tu 899 SPI, que los lleva hidráulicos.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda, Forocoches",
+   "verificado": true
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_ralenti",
+   "nombre": "Ralentí",
+   "valor": "850 ± 50 (no regulable: lo controla la centralita)",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_avance_de_encendido",
+   "nombre": "Avance de encendido",
+   "valor": "11° ± 3° a 850 rpm",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_co_al_ralenti",
+   "nombre": "CO al ralentí",
+   "valor": "< 0,5 %",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento), Manual de ITV",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_presion_de_gasolina",
+   "nombre": "Presión de gasolina",
+   "valor": "1,1 ± 0,2 bar regulada",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_valvula_de_sobrepresion",
+   "nombre": "Válvula de sobrepresión",
+   "valor": "Abre a 2,6 bar",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_caudal_de_la_bomba_de_gasolina",
+   "nombre": "Caudal de la bomba de gasolina",
+   "valor": "≥ 110 L/h",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_tiempo_de_inyeccion_al_ralenti",
+   "nombre": "Tiempo de inyección al ralentí",
+   "valor": "1,5 ms de tiempo de inyección al ralentí",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_presion_de_aceite",
+   "nombre": "Presión de aceite",
+   "valor": "2,94-3,92 bar con el aceite a 100 °C",
+   "detalle": "Dato del 903. Muelle de la válvula de descarga: 4,61 ± 0,15 kg a 22,5 mm. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_termostato",
+   "nombre": "Termostato",
+   "valor": "Empieza a abrir a 85 °C, abierto del todo a 89 °C, carrera ≥ 7,5 mm",
+   "detalle": "Dato del 903. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_termocontacto_del_electroventilador",
+   "nombre": "Termocontacto del electroventilador",
+   "valor": "Conecta a 90-94 °C, desconecta a 85-89 °C",
+   "detalle": "Dato del 903. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "motor",
+   "clave": "mot_prueba_de_estanqueidad_del_radiador",
+   "nombre": "Prueba de estanqueidad del radiador",
+   "valor": "0,98 bar",
+   "detalle": "Dato del 903. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "ruedas",
+   "clave": "presion_del",
+   "nombre": "Presión delantera",
+   "valor": "2,0",
+   "unidad": "bar",
+   "detalle": "Bucheli, para 135 SR 13 y 145/70 R13. El manual del Panda da 1,7/1,8 bar a media carga y 1,8/2,0 a plena carga.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda, Tablas de presiones",
+   "verificado": true
+  },
+  {
+   "seccion": "ruedas",
+   "clave": "presion_tras",
+   "nombre": "Presión trasera",
+   "valor": "2,0",
+   "unidad": "bar",
+   "detalle": "Bucheli, para 135 SR 13 y 145/70 R13. El manual del Panda da 1,7/1,8 bar a media carga y 1,8/2,0 a plena carga.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda, Tablas de presiones",
+   "verificado": true
+  },
+  {
+   "seccion": "ruedas",
+   "clave": "rue_alineacion_delantera",
+   "nombre": "Alineación delantera",
+   "valor": "Caída 1°34,5' ± 30' · avance 1°40' ± 30' · convergencia −1,41 ± 2 mm (−6' ± 10')",
+   "detalle": "Marbella con caja de 5. El manual del Panda de 1980 daba otros valores (avance 3° ± 30'): usa los del Bucheli. La convergencia se regula en las bieletas.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "ruedas",
+   "clave": "rue_alineacion_trasera",
+   "nombre": "Alineación trasera",
+   "valor": "No regulable (eje rígido)",
+   "fuente": "Fiabilidad B · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_freno_de_mano",
+   "nombre": "Freno de mano",
+   "valor": "Regulado cuando la palanca sube 4 o 5 dientes del trinquete",
+   "fuente": "Fiabilidad B · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "transmision",
+   "clave": "tra_pedal_de_embrague",
+   "nombre": "Pedal de embrague",
+   "valor": "15-20 mm por debajo del plano del pedal de freno (tuerca del cable en la caja)",
+   "detalle": "El manual del Panda decía «a la misma altura».",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_caja_de_direccion_precarga",
+   "nombre": "Caja de dirección: precarga",
+   "valor": "Precarga del empujador 0,05-0,13 mm · par de giro del piñón 1,35 N·m · grasa ESTERAK 1",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_angulos_de_giro",
+   "nombre": "Ángulos de giro",
+   "valor": "Rueda exterior 31° ± 1°30' · rueda interior 33°30' ± 1°30'",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_culata",
+   "nombre": "Culata",
+   "valor": "30 N·m + 90° + 90°",
+   "detalle": "CRÍTICO. Es el procedimiento del 899 (Cinquecento). El Bucheli da 60 N·m para el 903 de carburación y el manual SEAT del Panda 49 o 59 N·m: son otros tornillos y otro procedimiento, no los mezcles. Orden en espiral desde el centro.",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_bancada",
+   "nombre": "Bancada",
+   "valor": "69",
+   "unidad": "N·m",
+   "detalle": "Coinciden las tres fuentes.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Datos del 899 (Cinquecento), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_biela",
+   "nombre": "Biela",
+   "valor": "41",
+   "unidad": "N·m",
+   "detalle": "Coinciden las tres fuentes.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Datos del 899 (Cinquecento), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_volante",
+   "nombre": "Volante motor",
+   "valor": "44",
+   "unidad": "N·m",
+   "detalle": "El Cinquecento da 45.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda, Datos del 899 (Cinquecento)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_polea_ciguenal",
+   "nombre": "Polea del cigüeñal",
+   "valor": "98",
+   "unidad": "N·m",
+   "detalle": "Manual SEAT: 98 N·m (10 kgm); Cinquecento: 100. En la tabla del Bucheli aparece 98 N·m en la primera fila, etiquetada «alternador al bloque»: casi seguro es este par.",
+   "fuente": "Fiabilidad B · Manual SEAT Panda, Datos del 899 (Cinquecento), Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_pinon_arbol_levas",
+   "nombre": "Piñón del árbol de levas",
+   "valor": "45-49",
+   "unidad": "N·m",
+   "detalle": "49 N·m en el Bucheli y el manual SEAT (903); 45 N·m en el Cinquecento 899.",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda, Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_soportes_eje_balancines",
+   "nombre": "Soportes del eje de balancines",
+   "valor": "39",
+   "unidad": "N·m",
+   "detalle": "40 en el Cinquecento.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda, Datos del 899 (Cinquecento)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_colector_escape",
+   "nombre": "Colector de escape",
+   "valor": "20",
+   "unidad": "N·m",
+   "detalle": "Bucheli pág. 122, leído de una foto inclinada: confírmalo. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_carter_tornillos",
+   "nombre": "Cárter",
+   "valor": "7,8",
+   "unidad": "N·m",
+   "detalle": "Bucheli pág. 122, leído de una foto inclinada: confírmalo. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_carter",
+   "nombre": "Tapón del cárter",
+   "valor": "30",
+   "unidad": "N·m",
+   "detalle": "Bucheli pág. 122, leído de una foto inclinada: confírmalo. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_tapa_distribucion",
+   "nombre": "Tapa de distribución",
+   "valor": "7,8",
+   "unidad": "N·m",
+   "detalle": "Bucheli pág. 122, leído de una foto inclinada: confírmalo. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_bomba_agua",
+   "nombre": "Bomba de agua",
+   "valor": "25",
+   "unidad": "N·m",
+   "detalle": "Bucheli pág. 122, leído de una foto inclinada: confírmalo. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_embrague_volante",
+   "nombre": "Embrague al volante",
+   "valor": "16",
+   "unidad": "N·m",
+   "detalle": "Bucheli pág. 122, leído de una foto inclinada: confírmalo. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_termostato_carcasa",
+   "nombre": "Carcasa del termostato",
+   "valor": "15",
+   "unidad": "N·m",
+   "detalle": "Bucheli pág. 122, leído de una foto inclinada: confírmalo. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_bomba_aceite",
+   "nombre": "Bomba de aceite",
+   "valor": "15 (al bloque) · 4,9 (M6 y tapa)",
+   "detalle": "Bucheli pág. 122, leído de una foto inclinada: confírmalo. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_manocontacto_aceite",
+   "nombre": "Manocontacto de aceite",
+   "valor": "35",
+   "unidad": "N·m",
+   "detalle": "Bucheli pág. 122, leído de una foto inclinada: confírmalo. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_tapa_balancines",
+   "nombre": "Tapa de balancines",
+   "valor": "4,5-8",
+   "unidad": "N·m",
+   "detalle": "El Cinquecento da 8; en la foto del Bucheli parece 4,5. Es una tapa de chapa: aprieta suave. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella), Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_bujias",
+   "nombre": "Bujías",
+   "valor": "27-32",
+   "unidad": "N·m",
+   "detalle": "27 en el Cinquecento; en la foto del Bucheli parece 32. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Datos del 899 (Cinquecento), Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_soportes_motor",
+   "nombre": "Soportes del motor",
+   "valor": "Soporte derecho M12: 88 · taco derecho a carrocería: tornillo M8 25, tuerca M8 15 · taco izquierdo a carrocería: 25 · soporte izquierdo M12: 88",
+   "detalle": "Final de la tabla de la pág. 122, bastante legible.",
+   "fuente": "Fiabilidad B · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_cambio_motor",
+   "nombre": "Cambio al motor",
+   "valor": "78",
+   "unidad": "N·m",
+   "detalle": "Caja al bloque motor.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_carcasa_campana",
+   "nombre": "Carcasa a campana",
+   "valor": "25",
+   "unidad": "N·m",
+   "detalle": "Carcasa a la campana del embrague.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_tapa_5a",
+   "nombre": "Tapa de la 5.ª",
+   "valor": "M8: 25 · M6: 10",
+   "detalle": "Tapa de la 5.ª a la carcasa.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_tuercas_ejes",
+   "nombre": "Tuercas de los ejes del cambio",
+   "valor": "118",
+   "unidad": "N·m",
+   "detalle": "Tuercas de los ejes primario y secundario.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_brida_intermedia",
+   "nombre": "Brida intermedia del cambio",
+   "valor": "10",
+   "unidad": "N·m",
+   "detalle": "M6.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_tapa_muelles_bloqueo",
+   "nombre": "Tapa de muelles de retención",
+   "valor": "25",
+   "unidad": "N·m",
+   "detalle": "Tapa de los muelles de retención de las varillas.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_brida_rodamiento_diferencial",
+   "nombre": "Brida del rodamiento del diferencial",
+   "valor": "25",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_bloqueo_marcha_atras",
+   "nombre": "Bloqueo de marcha atrás",
+   "valor": "10",
+   "unidad": "N·m",
+   "detalle": "M6.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_horquillas",
+   "nombre": "Horquillas del cambio",
+   "valor": "10",
+   "unidad": "N·m",
+   "detalle": "Horquillas a las varillas.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_chapa_eje_marcha_atras",
+   "nombre": "Chapa del eje de marcha atrás",
+   "valor": "10",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_horquilla_marcha_atras",
+   "nombre": "Horquilla de marcha atrás",
+   "valor": "35",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_corona_diferencial",
+   "nombre": "Corona del diferencial",
+   "valor": "68",
+   "unidad": "N·m",
+   "detalle": "Corona a la caja del diferencial.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_brida_fuelle_palier_izq",
+   "nombre": "Brida del fuelle del palier izquierdo",
+   "valor": "10",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_horquilla_mando",
+   "nombre": "Horquilla del mando",
+   "valor": "15",
+   "unidad": "N·m",
+   "detalle": "Contratuerca: 18.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_varillaje",
+   "nombre": "Varillaje y mando del cambio",
+   "valor": "Soporte del reenvío: 11 · bulón horquilla marcha atrás: 25 · tuerca carcasa: 25 · tapa del mando: 10 · brida fuelle palier dcho.: 7,8 · consola del mando a carrocería: 8",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_tuerca_buje_delantero",
+   "nombre": "Tuerca del buje delantero",
+   "valor": "216",
+   "unidad": "N·m",
+   "detalle": "CRÍTICO. Bucheli, Marbella. El manual SEAT del Panda de 1980 daba 196 N·m y el Cinquecento 240: usa 216.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_ruedas",
+   "nombre": "Tornillos de rueda",
+   "valor": "86",
+   "unidad": "N·m",
+   "detalle": "CRÍTICO. Delante y detrás.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Foros Fiat, Datos del 899 (Cinquecento)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_soporte_pinza",
+   "nombre": "Soporte de la pinza",
+   "valor": "62",
+   "unidad": "N·m",
+   "detalle": "CRÍTICO. Portapinzas a la mangueta.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_disco_buje",
+   "nombre": "Disco al buje",
+   "valor": "64",
+   "unidad": "N·m",
+   "detalle": "Disco a la brida del buje.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_latiguillo_pinza",
+   "nombre": "Latiguillo a la pinza",
+   "valor": "20",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_purgadores",
+   "nombre": "Purgadores",
+   "valor": "6",
+   "unidad": "N·m",
+   "detalle": "Pinzas y bombines.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_brazo_carroceria",
+   "nombre": "Brazo oscilante a carrocería",
+   "valor": "39",
+   "unidad": "N·m",
+   "detalle": "Brazo oscilante a la carrocería.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_brazo_rotula",
+   "nombre": "Brazo oscilante a rótula",
+   "valor": "34",
+   "unidad": "N·m",
+   "detalle": "Brazo oscilante a la rótula.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_vastago_amortiguador",
+   "nombre": "Vástago del amortiguador",
+   "valor": "46",
+   "unidad": "N·m",
+   "detalle": "Vástago del amortiguador al taco de goma.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_amortiguador_arriba",
+   "nombre": "Amortiguador delantero arriba",
+   "valor": "59",
+   "unidad": "N·m",
+   "detalle": "Amortiguador (McPherson) arriba, al paso de rueda.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_amortiguador_mangueta",
+   "nombre": "Amortiguador a mangueta",
+   "valor": "59",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_tirante_brazo",
+   "nombre": "Tirante de reacción a brazo",
+   "valor": "69",
+   "unidad": "N·m",
+   "detalle": "Tirante de reacción al brazo.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_tirante_soporte",
+   "nombre": "Tirante de reacción a soporte",
+   "valor": "69",
+   "unidad": "N·m",
+   "detalle": "Tirante al soporte.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_soporte_tirante_carroceria",
+   "nombre": "Soporte del tirante a carrocería",
+   "valor": "49",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_chapa_seguridad_tirante",
+   "nombre": "Chapa de seguridad del tirante",
+   "valor": "15",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_brazo_direccion_amortiguador",
+   "nombre": "Brazo de dirección a amortiguador",
+   "valor": "26",
+   "unidad": "N·m",
+   "detalle": "Brazo de dirección al amortiguador.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_ballesta_placa_eje",
+   "nombre": "Ballesta: placa al eje",
+   "valor": "39",
+   "unidad": "N·m",
+   "detalle": "Placa de la ballesta (abarcón) al tubo del eje.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_ballesta_gemela",
+   "nombre": "Ballesta: gemela",
+   "valor": "29",
+   "unidad": "N·m",
+   "detalle": "Gemela a la ballesta.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_ballesta_carroceria",
+   "nombre": "Ballesta a carrocería",
+   "valor": "49",
+   "unidad": "N·m",
+   "detalle": "Ballesta a la carrocería (perno delantero).",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_amortiguador_tras_placa",
+   "nombre": "Amortiguador trasero abajo",
+   "valor": "69",
+   "unidad": "N·m",
+   "detalle": "Amortiguador trasero a la placa de la ballesta.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_amortiguador_tras_arriba",
+   "nombre": "Amortiguador trasero arriba",
+   "valor": "69",
+   "unidad": "N·m",
+   "detalle": "Amortiguador trasero arriba, a la carrocería.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_rodamiento_trasero_eje",
+   "nombre": "Rodamiento trasero al eje",
+   "valor": "70",
+   "unidad": "N·m",
+   "detalle": "Rodamiento (buje) trasero al tubo del eje.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_tuberia_bombin",
+   "nombre": "Tubería al bombín",
+   "valor": "20",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_tambor",
+   "nombre": "Tambor",
+   "valor": "10",
+   "unidad": "N·m",
+   "detalle": "Tambor a la brida.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_bombin_plato",
+   "nombre": "Bombín al plato",
+   "valor": "10",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_freno_mano_carroceria",
+   "nombre": "Freno de mano a carrocería",
+   "valor": "39",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_volante_direccion",
+   "nombre": "Volante de dirección",
+   "valor": "49",
+   "unidad": "N·m",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda, Datos del 899 (Cinquecento)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_columna_carroceria",
+   "nombre": "Columna de dirección",
+   "valor": "25",
+   "unidad": "N·m",
+   "detalle": "Soporte de la columna a la carrocería.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_cruceta_caja",
+   "nombre": "Cruceta a caja de dirección",
+   "valor": "27",
+   "unidad": "N·m",
+   "detalle": "Abrazadera de la cruceta a la caja de dirección.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_contratuerca_rotula",
+   "nombre": "Contratuerca de la rótula",
+   "valor": "49",
+   "unidad": "N·m",
+   "detalle": "Contratuerca de la rótula de dirección (tras ajustar la convergencia).",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_rotula_brazo",
+   "nombre": "Rótula al brazo de dirección",
+   "valor": "34",
+   "unidad": "N·m",
+   "detalle": "Rótula al brazo de dirección.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "pares",
+   "clave": "par_bieleta_cremallera",
+   "nombre": "Bieleta a cremallera",
+   "valor": "47-58",
+   "unidad": "N·m",
+   "detalle": "Bieleta axial a la cremallera.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_disco_diametro",
+   "nombre": "Disco: diámetro",
+   "valor": "227",
+   "unidad": "mm",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_disco_espesor_nuevo",
+   "nombre": "Disco: espesor nuevo",
+   "valor": "10,7-10,9",
+   "unidad": "mm",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_disco_espesor_minimo_tras_rectificar",
+   "nombre": "Disco: espesor mínimo tras rectificar",
+   "valor": "9,7",
+   "unidad": "mm",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "disco_del_min",
+   "nombre": "Espesor mínimo disco delantero",
+   "valor": "9",
+   "unidad": "mm",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_disco_alabeo_maximo",
+   "nombre": "Disco: alabeo máximo",
+   "valor": "0,15",
+   "unidad": "mm",
+   "detalle": "Medido a ~2 mm del borde.",
+   "fuente": "Fiabilidad B · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_pastillas_forro_minimo",
+   "nombre": "Pastillas: forro mínimo",
+   "valor": "1,5",
+   "unidad": "mm",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_tambor_diametro_nuevo",
+   "nombre": "Tambor: diámetro nuevo",
+   "valor": "185,24-185,53",
+   "unidad": "mm",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_tambor_diametro_maximo_tras_rectific",
+   "nombre": "Tambor: diámetro máximo tras rectificar",
+   "valor": "186",
+   "unidad": "mm",
+   "detalle": "El manual del Panda daba 186,33. Usa el del Marbella, que es más conservador.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_tambor_diametro_limite",
+   "nombre": "Tambor: diámetro límite",
+   "valor": "186,3",
+   "unidad": "mm",
+   "detalle": "El manual del Panda daba 186,83.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_zapatas_forro_minimo",
+   "nombre": "Zapatas: forro mínimo",
+   "valor": "1,5",
+   "unidad": "mm",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_piston_de_la_pinza",
+   "nombre": "Pistón de la pinza Ø",
+   "valor": "48",
+   "unidad": "mm",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_bomba_de_freno",
+   "nombre": "Bomba de freno Ø",
+   "valor": "19,05 (3/4\")",
+   "unidad": "mm",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_bombines_traseros",
+   "nombre": "Bombines traseros Ø",
+   "valor": "19,05 o 15,875",
+   "unidad": "mm",
+   "detalle": "El Bucheli da 19,05 y el manual del Panda 15,875 (5/8\"): mide el tuyo antes de pedir bombines. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_regulador_de_frenada",
+   "nombre": "Regulador de frenada",
+   "valor": "60 bar delante → 35,5 ± 1,75 bar detrás",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "frenos",
+   "clave": "fre_grasas_de_frenos",
+   "nombre": "Grasas de frenos",
+   "valor": "Deslizaderas: grasa PBC · montaje de bombines: RA 349",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_muelle_delantero",
+   "nombre": "Muelle delantero",
+   "valor": "Libre 364 mm, hilo Ø 10 mm, 8 espiras útiles, hélice a derechas; dos clases (marca amarilla o verde)",
+   "detalle": "Monta los dos de la misma clase.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_ballesta_flecha",
+   "nombre": "Ballesta flecha",
+   "valor": "Apertura de la ballesta según carga: 113 mm a 100 kp · 93 mm a 134 kp · 25 mm a 250 kp · −12 mm a 312 kp. Tolerancias impresas: 19,5 ± 2 · 86 ± 7 · 120 ± 10",
+   "detalle": "Carga aplicada en el centro del tubo del eje. La tabla del libro no deja claro a qué fila va cada tolerancia. El manual del Panda da una flecha de 86 ± 3 mm con 134 daN.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_grasa_rotulas",
+   "nombre": "Grasa rotulas",
+   "valor": "Grasa de litio NLGI 3 para articulaciones y rodamientos",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_rotulas",
+   "nombre": "Rótulas",
+   "valor": "Sin engrase (for life)",
+   "fuente": "Fiabilidad B · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "transmision",
+   "clave": "tra_disco_de_embrague",
+   "nombre": "Disco de embrague",
+   "valor": "Ø exterior 170 mm, Ø interior del forro 120 mm; mando por cable",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": true
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_cilindro",
+   "nombre": "Cota 903: cilindro",
+   "valor": "Clases A 65,000-65,010 · B -65,020 · C -65,030 · D -65,040 · E -65,050",
+   "detalle": "Todo este bloque es del 903 de carburación (Bucheli, págs. 113-116). El 899 comparte bloque y diámetro, pero su carrera es 67,7 mm: confirma las cotas de cigüeñal, bielas y pistones antes de pedir piezas.",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_ovalidad_conicidad",
+   "nombre": "Cota 903: ovalidad conicidad",
+   "valor": "0,005 máx.",
+   "fuente": "Fiabilidad B · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_juego_bancada",
+   "nombre": "Cota 903: juego bancada",
+   "valor": "0,026-0,061",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_juego_axial_ciguenal",
+   "nombre": "Cota 903: juego axial cigueñal",
+   "valor": "0,060-0,260",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_munequillas_bancada",
+   "nombre": "Cota 903: muñequillas bancada",
+   "valor": "Estándar 50,785-50,805 · minoraciones: 50,531-50,551 · 50,277-50,297 · 50,023-50,043 · 49,769-49,789",
+   "fuente": "Fiabilidad B · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_munequillas_biela",
+   "nombre": "Cota 903: muñequillas biela",
+   "valor": "Estándar 39,985-40,005 · minoraciones: 39,731-39,751 · 39,477-39,497 · 39,223-39,243 · 38,969-38,989",
+   "fuente": "Fiabilidad B · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_ancho_axial",
+   "nombre": "Cota 903: ancho axial",
+   "valor": "Estándar 28,080-28,120 · 1.ª sobremedida 28,207-28,247; ancho de la muñequilla de biela 26,975-27,025",
+   "fuente": "Fiabilidad B · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_alojamientos",
+   "nombre": "Cota 903: alojamientos",
+   "valor": "Bancada 54,507-54,520 · taqués 14,010-14,028 · árbol de levas delante 50,505-50,725 (clases B-E), centro 46,420-46,450, detrás 35,921-35,951",
+   "fuente": "Fiabilidad B · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_biela",
+   "nombre": "Cota 903: biela",
+   "valor": "Ojo del bulón 19,940-19,960 · cabeza 43,657-43,673",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_piston",
+   "nombre": "Cota 903: piston",
+   "valor": "Clases A 64,940-64,950 a E 64,980-64,990, medido a 31,65 mm de la cabeza · sobremedidas +0,2/+0,4/+0,6 · juego con el cilindro 0,050-0,070",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_bulon",
+   "nombre": "Cota 903: bulon",
+   "valor": "Alojamiento clases 1: 19,970-19,974 · 2: -19,978 · 3: -19,982 · sobremedida +0,2 · juego 0,008-0,016",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_segmentos_ranura",
+   "nombre": "Cota 903: segmentos ranura",
+   "valor": "Ancho de ranura 1,785-1,805 · 2,015-2,035 · 3,957-3,977; espesor 1,728-1,740 · 1,978-1,990 · 3,925-3,937; juego vertical 0,045-0,077 · 0,025-0,057 · 0,020-0,052",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_luz_segmentos",
+   "nombre": "Cota 903: luz segmentos",
+   "valor": "1.º 0,200-0,450 · 2.º 0,200-0,350 · rascador 0,200-0,450",
+   "detalle": "El manual del Panda da 0,20-0,35 para los tres.",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_peso_pistones",
+   "nombre": "Cota 903: peso pistones",
+   "valor": "Diferencia máxima ± 3,5 g (con segmentos y bulón)",
+   "fuente": "Fiabilidad B · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_volante_motor",
+   "nombre": "Cota 903: volante motor",
+   "valor": "Cota superficie de fricción-asiento del plato: 0,6 · rectificado máximo 1,0 · alabeo 0,05",
+   "fuente": "Fiabilidad B · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_arbol_levas",
+   "nombre": "Cota 903: arbol levas",
+   "valor": "Apoyos: detrás 30,975-31,000 · centro 43,348-43,373 · delante 37,975-38,000; casquillos 31,026-31,046 · 43,404-43,424 · 38,025-38,050; alzada 5,1; alabeo 0,05",
+   "detalle": "La alzada puede ser distinta en el 899 con taqués hidráulicos.",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_bomba_aceite",
+   "nombre": "Cota 903: bomba aceite",
+   "valor": "Juego radial 0,050-0,140 · axial 0,020-0,105 · ancho de engranajes 29,956-29,986 · juego de flancos 0,080 · muelle de la válvula: 2,4-2,6 kp a 36,0 mm y 4,4-4,7 kp a 29,0 mm",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_bomba_agua",
+   "nombre": "Cota 903: bomba agua",
+   "valor": "Juego rodete-carcasa 0,800-1,200",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_culata",
+   "nombre": "Cota 903: culata",
+   "valor": "Alabeo máximo del plano 0,05",
+   "fuente": "Fiabilidad B · Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_valvulas",
+   "nombre": "Cota 903: valvulas",
+   "valor": "Guía: alojamiento 12,950-12,977, exterior 13,010-13,030 (sobremedidas +0,05/+0,1/+0,25), interior 7,022-7,040 · vástago 6,982-7,000 · juego 0,022-0,052 (límite 0,150) · cabeza ADM 28,8-29,1, ESC 25,8-26,1 · margen mínimo 1,0 · asiento 45° (correcciones 15° y 75°), ancho ADM 1,8 / ESC 2,2",
+   "detalle": "El libro imprime el vástago como «7,000-6,892»: será una errata, el manual SEAT da 6,982-7,000.",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "cota903_balancines",
+   "nombre": "Cota 903: balancines",
+   "valor": "Alojamiento 15,010-15,030 · soporte 15,010-15,028 · eje 14,978-14,990",
+   "fuente": "Fiabilidad B · Bucheli (Marbella), Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "bateria",
+   "nombre": "Batería",
+   "valor": "12 V, 32 Ah de origen · densidad 1,28 cargada / 1,20 a media carga / 1,12 descargada (32/24/16 °Bé) · carga máxima 3,2 A · 12,72 V cargada",
+   "detalle": "Hoy se suele montar una de 40-45 Ah, que cabe y va mejor. La densidad de descargada se lee «1,2» en la foto: por los 16 °Bé será 1,12.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella), Catálogos de baterías",
+   "verificado": true
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_alternador",
+   "nombre": "Alternador",
+   "valor": "45 A: Bosch K1-14V 20/45A (regulador EL 14V 4C), Marelli AA 125 R 14V 45A (regulador RTT 119AC) o Ducellier 45 A · empieza a cargar a 1000-1050 rpm · regulación 14,1 ± 0,1 V · rotor 2,9 Ω (Bosch), 3,1 ± 0,1 Ω (Marelli), 3,5 ± 0,2 Ω (Ducellier)",
+   "detalle": "Mira la placa del tuyo para saber de qué marca es.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_regulador_de_tension",
+   "nombre": "Regulador de tensión",
+   "valor": "Electrónico incorporado; 13,65-14 V (Marelli) o 13,6-14,4 V (Lucas)",
+   "fuente": "Fiabilidad B · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_motor_de_arranque",
+   "nombre": "Motor de arranque",
+   "valor": "Bosch DF 12 o Marelli E 76: 12 V, 0,7 kW, piñón de 9 dientes, corona de 116 · prueba de arranque: Bosch 410 A a 7,8 V; Marelli 340 ± 15 A a 7,1 ± 0,2 V · escobillas nuevas/mínimas: Bosch 13,75/11,5 mm, Marelli 10/8 mm",
+   "detalle": "Columnas de la pág. 120 leídas en foto inclinada.",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_rele_del_motor_de_arranque",
+   "nombre": "Relé del motor de arranque",
+   "valor": "Bobinado de atracción/retención: Bosch 0,44 ± 0,02 / 1,9 ± 0,5 Ω · Marelli 0,35 ± 0,02 / 1,2 ± 0,07 Ω",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_bomba_de_gasolina",
+   "nombre": "Bomba de gasolina",
+   "valor": "Eléctrica, dentro del depósito, con relé mandado por la centralita",
+   "detalle": "Así aparece en los catálogos y en un foro; confírmalo en el coche. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · autodoc, Forocoches",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_rele_de_la_bomba",
+   "nombre": "Relé de la bomba",
+   "valor": "En la caja de fusibles, bajo el salpicadero, lado del conductor",
+   "detalle": "Es lo que dice una tienda de recambios. El número de relé está pendiente. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · autodoc",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_bombillas",
+   "nombre": "Bombillas",
+   "valor": "Faros halógenos 60/65 W (impreso así: lo normal es H4 60/55) · posición delante 4 W, detrás 5 W · intermitentes 21 W · freno 21 W · marcha atrás 21 W · matrícula 5 W · antiniebla trasero 21 W · luz interior 5 W · cuadro 2 W · testigos 1,2 W (los de posición y carga, 3 W)",
+   "fuente": "Fiabilidad A · Bucheli (Marbella)",
+   "verificado": true
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_localizacion_de_averias",
+   "nombre": "Localización de averías",
+   "valor": "El capítulo 55 del manual SEAT (localización de averías por circuitos: arranque, carga, luces, intermitentes, limpias, luneta, indicadores…) sirve como método de comprobación con lámpara de pruebas",
+   "detalle": "El método vale; los números de fusibles y conectores son del Panda.",
+   "fuente": "Fiabilidad B · Manual SEAT Panda",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_inyector",
+   "nombre": "Comprobación: inyector",
+   "valor": "Marelli 213170623605 · 1,75 Ω ± 5 % a 20 °C · 465 cm³/min estático",
+   "detalle": "Cita del manual de taller del Seicento (SPI). Es de baja impedancia: no lo cambies por un inyector Weber de 13-18 Ω.",
+   "fuente": "Fiabilidad B · fiatforum (manual Seicento)",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_presion_gasolina",
+   "nombre": "Comprobación: presión de gasolina",
+   "valor": "1,1 ± 0,2 bar regulada; válvula de sobrepresión a 2,6 bar; bomba ≥ 110 L/h",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_sensor_temp_refrigerante",
+   "nombre": "Comprobación: sensor de temperatura del refrigerante",
+   "valor": "Contradictorio: ~5 kΩ a 20 °C (10 kΩ a 0 °C) según el Cinquecento, o 2,2-2,8 kΩ a 20 °C (6,0-6,8 kΩ a 0 °C; 280-350 Ω a 80 °C) según la guía Marelli",
+   "detalle": "Medir en frío y en caliente: lo importante es que baje de forma progresiva al calentarse. Está en el colector de admisión. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Datos del 899 (Cinquecento), Guía Marelli",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_sensor_temp_aire",
+   "nombre": "Comprobación: sensor de temperatura del aire",
+   "valor": "2,2-2,8 kΩ a 20 °C; 6,0-7,0 kΩ a 0 °C; 250-380 Ω a 80 °C",
+   "detalle": "Valores genéricos de la guía Marelli, sin asignar a la 6F. Está en el cuerpo de mariposa. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Guía Marelli",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_potenciometro_mariposa",
+   "nombre": "Comprobación: potenciómetro de mariposa",
+   "valor": "0,25-0,30 V cerrada · 4,5-5,0 V abierta (alimentación 5 V)",
+   "detalle": "Genérico Marelli. Un documento del Cinquecento da 3,8-4,7 V a plena apertura. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Guía Marelli",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_sensor_map",
+   "nombre": "Comprobación: sensor MAP",
+   "valor": "4,5-4,8 V a 800 mmHg · 2,4-2,6 V a 500 mmHg · 0,25-0,30 V a 150 mmHg",
+   "detalle": "Genérico Marelli. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Guía Marelli",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_motor_paso_a_paso",
+   "nombre": "Comprobación: motor paso a paso",
+   "valor": "45-65 Ω por bobinado; dos fases, cuatro hilos",
+   "detalle": "La resistencia es genérica Marelli. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Guía Marelli, Doc. Marelli IAW 16F",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_sensor_pms",
+   "nombre": "Comprobación: sensor PMS",
+   "valor": "575-720 Ω a 20 °C; entrehierro 0,5-1,5 mm",
+   "detalle": "La guía Marelli genérica da 300-500 Ω. Señal de unos 12 V pico a pico.",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_bobinas",
+   "nombre": "Comprobación: bobinas",
+   "valor": "Primario 0,5-0,6 Ω (0,45-0,75 Ω según Marelli); secundario 12-16 kΩ",
+   "detalle": "El primario coincide en las dos fuentes; el secundario solo viene en la guía genérica. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Datos del 899 (Cinquecento), Guía Marelli",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_calefactor_lambda",
+   "nombre": "Comprobación: calefactor de la sonda lambda",
+   "valor": "2,5-4,5 Ω a 20 °C",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento)",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_sonda_lambda",
+   "nombre": "Comprobación: sonda lambda",
+   "valor": "Banda estrecha, 0-1 V: oscila por encima y por debajo de 0,45 V en lazo cerrado",
+   "detalle": "El umbral de 0,45 V es el estándar de las sondas de circonio, no viene en la fuente. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · fiatforum",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "comp_electrovalvula_canister",
+   "nombre": "Comprobación: electroválvula del cánister",
+   "valor": "25-55 Ω",
+   "detalle": "Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Guía Marelli",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_diagnosis_conector",
+   "nombre": "Diagnosis: conector",
+   "valor": "Conector Fiat de 3 pines; con IAW Scan2 hace falta un adaptador OBD-2 → Fiat 3 pines",
+   "detalle": "Falta confirmar dónde está en el Marbella. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · IAW Scan2",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_diagnosis_protocolo",
+   "nombre": "Diagnosis: protocolo",
+   "valor": "Código ISO a 1200 baudios al dar el contacto; diálogo a 7812,5 baudios por las líneas K (pin 15) y L (pin 10)",
+   "fuente": "Fiabilidad B · Doc. Marelli IAW 16F",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_diagnosis_herramienta",
+   "nombre": "Diagnosis: herramienta",
+   "valor": "IAW Scan2 con cable KKL (FTDI) + adaptador Fiat 3 pines",
+   "detalle": "Lista oficialmente la 6F y la 16F: si tu coche lleva la 6F.SF, lo más probable es que la lea. La 16S no está en la lista. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · IAW Scan2",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_inmovilizador_sistema",
+   "nombre": "Inmovilizador: sistema",
+   "valor": "Inmovilizador con transpondedor: chip en la llave, antena en el bombín y cajetín propio, separado de la centralita de motor. La centralita solo inyecta y da chispa si el cajetín valida el código de la llave.",
+   "detalle": "Que el cajetín es una pieza aparte lo dicen los vendedores de la 16S.S0 («hay que desconectar la caja de inmovilizador») y hay cajetines del Marbella 0.9 08NCB en desguace.",
+   "fuente": "Fiabilidad B · ecudiag, Doc. Marelli IAW 16F, Desguaces",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_inmovilizador_transpondedor",
+   "nombre": "Inmovilizador: transpondedor",
+   "valor": "TEMIC 11 o Philips ID33 (código fijo)",
+   "detalle": "Catálogo de transpondedores para el Marbella 1997-1998. Es la misma familia que los Ibiza, Inca, Córdoba y Toledo de 1995-98.",
+   "fuente": "Fiabilidad A · Catálogo de transpondedores",
+   "verificado": true
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_inmovilizador_enlace_centralita",
+   "nombre": "Inmovilizador: enlace centralita",
+   "valor": "Un solo cable de línea serie entre el cajetín y la centralita (pin 7 en la 16F)",
+   "detalle": "Confírmalo en la 16S.S0.",
+   "fuente": "Fiabilidad B · Doc. Marelli IAW 16F, fiatforum",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_inmovilizador_contador",
+   "nombre": "Inmovilizador: contador",
+   "valor": "La centralita cuenta los contactos desde el último fallo de inmovilizador",
+   "fuente": "Fiabilidad B · Doc. Marelli IAW 16F",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_inmovilizador_arranque_emergencia",
+   "nombre": "Inmovilizador: arranque emergencia",
+   "valor": "Código de 5 cifras de la tarjeta, introducido con el pedal del acelerador: dar contacto, esperar a que parpadee el testigo, pisar a fondo y soltar al contar cada cifra en los destellos",
+   "detalle": "Es el procedimiento de la 16F y del Fiat CODE. No he encontrado si SEAT entregaba tarjeta de código con el Marbella: busca una tarjeta de plástico con la documentación. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · Doc. Marelli IAW 16F, Fiat CODE",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_inmovilizador_llaves",
+   "nombre": "Inmovilizador: llaves",
+   "valor": "Programación con equipo de diagnosis (como los SEAT de la época). Un cerrajero puede copiar el transpondedor de código fijo a partir de una llave buena.",
+   "detalle": "Antes de que se te pierda la única llave, haz una copia. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · autotronica, Catálogo de transpondedores",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_inmovilizador_memoria",
+   "nombre": "Inmovilizador: memoria",
+   "valor": "Datos del inmovilizador en la EEPROM interna del microcontrolador MC68HC11F1 de la centralita (volcado de 512 bytes). Se lee en placa con programador (Xprog, UPA) alimentando la centralita a 12 V.",
+   "detalle": "Un listado habla de un chip 24C02. Antes de tocar nada, haz copia de la EEPROM. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · ecufile, immooff, Foro de diagnosis",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_inmovilizador_centralita_desguace",
+   "nombre": "Inmovilizador: centralita desguace",
+   "valor": "Una 16S.S0 usada no arranca con tu cajetín: hay que adaptarla (traspasar los datos de la tuya) o anularle el inmovilizador y desconectar el cajetín.",
+   "fuente": "Fiabilidad B · ecudiag, topllaves, ecufile",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_inmovilizador_sintomas",
+   "nombre": "Inmovilizador: sintomas",
+   "valor": "Llave no reconocida: el motor no arranca o arranca y se para en 2-3 s. Prueba con la otra llave antes de culpar a la centralita.",
+   "detalle": "Comportamiento descrito para SEAT de la época, no para el Marbella en concreto. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · FOROS-INMO",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_codigos_de_averia_iaw_16f",
+   "nombre": "Códigos de avería (IAW 16F)",
+   "valor": "ENT 01 Potenciómetro de mariposa · ENT 02 Sensor MAP · ENT 04 Sonda lambda · ENT 08 Temperatura del refrigerante · ENT 10 Temperatura del aire · ENT 20 Tensión de batería · SAL 01 Inyector · SAL 02 Bobina 1 · SAL 04 Bobina 2 · SAL 08 Motor paso a paso (o cánister: el documento se contradice) · SAL 20 Relé del A/A · SAL 40 Relé de la bomba de gasolina · FUN 01 Autocalibración · FUN 02 RAM · FUN 04 EPROM · FUN 08 EEPROM · FUN 10 Microcontrolador · FUN 20 Señal de rpm/PMS",
+   "detalle": "Códigos validados de la IAW 16F, por grupos (hexadecimal). El testigo solo se enciende si la avería está filtrada y validada; al dar el contacto se enciende 4 s como prueba.",
+   "fuente": "Fiabilidad B · Doc. Marelli IAW 16F",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_pruebas_activas_iaw_16f",
+   "nombre": "Pruebas activas (IAW 16F)",
+   "valor": "80 Relé de la bomba de gasolina (30 s) · 81 Inyector (4 ms, 5 veces) · 82 Bobina 1 (2 ms, 5 veces) · 83 Bobina 2 (2 ms, 5 veces) · 84 Borrar averías de la EEPROM · 85 Cánister (20 ms, 7 veces) · 86 Corte de régimen a 3750 rpm (2 s) · 87 Relé del A/A (30 s) · 8C Motor paso a paso",
+   "fuente": "Fiabilidad B · Doc. Marelli IAW 16F",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_centralita_estrategia",
+   "nombre": "Centralita: estrategia",
+   "valor": "Densidad-velocidad: calcula el combustible con la presión del colector (MAP) y las rpm, y lo corrige en lazo cerrado con la sonda lambda · Correcciones por temperatura del aire, del refrigerante, mariposa, tensión de batería y sonda lambda. Corte de inyección en retención y a altas rpm · Encendido estático de chispa perdida: dos bobinas, una para los cilindros 1+4 y otra para 2+3, sin delco. Avance calculado con MAP, rpm y temperatura · Rueda fónica de 60-2 dientes en la polea del cigüeñal · Bomba de gasolina por relé, mandado por la centralita (se activa un momento al dar el contacto) · Purga del cánister de carbón activo hacia la admisión mediante electroválvula",
+   "fuente": "Fiabilidad B · Doc. Marelli IAW 16F",
+   "verificado": false
+  },
+  {
+   "seccion": "electricidad",
+   "clave": "ele_centralita_modo_de_emergencia",
+   "nombre": "Centralita: modo de emergencia",
+   "valor": "Fallo del motor paso a paso: lo desactiva y limita el motor a 1200 rpm · Fallo del MAP: usa presión atmosférica fija (1012 mbar) · Fallo de la mariposa (TPS): calcula la posición con el MAP y las rpm · Fallo de temperatura de aire o refrigerante: último valor válido o un valor por defecto · Sin señal de rpm/PMS: el motor no arranca (no hay modo de emergencia) · Batería fuera de rango: avería si pasa de 16,2 V o baja de 6 V",
+   "fuente": "Fiabilidad B · Doc. Marelli IAW 16F",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_itv_co_al_ralenti",
+   "nombre": "ITV: CO al ralentí",
+   "valor": "≤ 0,5 % vol.",
+   "detalle": "Para matriculados antes del 1/7/2002, si el fabricante no da otro valor.",
+   "fuente": "Fiabilidad B · Manual de ITV",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_itv_co_a_ralenti_acelerado",
+   "nombre": "ITV: CO a ralentí acelerado",
+   "valor": "≤ 0,3 % vol. a ≥ 2000 rpm",
+   "fuente": "Fiabilidad B · Manual de ITV",
+   "verificado": false
+  },
+  {
+   "seccion": "otros",
+   "clave": "otr_itv_lambda_a_ralenti_acelerado",
+   "nombre": "ITV: lambda a ralentí acelerado",
+   "valor": "1 ± 0,03",
+   "fuente": "Fiabilidad B · Manual de ITV",
+   "verificado": false
+  },
+  {
+   "seccion": "recambios",
+   "clave": "filtro_aceite_ref",
+   "nombre": "Filtro de aceite",
+   "valor": "Mann-Filter W 714/2",
+   "detalle": "Catálogo para Marbella 028A 0.9 CAT y 08NCB. La equivalencia Bosch no está confirmada.",
+   "fuente": "Fiabilidad A · Catálogo Mann",
+   "verificado": true
+  },
+  {
+   "seccion": "recambios",
+   "clave": "filtro_aire_ref",
+   "nombre": "Filtro de aire",
+   "valor": "Aerofiltro redondo: alto 55-59 mm, Ø interior 181-182, Ø exterior 215-235 mm. Deportivo: BMC 155/06",
+   "detalle": "BMC es A (catálogo del Marbella 0.9 cat). La referencia de filtro de papel está pendiente. Fiabilidad C: verifícalo antes de usarlo.",
+   "fuente": "Fiabilidad C · carerac, Catálogo BMC",
+   "verificado": false
+  },
+  {
+   "seccion": "recambios",
+   "clave": "rec_bujia",
+   "nombre": "Bujía",
+   "valor": "Champion RN9YCC · Bosch WR7D · Marelli F7LCR",
+   "fuente": "Fiabilidad B · Datos del 899 (Cinquecento), Bucheli (Marbella)",
+   "verificado": false
+  },
+  {
+   "seccion": "recambios",
+   "clave": "rec_taques_hidraulicos",
+   "nombre": "Taqués hidráulicos",
+   "valor": "INA 420 0033 10 · Febi 19368 · Ajusa 85018400 · AE FOL119/FOL161 · Ruville 265804",
+   "detalle": "Para el 1170A1.046. Hay de Ø 11 y Ø 12 mm según el número de motor: medir antes de pedir.",
+   "fuente": "Fiabilidad B · Catálogos de recambio",
+   "verificado": false
+  },
+  {
+   "seccion": "recambios",
+   "clave": "rec_centralita",
+   "nombre": "Centralita",
+   "valor": "IAW 16S.S0 6160209401 / SEAT 6A0906018 (con inmovilizador) o IAW 6F.SF 61602.047.01",
+   "detalle": "Pídela con la referencia de la etiqueta de la tuya.",
+   "fuente": "Fiabilidad A · ecudiag, Desguaces",
+   "verificado": true
+  },
+  {
+   "seccion": "recambios",
+   "clave": "rec_inyector",
+   "nombre": "Inyector",
+   "valor": "Magneti Marelli 213170623605 (1,75 Ω)",
+   "detalle": "Inyector SPI del Cinquecento/Seicento: confirma que es el mismo antes de pedirlo.",
+   "fuente": "Fiabilidad B · fiatforum (manual Seicento)",
+   "verificado": false
+  }
+ ],
+ "procedimientos": [
+  {
+   "titulo": "Comprobar el pineado de la centralita (IAW 16F → 16S.S0)",
+   "tiempoMin": 120,
+   "herramientas": [
+    "Polímetro",
+    "Puntas finas para pinchar por detrás",
+    "Esquema de la sección 9.5"
+   ],
+   "notas": "Patillaje de la IAW 16F (Cinquecento/Seicento 899): punto de partida para tu 16S.S0. Resistencias y continuidades con el contacto quitado y el conector suelto (lado del mazo); tensiones con el conector enchufado. Fiabilidad C hasta comprobarlo. 35 pines (16F). En la 16S.S0 sin confirmar: cuéntalos.",
+   "pasos": [
+    {
+     "texto": "Pin 1 · Bobina 1, cilindros 1+4 (mando a masa) (blanco/verde): Sin contacto y conector suelto: entre el pin y el borne + de la bobina, 0,5-0,6 Ω (el primario). Ojo: la alimentación de la bobina puede venir del relé principal, que no se activa con la centralita desenchufada."
+    },
+    {
+     "texto": "Pin 2 · Motor paso a paso, fase B (verde): Las cuatro fases forman dos bobinados: busca la pareja con 45-65 Ω entre sí."
+    },
+    {
+     "texto": "Pin 3 · Motor paso a paso, fase D (azul/amarillo): Ídem. Entre fases de bobinados distintos no debe haber continuidad."
+    },
+    {
+     "texto": "Pin 4 · Mando del relé principal (mantenimiento de alimentación) (azul/rojo): Continuidad con la bobina del relé principal."
+    },
+    {
+     "texto": "Pin 5 · Entrada de cambio automático: No se usa con cambio manual."
+    },
+    {
+     "texto": "Pin 6 · Testigo de inyección (mando a masa) (gris/rojo): Contacto dado y conector suelto: ~12 V a través de la bombilla del testigo."
+    },
+    {
+     "texto": "Pin 7 · Inmovilizador: línea serie con el cajetín: Continuidad con el conector del cajetín del inmovilizador. Es el único cable entre los dos."
+    },
+    {
+     "texto": "Pin 8 · Relé del aire acondicionado (+) (verde): Sin A/A suele estar vacío."
+    },
+    {
+     "texto": "Pin 9 · Sin conectar: "
+    },
+    {
+     "texto": "Pin 10 · Diagnosis, línea L (azul claro/azul): Continuidad con el conector de diagnosis de 3 pines."
+    },
+    {
+     "texto": "Pin 11 · Sensor PMS (−) (azul/rojo): Entre 11 y 28: 575-720 Ω (la resistencia del sensor)."
+    },
+    {
+     "texto": "Pin 12 · Sonda lambda (−) (marrón/verde): Continuidad con la masa de señal de la sonda."
+    },
+    {
+     "texto": "Pin 13 · Sensor de temperatura del refrigerante (violeta/blanco): Entre 13 y la masa de sensores: resistencia del NTC, baja al calentarse. Enchufado y con contacto: 2-3 V en frío."
+    },
+    {
+     "texto": "Pin 14 · Alimentación de sensores +5 V (azul claro/negro): Enchufado y con contacto: 5,0 V respecto a masa."
+    },
+    {
+     "texto": "Pin 15 · Diagnosis, línea K (blanco/rojo): Continuidad con el conector de diagnosis de 3 pines."
+    },
+    {
+     "texto": "Pin 16 · Masa de señales (negro): Conector suelto: continuidad a masa del motor (< 1 Ω)."
+    },
+    {
+     "texto": "Pin 17 · Masa principal (motor) (verde/negro (dudoso)): Conector suelto: continuidad a masa del motor (< 1 Ω)."
+    },
+    {
+     "texto": "Pin 18 · Inyector (mando a masa) (rosa/negro): Sin contacto y conector suelto: entre el pin y la alimentación del inyector, unos 1,75 Ω (el inyector) más el cable."
+    },
+    {
+     "texto": "Pin 19 · Bobina 2, cilindros 2+3 (mando a masa) (azul claro/rojo): Como el pin 1, con la otra bobina."
+    },
+    {
+     "texto": "Pin 20 · Motor paso a paso, fase A (azul/blanco): Como el pin 2."
+    },
+    {
+     "texto": "Pin 21 · Motor paso a paso, fase C (blanco): Como el pin 2."
+    },
+    {
+     "texto": "Pin 22 · Electroválvula del cánister (mando a masa) (naranja/negro): Entre el pin y su alimentación: 25-55 Ω."
+    },
+    {
+     "texto": "Pin 23 · Relé de la bomba de gasolina (mando a masa) (negro/violeta): Continuidad con la bobina del relé de la bomba. Puentear a masa con contacto dado debe hacer sonar la bomba."
+    },
+    {
+     "texto": "Pin 24 · Relé del aire acondicionado (−) (amarillo): Sin A/A suele estar vacío."
+    },
+    {
+     "texto": "Pin 25 · Sin conectar: "
+    },
+    {
+     "texto": "Pin 26 · Positivo de contacto (+15) (naranja (dudoso)): ~12 V solo con el contacto dado."
+    },
+    {
+     "texto": "Pin 27 · Sin conectar: "
+    },
+    {
+     "texto": "Pin 28 · Sensor PMS (+) (amarillo/negro): Con 11: 575-720 Ω. Al dar arranque, señal alterna de unos voltios."
+    },
+    {
+     "texto": "Pin 29 · Sonda lambda (señal +) (azul/amarillo): Motor caliente al ralentí: oscila entre ~0,1 y ~0,9 V."
+    },
+    {
+     "texto": "Pin 30 · Potenciómetro de mariposa (señal) (rosa): Enchufado y con contacto: ~0,3 V cerrada y sube sin saltos hasta ~4,5 V abierta."
+    },
+    {
+     "texto": "Pin 31 · Sensor de temperatura del aire (violeta): Entre 31 y la masa de sensores: unos 2,5 kΩ a 20 °C."
+    },
+    {
+     "texto": "Pin 32 · Sensor MAP (señal) (amarillo/rojo): Contacto dado sin arrancar: ~4,5 V (presión atmosférica). Al ralentí baja mucho."
+    },
+    {
+     "texto": "Pin 33 · Sin conectar: "
+    },
+    {
+     "texto": "Pin 34 · Masa secundaria (motor) (gris/negro): Conector suelto: continuidad a masa del motor (< 1 Ω)."
+    },
+    {
+     "texto": "Pin 35 · Alimentación desde el relé principal (+30) (marrón/blanco): ~12 V con el relé principal activado (motor arrancando o en marcha). Con el conector suelto, el relé no entra."
+    }
+   ]
+  },
+  {
+   "titulo": "Averías típicas del motor SPI",
+   "tiempoMin": null,
+   "herramientas": [
+    "Polímetro",
+    "Lámpara de pruebas"
+   ],
+   "notas": "Experiencia de usuarios del 899 SPI (fiabilidad C): orden lógico para buscar la avería.",
+   "pasos": [
+    {
+     "texto": "Se cala en caliente y no arranca hasta que se enfría: sensor PMS. A menudo no deja código."
+    },
+    {
+     "texto": "CO alto, mezcla rica o suspende la ITV: sensor de temperatura del refrigerante, luego sonda lambda."
+    },
+    {
+     "texto": "Ralentí bajo o inestable, o se cala al soltar el acelerador: motor paso a paso o cuerpo de mariposa sucio. Si falla el motor paso a paso, la centralita limita a 1200 rpm."
+    },
+    {
+     "texto": "Tirones y petardeos por el escape (SPI de Fiat): bujías, cables y bobinas; después, la presión de gasolina."
+    },
+    {
+     "texto": "Golpeteo de taqués: cambiar el aceite (con limpiador); si sigue, cambiar los taqués hidráulicos."
+    },
+    {
+     "texto": "Tras montar la culata funciona mal (bujías negras y húmedas): taqués hidráulicos sin purgar o bloqueados."
+    },
+    {
+     "texto": "Centralita de desguace que no arranca: el inmovilizador (solo IAW 16S.S0)."
+    },
+    {
+     "texto": "Fallos intermitentes: revisar conectores y masas antes de cambiar piezas."
+    }
+   ]
+  },
+  {
+   "titulo": "Arranque de emergencia del inmovilizador",
+   "tiempoMin": 5,
+   "herramientas": [
+    "Tarjeta de código (5 cifras)"
+   ],
+   "notas": "Procedimiento de la IAW 16F y del Fiat CODE (fiabilidad C): no está confirmado que SEAT entregara tarjeta con el Marbella. Busca una tarjeta de plástico con la documentación del coche.",
+   "pasos": [
+    {
+     "texto": "Da el contacto y espera a que el testigo de inyección parpadee."
+    },
+    {
+     "texto": "Para cada cifra del código: pisa el acelerador a fondo y suéltalo al contar en los destellos la cifra que toca."
+    },
+    {
+     "texto": "Repite con las 5 cifras. Si el código es correcto, el testigo se apaga y el motor arranca."
+    },
+    {
+     "texto": "Haz una copia de la llave cuanto antes: el transpondedor es de código fijo (TEMIC 11 o Philips ID33) y un cerrajero lo copia de una llave buena."
+    }
+   ]
+  },
+  {
+   "titulo": "Cambio de aceite y filtro",
+   "tiempoMin": 45,
+   "herramientas": [
+    "Bandeja de aceite",
+    "Llave del tapón del cárter",
+    "Llave de filtro",
+    "Embudo"
+   ],
+   "notas": "Pasos generales del taller con los datos de la ficha. Cada 5.000 km o 12 meses: los taqués hidráulicos son sensibles al aceite viejo.",
+   "pasos": [
+    {
+     "texto": "Calienta el motor unos minutos y pon el coche en llano."
+    },
+    {
+     "texto": "Quita el tapón del cárter y deja vaciar."
+    },
+    {
+     "texto": "Cambia el filtro (Mann W 714/2): junta untada con aceite, apriete a mano."
+    },
+    {
+     "texto": "Pon el tapón del cárter con arandela nueva.",
+     "par": "30 N·m (fiab. C)"
+    },
+    {
+     "texto": "Llena con 15W-40 o 10W-40 API SG o superior: 3,6 L con filtro (3,4 L sin filtro)."
+    },
+    {
+     "texto": "Arranca, deja al ralentí 1 minuto, para y comprueba el nivel con la varilla. Si los taqués golpetean al principio, deja que se llenen al ralentí."
+    }
+   ]
+  },
+  {
+   "titulo": "Cambio de aceite de la caja de cambios (5 marchas)",
+   "tiempoMin": 40,
+   "herramientas": [
+    "Bandeja",
+    "Llave del tapón de vaciado",
+    "Bomba o jeringa de aceite"
+   ],
+   "notas": "Caja de 5: 2,95 L de SAE 80W-90 GL-4 (no 2,40: ese era de la de 4). Pasos generales del taller.",
+   "pasos": [
+    {
+     "texto": "Coche en llano y la caja templada."
+    },
+    {
+     "texto": "Quita primero el tapón de llenado/nivel (para asegurarte de que podrás rellenar) y luego el de vaciado."
+    },
+    {
+     "texto": "Deja vaciar, limpia el imán del tapón y monta el tapón de vaciado."
+    },
+    {
+     "texto": "Llena con SAE 80W-90 GL-4 hasta que rebose por el borde del tapón de nivel: unos 2,95 L."
+    },
+    {
+     "texto": "Monta el tapón de nivel y revisa fugas."
+    }
+   ]
+  },
+  {
+   "titulo": "Purgar frenos / cambiar el líquido",
+   "tiempoMin": 45,
+   "herramientas": [
+    "Manguito transparente",
+    "Bote",
+    "Llave del purgador",
+    "DOT 4 nuevo (0,37 L)"
+   ],
+   "notas": "DOT 4 (el manual del Panda pedía DOT 3). Cada 2 años. Con regulador de frenada trasero: purga empezando por la rueda más alejada de la bomba.",
+   "pasos": [
+    {
+     "texto": "Llena el depósito de la bomba y no dejes que baje del mínimo durante la purga."
+    },
+    {
+     "texto": "Empieza por la rueda trasera más alejada de la bomba; luego la otra trasera y después las delanteras."
+    },
+    {
+     "texto": "Manguito en el purgador al bote. Un ayudante pisa y mantiene el pedal; abre el purgador, ciérralo y que suelte."
+    },
+    {
+     "texto": "Repite hasta que el líquido salga limpio y sin burbujas."
+    },
+    {
+     "texto": "Aprieta el purgador.",
+     "par": "6 N·m"
+    },
+    {
+     "texto": "Rellena el depósito y comprueba que el pedal queda firme."
+    }
+   ]
+  }
+ ]
+}

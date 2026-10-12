@@ -42,6 +42,7 @@ describe('ficha técnica', () => {
 });
 
 import manualBandit from '../../../docs/manuales/suzuki-gsf600-bandit.novaz-ficha.json';
+import manualMarbella from '../../../docs/manuales/seat-marbella-09i.novaz-ficha.json';
 
 describe('manual de la Bandit', () => {
 	it('el JSON del manual se importa entero', () => {
@@ -52,5 +53,18 @@ describe('manual de la Bandit', () => {
 		expect(new Set(r.datos.map((d) => d.clave)).size).toBe(93);
 		expect(r.datos.find((d) => d.clave === 'par_eje_tras')?.valor).toBe('100');
 		expect(r.datos.every((d) => d.verificado)).toBe(true);
+	});
+});
+
+describe('manual del Marbella', () => {
+	it('se importa entero y solo lo de fiabilidad A va verificado', () => {
+		const r = leerFichaJSON(manualMarbella);
+		expect(r.avisos).toEqual([]);
+		expect(r.datos.length).toBe(219);
+		expect(new Set(r.datos.map((d) => d.clave)).size).toBe(219);
+		expect(r.procedimientos.length).toBe(6);
+		expect(r.datos.find((d) => d.clave === 'par_ruedas')).toMatchObject({ valor: '86', verificado: true });
+		expect(r.datos.find((d) => d.clave === 'par_culata')?.verificado).toBe(false);
+		expect(r.datos.filter((d) => d.verificado).every((d) => d.fuente?.startsWith('Fiabilidad A'))).toBe(true);
 	});
 });

@@ -1,0 +1,2496 @@
+{
+ "meta": {
+  "vehiculo": "SEAT Marbella 0.9i SPI (tipo 028A)",
+  "version": {
+   "valor": "0.9 Cat, 899 cc, 41 CV (30 kW), inyección monopunto, catalizador y sonda lambda",
+   "fiab": "A",
+   "fuente": "ADAC; AUTODATA; ULTI",
+   "nota": ""
+  },
+  "periodo": {
+   "valor": "1996-1998 (ADAC: 03/97-04/98; auto-data: 1996-1998)",
+   "fiab": "A",
+   "fuente": "ADAC; AUTODATA",
+   "nota": "Las fuentes difieren en el inicio. La documentación del coche manda."
+  },
+  "codigo_motor_seat": {
+   "valor": "08 NCB",
+   "fiab": "A",
+   "fuente": "FICHA; AUTODATA; MANN",
+   "nota": "Confirmado en la ficha técnica del coche. Los 0.9 Cat anteriores llevaban el 09 NCB."
+  },
+  "tipo_variante": {
+   "valor": "Tipo 028 A1, variante 028 A3",
+   "fiab": "A",
+   "fuente": "FICHA",
+   "nota": ""
+  },
+  "fecha_ficha": {
+   "valor": "Certificado de conformidad del 29/11/1996",
+   "fiab": "A",
+   "fuente": "FICHA",
+   "nota": ""
+  },
+  "equivalente_fiat": {
+   "valor": "1170A1.046 (Fiat Panda 141 900 i.e., Cinquecento 900 i.e.)",
+   "fiab": "B",
+   "fuente": "CINQ; CAT-TAQ",
+   "nota": "Misma cilindrada, cotas y tipo de taqués. Ninguna fuente dice literalmente «08 NCB = 1170A1.046»."
+  },
+  "fiabilidad": {
+   "A": "Publicado para el Marbella 0.9i (ficha, catálogo de recambios del Marbella)",
+   "B": "Del mismo motor (899 i.e. de Panda/Cinquecento) o del mismo chasis (manual SEAT del Panda con ballestas, anterior a 1986), sin contradicción",
+   "C": "Fuente única débil, de otro motor/chasis, o fuentes contradictorias: verificar antes de usar"
+  },
+  "unidades": {
+   "par": "N·m",
+   "longitud": "mm",
+   "presion": "bar",
+   "volumen": "L"
+  },
+  "actualizado": "2026-10-12",
+  "fuentes": {
+   "SEAT-P": {
+    "nombre": "Manual de taller SEAT Panda 35-45 (tomos «Datos y normas» y «Normas para las reparaciones»), SEAT Subdirección Asistencia Técnica, Publicaciones P-1270001, Dep. Legal B-37.262-1980",
+    "url": "https://www.mundoforo.es/viewtopic.php?t=54",
+    "tipo": "B (mismo chasis: Panda con ballestas, anterior a 1986; motores 843/903 OHV de carburación, misma familia que el 899)"
+   },
+   "MF-HILO": {
+    "nombre": "Mundoforo, hilo «MANUAL DE TALLER SEAT PANDA (COMPLETO)», respuestas de 2018-2020",
+    "url": "https://www.mundoforo.es/viewtopic.php?t=54",
+    "tipo": "C (comentarios de foro)"
+   },
+   "CINQ": {
+    "nombre": "fiatforum.com, «cinq/sei data» (usuario custard, 2007): ficha del motor 899 OHV 1170A1.046 del Cinquecento/Seicento",
+    "url": "https://www.fiatforum.com/threads/cinq-sei-data.94737/",
+    "tipo": "B (mismo motor; no cita el manual de origen)"
+   },
+   "ADAC": {
+    "nombre": "ADAC Autokatalog, SEAT Marbella 900 SPI (03/97-04/98)",
+    "url": "https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle/seat/marbella/028/983544/",
+    "tipo": "A"
+   },
+   "ULTI": {
+    "nombre": "ultimatespecs, Seat Marbella Injection (1997-1998)",
+    "url": "https://www.ultimatespecs.com/es/car-specs/Seat/6217/Seat-Marbella-Injection.html",
+    "tipo": "A (agregador)"
+   },
+   "AUTODATA": {
+    "nombre": "auto-data.net, Seat Marbella (28) 0.9 CAT 41 hp (1996-1998)",
+    "url": "https://www.auto-data.net/en/seat-marbella-28-0.9-cat-41hp-13530",
+    "tipo": "A (agregador)"
+   },
+   "QR": {
+    "nombre": "Quattroruote, Seat Marbella 899",
+    "url": "https://www.quattroruote.it/auto/seat/marbella/marbella-899-044180199703",
+    "tipo": "A"
+   },
+   "CAT-TAQ": {
+    "nombre": "Catálogos de recambios (motordoctor.it, auto-doc.it): taqués hidráulicos del Fiat Panda 141 0.9 1170A1.046 y del SEAT Marbella 28 0.9 Cat",
+    "url": "https://www.motordoctor.it/punterie-idrauliche/fiat/panda/panda-141a/2558-900/1216",
+    "tipo": "A/B (catálogos de recambio por vehículo)"
+   },
+   "FC-REGLAJE": {
+    "nombre": "Forocoches, «reglaje de valvulas para seat marbella»",
+    "url": "https://forocoches.com/foro/showthread.php?t=827806",
+    "tipo": "C (foro; aplica a Marbella de carburación)"
+   },
+   "FF-VALV": {
+    "nombre": "fiatforum.com, «Valve clearance» (motor 1.4 FIRE OHC)",
+    "url": "https://www.fiatforum.com/threads/valve-clearance.331618/",
+    "tipo": "No aplica al 899: origen del 0,40/0,50"
+   },
+   "ECUDIAG": {
+    "nombre": "ecudiag.es, fichas de la centralita Magneti Marelli IAW 16S.S0 6160209401 / 6160211600, SEAT Marbella 0.9i 6A0906018",
+    "url": "https://www.ecudiag.es/es/ecus-de-motor/6075-ecu-motor-magneti-marelli-iaw-16ss0-6160209401-seat-marbella-09i-6a0906018-con-inmovilizador-anulado.html",
+    "tipo": "A (referencia de pieza del Marbella)"
+   },
+   "ECUFILE": {
+    "nombre": "ecufile.net, IAW 16S.S0 6160209401 SEAT Marbella 0.9i 6A0906018 (EEPROM MC68HC11F1)",
+    "url": "https://www.ecufile.net/ecu-file-description/MAGNETI-MARELLI-IAW-16S.S0-6160209401-SEAT-MARBELLA-0.9i-6A0906018-EEPROM-MC68HC11F1-MASK-2F37E/32698/",
+    "tipo": "A (referencia de pieza del Marbella)"
+   },
+   "FF-IAW": {
+    "nombre": "fiatforum.com, «IAW ECU Live Mapping & Tech Info» (familias IAW 16F/18F)",
+    "url": "https://fiatforum.com/cinquecento-seicento/253576-iaw-ecu-live-mapping-tech-info.html",
+    "tipo": "C (otra variante de centralita)"
+   },
+   "FF-SENS": {
+    "nombre": "fiatforum.com, hilos del Cinquecento/Seicento 900 (sensor PMS que falla en caliente, sensor de temperatura y emisiones)",
+    "url": "https://www.fiatforum.com/threads/seicento-900-emissions-way-over-limits.270977/",
+    "tipo": "C (experiencia de usuarios)"
+   },
+   "IAWSCAN": {
+    "nombre": "IAW Scan2 (software libre de diagnosis para Fiat SPI/MPI anteriores a 1998)",
+    "url": "https://iaw-scan2.sourceforge.net/",
+    "tipo": "C (no lista la 16S)"
+   },
+   "IT-TAQ": {
+    "nombre": "forumdellautoriparatore.it «Fiat Panda 1170A1.046 (caso risolto)» y forum.elaborare.com «rumore punterie panda 900 i.e.»",
+    "url": "https://www.forumdellautoriparatore.it/?p=posts&g=4&s=12&t=37650",
+    "tipo": "C (foros de taller)"
+   },
+   "PRES": {
+    "nombre": "cararac.com y tirewheelguide.com, presiones del SEAT Marbella 135/80 R13",
+    "url": "https://cararac.com/wheel_sizes/seat/marbella.html",
+    "tipo": "A (agregadores)"
+   },
+   "RUEDA": {
+    "nombre": "scegliauto.com y fiatforum.com: par de los tornillos de rueda en Fiat Panda (86 N·m llanta de acero, 98 N·m aleación)",
+    "url": "https://www.scegliauto.com/domanderisposte/6888/",
+    "tipo": "C (genérico Fiat Panda, sin serie)"
+   },
+   "PM-PINZA": {
+    "nombre": "ilpuntomanutenzione.it, coppie di serraggio zona freni Panda (porta-pinza M10x1,25: 57 N·m según manual citado por un usuario)",
+    "url": "https://lnx.ilpuntomanutenzione.it/forum/threads/fiat-panda-1-2-312-coppie-di-serraggio-zona-freni.15660/",
+    "tipo": "C (otra Panda)"
+   },
+   "MANN": {
+    "nombre": "kursport.es, Mann-Filter W 714/2 para SEAT Marbella 028A 0.8/0.9/0.9 CAT; listado eBay de filtro para Marbella 0.9 96-98 08NCB",
+    "url": "https://kursport.es/filtros-de-aceite-coche/93420-Filtro-de-Aceite-MANN-FILTER-W-714-2-SEAT-MARBELLA-Furgon-30-4011558735609.html",
+    "tipo": "A (catálogo de recambio)"
+   },
+   "BMC": {
+    "nombre": "strperformance.com, BMC 155/06 para SEAT Marbella 0.9 catalizado 41/44 CV",
+    "url": "https://strperformance.com/en/marbela/15152-bmc-155-06-sport-air-filter-for-seat-marbella-09-catalyzed-41cv-44cv.html",
+    "tipo": "A (catálogo de recambio)"
+   },
+   "AEROF": {
+    "nombre": "carerac.com, medidas del aerofiltro del SEAT Marbella 0.9 Cat",
+    "url": "https://carerac.com/aerofiltro/seat/marbella.html",
+    "tipo": "C (agregador)"
+   },
+   "ITV": {
+    "nombre": "Manual de procedimiento de inspección ITV (Ministerio de Industria), límites de Directiva 2003/27/CE, citado en bmwfaq.org y sensorautomotriz.com",
+    "url": "https://sensorautomotriz.com/preguntas-frecuentes/cual-es-el-limite-lambda-para-la-itv",
+    "tipo": "B (normativa citada por terceros; no se pudo abrir el manual ITV original)"
+   },
+   "DESG-6F": {
+    "nombre": "Desguaces Tamayo, Desguaces Pedros y topllaves.com: centralita IAW 6F.SF (6160204701 / 61602.047.01) de SEAT Marbella 0.9 Cat de 1993, motor 09NCB",
+    "url": "https://www.desguaces-tamayo.com/piezas-vehiculos/98544-centralita_motor_uce_iaw6fsf_6160204701_seat_marbella_0_9_cat.html",
+    "tipo": "A (pieza desmontada de un Marbella)"
+   },
+   "TOPLLAVES": {
+    "nombre": "topllaves.com, centralita Seat Marbella 0.9 IAW6FSF (guarda inmovilizador, bastidor y km; servicio de adaptación)",
+    "url": "https://www.topllaves.com/centralitas-de-coche/centralita-motor-seat-marbella-09-1443.html",
+    "tipo": "C (vendedor)"
+   },
+   "IAW16F-DOC": {
+    "nombre": "Magneti Marelli, «IAW 16F Technical Information» (ed. 2, rev. C, nov. 1997), traducción automática publicada en pdfcoffee",
+    "url": "https://pdfcoffee.com/16f-technical-information-pdf-free.html",
+    "tipo": "B (documento del fabricante para la familia Fiat SPI 899/1108; la traducción tiene errores)"
+   },
+   "FF-PIN": {
+    "nombre": "fiatforum.com, «IAW 16F ECU wiring help please»: patillaje y colores de cable del Cinquecento 899",
+    "url": "https://fiatforum.com/cinquecento-seicento/199089-iaw-16f-ecu-wiring-help-please.html",
+    "tipo": "B/C (transcripción del documento Marelli + desmontaje de un usuario)"
+   },
+   "FF-SPI-ENC": {
+    "nombre": "fiatforum.com, hilos «Question about SPI to Carburetor 899cc» y «How to run 899 SPi on carbs», y Wikipedia (Fiat Cinquecento): encendido estático de doble bobina",
+    "url": "https://www.fiatforum.com/threads/question-about-spi-to-carburetor-899cc.497410/",
+    "tipo": "B"
+   },
+   "FF-INY": {
+    "nombre": "fiatforum.com, «Seicent SPI injectors» (cita del manual de taller del Seicento)",
+    "url": "https://fiatforum.com/cinquecento-seicento/128262-seicent-spi-injectors.html",
+    "tipo": "B"
+   },
+   "MARELLI-GUIA": {
+    "nombre": "Guía de diagnóstico Magneti Marelli 8P/8F/6F/6R (scribd; texto muy desordenado)",
+    "url": "https://www.scribd.com/document/950376100/Magnetti-Marelli-IAW-8P-20",
+    "tipo": "C (valores genéricos sin asignar a la 6F)"
+   },
+   "IT-SPI": {
+    "nombre": "ilpuntomanutenzione.it, «Seicento 1.1 SPI strattona e scoppi dallo scarico»",
+    "url": "https://lnx.ilpuntomanutenzione.it/forum/threads/fiat-seicento-1-1-spi-seicento-strattona-e-scoppi-dallo-scarico.2590/",
+    "tipo": "C"
+   },
+   "HSEAT": {
+    "nombre": "historiaseat.com, SEAT Marbella: datos técnicos (XL/GLX con cambio de 5 marchas, grupo 4,500)",
+    "url": "https://www.historiaseat.com/kmarbell.htm",
+    "tipo": "A"
+   },
+   "ULTI-5V": {
+    "nombre": "ultimatespecs, Seat Marbella 5-speed (grupo final 4,50; relaciones vacías)",
+    "url": "https://www.ultimatespecs.com/car-specs/Seat/6218/Seat-Marbella-5-speed.html",
+    "tipo": "A (agregador)"
+   },
+   "F850": {
+    "nombre": "Foro del Seat 850, «Brico cambio líquido diferencial y cambio Marbella» (cita el manual de taller del Marbella: 2,40 L para la caja de 4 y la de 5)",
+    "url": "https://foro850.mforos.com/1019488/6475177-brico-cambio-liquido-diferencial-y-cambio-marbella/",
+    "tipo": "B (cita del manual del Marbella a través de un foro; la página no se pudo abrir directamente)"
+   },
+   "AUTODOC-ACE": {
+    "nombre": "autodoc.es, aceite de caja para Seat Marbella 28 0.9, motor 08 NCB (GL-4+ 75W-90, cambio cada 6-8 años)",
+    "url": "https://www.autodoc.es/repuestos/aceite-de-transmision-y-aceite-de-diferencial-11915/seat/marbella/marbella-28/16116-0-9",
+    "tipo": "C (tienda)"
+   },
+   "AUTODOC-REL": {
+    "nombre": "autodoc.es, bomba de combustible del SEAT Marbella (relé en la caja de fusibles bajo el salpicadero, lado del conductor)",
+    "url": "https://www.autodoc.es/repuestos/bomba-de-combustible-10817/seat/marbella",
+    "tipo": "C (tienda)"
+   },
+   "MF-INY": {
+    "nombre": "Forocoches, «Seat marbella inyección» (2011-2021)",
+    "url": "https://forocoches.com/foro/showthread.php?t=2359729",
+    "tipo": "C (opiniones contradictorias: algunos confunden la inyección con el carburador electrónico)"
+   },
+   "BAT": {
+    "nombre": "cararac.com y baterias.com, baterías del SEAT Marbella",
+    "url": "https://cararac.com/batteries/seat/marbella.html",
+    "tipo": "C (agregadores)"
+   },
+   "ALT": {
+    "nombre": "Catálogos de alternador (classic-parts-finder, expertoautorecambios) para Panda/Marbella y Fura 0.9",
+    "url": "https://classic-parts-finder.com/en/car-parts/seat/panda-marbella-trans-terra/engine/alternator_697",
+    "tipo": "C"
+   },
+   "PROPIETARIO": {
+    "nombre": "Dato confirmado por el propietario sobre su coche",
+    "url": "",
+    "tipo": "A"
+   },
+   "FICHA": {
+    "nombre": "Ficha técnica (tarjeta ITV) del propio coche: certificado de conformidad SEAT del 29/11/1996",
+    "url": "",
+    "tipo": "A (documento oficial de tu unidad: manda sobre cualquier otra fuente)"
+   },
+   "RECEURO": {
+    "nombre": "recambioseuropiezas.com, centralita inmovilizador Seat Marbella 0.9 41CV [08NCB] (1995)",
+    "url": "https://www.recambioseuropiezas.com/recambios/seat/marbella/sistema-electrico/centralita-inmovilizador",
+    "tipo": "A (pieza desmontada de un Marbella; sin referencia)"
+   },
+   "TRANSP": {
+    "nombre": "transpondery.com, catálogo de transpondedores SEAT (Marbella 1997-1998: TEMIC 11 o Philips ID33)",
+    "url": "https://www.transpondery.com/transponder_catalog/seat_transponder_catalog.html",
+    "tipo": "A (catálogo por modelo)"
+   },
+   "FIAT-CODE": {
+    "nombre": "Procedimiento de arranque de emergencia del Fiat CODE (manual FiCOM y fiatforum)",
+    "url": "https://www.fiatforum.com/threads/key-code-symbol-now-engine-wont-start.340569/",
+    "tipo": "C (otro fabricante; misma familia de centralitas)"
+   },
+   "AUTOTRON": {
+    "nombre": "autotronica.es, programación de llaves SEAT (inmovilizador de los Ibiza/Córdoba/Toledo/Inca desde 1995 con equipo de diagnosis)",
+    "url": "https://autotronica.es/programacion-de-llaves-y-mandos-seat/",
+    "tipo": "C"
+   },
+   "IMMOOFF": {
+    "nombre": "immooff.net, ficha «seat marbella 0.9 iaw 16s.s0» (volcado de 512 bytes)",
+    "url": "https://immooff.net/download/immobiliser-off-files-with-pictures-and-instructions/seat-immo-off-files/seat-marbella-0.9-iaw-16s.s0-total/",
+    "tipo": "C"
+   },
+   "DIAGCOCHES": {
+    "nombre": "diagnosiscoches.foroactivo.com, «Desinmovilizar seat marbella» (lectura de la IAW 16S.S0 con Xprog/UPA, MC68HC11F1)",
+    "url": "https://diagnosiscoches.foroactivo.com/t2550-desinmovilizar-seat-marbella",
+    "tipo": "C (foro de profesionales)"
+   },
+   "FOROS-INMO": {
+    "nombre": "Club Seat León, Club Seat Toledo y opinautos (síntomas del inmovilizador en SEAT de la época)",
+    "url": "https://www.clubseattoledo.com/foro/viewtopic.php?t=8664&start=15",
+    "tipo": "C"
+   },
+   "LIBRO-DE": {
+    "paginas": "1, 49, 113-123",
+    "nombre": "Bucheli, «SEAT Marbella ab 1986», Bucheli Verlags AG (Zug, Suiza), ISBN 3-7168-1864-X, 3.ª ed. 2004 (fotos del propietario). Pág. 1: datos generales de las versiones 850, 903 y 903 KAT",
+    "url": "",
+    "tipo": "A (manual específico del Marbella). Llama «903 cm³ KAT» a la versión catalizada; su compresión (8,8) y par (2800 rpm) son los del 899 de la ficha"
+   },
+   "NOVAZ": {
+    "nombre": "Propuesta de Novaz para un clásico de pocos km (no hay plan oficial publicado)",
+    "url": "",
+    "tipo": "Propuesta"
+   }
+  }
+ },
+ "motor": {
+  "tipo": {
+   "valor": "Gasolina, 4 cil. en línea, transversal delantero, 8 válvulas OHV (árbol de levas en bloque, varillas y balancines)",
+   "fiab": "A",
+   "fuente": "ULTI; ADAC; SEAT-P",
+   "nota": ""
+  },
+  "cilindrada_cc": {
+   "valor": 899,
+   "fiab": "A",
+   "fuente": "FICHA; ADAC; ULTI",
+   "nota": ""
+  },
+  "diametro_carrera_mm": {
+   "valor": [
+    65.0,
+    67.7
+   ],
+   "fiab": "A",
+   "fuente": "ULTI",
+   "nota": "El 903 de carburación era 65 × 68 (SEAT-P)."
+  },
+  "compresion": {
+   "valor": "8,8 : 1",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; ULTI",
+   "nota": "El libro alemán lo da para la versión catalizada. Los de carburación eran 8,5 : 1 (libro) o 9 : 1 (manual SEAT)."
+  },
+  "potencia": {
+   "valor": "30 kW (41 CV) a 5800 rpm; potencia fiscal 8,23 CVF",
+   "fiab": "A",
+   "fuente": "FICHA; ADAC; ULTI; QR",
+   "nota": "La ficha confirma los 30 kW y la potencia fiscal. Quattroruote da 5900 rpm."
+  },
+  "par_maximo": {
+   "valor": "60 N·m (6,1 mkp) a 2800 rpm",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; ADAC; ULTI; QR",
+   "nota": ""
+  },
+  "distribucion": {
+   "valor": "Cadena (árbol de levas en bloque)",
+   "fiab": "A",
+   "fuente": "ADAC; SEAT-P",
+   "nota": ""
+  },
+  "taques": {
+   "valor": "Hidráulicos: no llevan reglaje de holgura",
+   "fiab": "A",
+   "fuente": "CAT-TAQ; CINQ",
+   "nota": "Catálogos del Marbella 0.9 Cat y del 1170A1.046 los dan como hidráulicos. Comprobación en el coche: los balancines no llevan tornillo de reglaje con contratuerca."
+  },
+  "alimentacion": {
+   "valor": "Inyección monopunto (SPI) Magneti Marelli, en lazo cerrado con sonda lambda: IAW 16S.S0 con inmovilizador (los 0.9 Cat anteriores llevaban la IAW 6F.SF)",
+   "fiab": "A",
+   "fuente": "PROPIETARIO; ECUDIAG; DESG-6F; FICHA; ULTI; ADAC",
+   "nota": "Sección 9: pineado e inmovilizador."
+  },
+  "orden_encendido": {
+   "valor": "1-3-4-2",
+   "fiab": "B",
+   "fuente": "CINQ",
+   "nota": "Cilindro 1 en el lado de la distribución (convención Fiat): pendiente de confirmar en el 899."
+  },
+  "emisiones": {
+   "valor": "Euro 2",
+   "fiab": "A",
+   "fuente": "ADAC",
+   "nota": ""
+  },
+  "combustible": {
+   "valor": "Gasolina sin plomo 95 (Super)",
+   "fiab": "A",
+   "fuente": "ADAC",
+   "nota": ""
+  },
+  "transmision": {
+   "valor": "Delantera, cambio manual de 5 marchas, grupo 4,500",
+   "fiab": "A",
+   "fuente": "ADAC; HSEAT; ULTI-5V",
+   "nota": ""
+  },
+  "prestaciones": {
+   "valor": "135 km/h, 0-100 en 19,2 s, 6,1 L/100 km mixto",
+   "fiab": "A",
+   "fuente": "ADAC; ULTI",
+   "nota": ""
+  },
+  "peso_vacio_kg": {
+   "valor": 720,
+   "fiab": "A",
+   "fuente": "FICHA",
+   "nota": "Tara de la ficha técnica. ADAC y ultimatespecs dan 695 kg."
+  },
+  "mma_ejes_kg": {
+   "valor": "Delantero 580 · trasero 620",
+   "fiab": "A",
+   "fuente": "FICHA",
+   "nota": ""
+  },
+  "remolque_kg": {
+   "valor": "375 sin freno · 750 con freno",
+   "fiab": "A",
+   "fuente": "FICHA",
+   "nota": ""
+  },
+  "mma_kg": {
+   "valor": 1150,
+   "fiab": "A",
+   "fuente": "FICHA; ADAC",
+   "nota": ""
+  },
+  "dimensiones_mm": {
+   "valor": "Largo 3475 · ancho 1500 · alto 1445 · batalla 2160 · vías 1256/1250 · voladizo trasero 641",
+   "fiab": "A",
+   "fuente": "FICHA",
+   "nota": "De la ficha técnica."
+  },
+  "neumaticos": {
+   "valor": "135 R13 (135/80 R13); opción homologada 145/70 R13. Llanta 4.00B × 13 (4,5\" según ultimatespecs)",
+   "fiab": "A",
+   "fuente": "FICHA; ADAC; ULTI; SEAT-P",
+   "nota": "En la ficha, la línea de opciones está doblada y no se lee entera: puede haber más medidas homologadas."
+  },
+  "frenos": {
+   "valor": "Delante disco macizo Ø 227 mm con pinza flotante; detrás tambor Ø 185 mm, autoajustables; regulador de presión trasero",
+   "fiab": "B",
+   "fuente": "SEAT-P",
+   "nota": "El dato anterior (228 mm) no coincide: el manual SEAT dice 227."
+  },
+  "suspension": {
+   "valor": "Delante McPherson con muelle helicoidal; detrás eje rígido tubular con dos ballestas longitudinales de dos hojas",
+   "fiab": "A",
+   "fuente": "ADAC; ULTI; SEAT-P",
+   "nota": ""
+  },
+  "direccion": {
+   "valor": "Cremallera, 3,8 vueltas de tope a tope; recorrido de la cremallera 130 ± 1,5 mm",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; SEAT-P",
+   "nota": "El Bucheli da 3,8 vueltas; ultimatespecs y el manual del Panda, 3,4."
+  },
+  "diametro_giro_m": {
+   "valor": 9.2,
+   "fiab": "A",
+   "fuente": "LIBRO-DE; SEAT-P",
+   "nota": "ultimatespecs da 9,3 m y ADAC 9,6 m."
+  },
+  "encendido": {
+   "valor": "Estático de chispa perdida, dos bobinas (1+4 y 2+3), sin delco",
+   "fiab": "B",
+   "fuente": "IAW16F-DOC; FF-SPI-ENC",
+   "nota": "En los SPI el agujero del delco de la culata va tapado."
+  }
+ },
+ "transmision": {
+  "cambio": {
+   "valor": "Manual de 5 marchas + marcha atrás",
+   "fiab": "A",
+   "fuente": "ADAC; HSEAT; LIBRO-DE",
+   "nota": "El Bucheli trae el procedimiento de la caja de 5 en las págs. 59-66. El manual del Panda y el Cinquecento son de 4 marchas."
+  },
+  "grupo_final": {
+   "valor": "4,500 (72:16)",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; HSEAT; ULTI-5V",
+   "nota": "El 850 de 5 marchas llevaba 4,785 y las cajas de 4, 4,071."
+  },
+  "relaciones": {
+   "valor": "1.ª 3,500 · 2.ª 1,952 · 3.ª 1,323 · 4.ª 0,972 · 5.ª 0,769 · MA 3,642",
+   "fiab": "A",
+   "fuente": "LIBRO-DE",
+   "nota": "Bucheli págs. 49 y 117-118, «900er 5-Gang»."
+  },
+  "desarrollos": {
+   "valor": "A 1000 rpm: 1.ª 6,5 · 2.ª 11,7 · 3.ª 17,3 · 4.ª 23,5 · 5.ª 29,8 km/h",
+   "fiab": "C",
+   "fuente": "NOVAZ",
+   "nota": "Calculado con grupo 4,500 y rueda 135/80 R13 (perímetro teórico 1,716 m). En la práctica, un 2-3 % menos."
+  },
+  "datos_montaje": {
+   "valor": "Rodamientos de agujas: montar a 110 °C · precarga de los rodamientos cónicos del diferencial 0,080",
+   "fiab": "A",
+   "fuente": "LIBRO-DE",
+   "nota": ""
+  },
+  "palieres": {
+   "valor": "Posición de los fuelles desde la cara frontal: derecho 107 ± 1, izquierdo 138 ± 1 · grasa NLGI 2",
+   "fiab": "C",
+   "fuente": "LIBRO-DE",
+   "nota": "Columna de la caja de 5 en la pág. 118 (con 4 marchas: 123/146 y grasa MoS2): confírmalo con el procedimiento del capítulo 9."
+  },
+  "aceite": {
+   "valor": "2,95 L",
+   "fiab": "A",
+   "fuente": "LIBRO-DE",
+   "nota": "La caja de 4 lleva 2,15 L. El 2,40 L del foro no vale."
+  },
+  "aceite_tipo": {
+   "valor": "SAE 80W-90 GL-4 (ZC 80VV90)",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; AUTODOC-ACE",
+   "nota": ""
+  },
+  "cambio_aceite": {
+   "valor": "Cada 6-8 años",
+   "fiab": "C",
+   "fuente": "AUTODOC-ACE",
+   "nota": "Es la recomendación de una tienda, no del fabricante."
+  },
+  "embrague": {
+   "valor": "Monodisco en seco por cable; disco Ø 170/120 mm; pedal 15-20 mm por debajo del de freno",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; SEAT-P",
+   "nota": ""
+  }
+ },
+ "fluidos": {
+  "aceite_motor_tipo": {
+   "valor": "SAE 15W-40, API SG (el libro alemán pide SAE 20W-40)",
+   "fiab": "B",
+   "fuente": "LIBRO-DE; CINQ; SEAT-P",
+   "nota": "El 20W-40 era el grado de la época. Hoy un 15W-40 o 10W-40 API SG o superior cumple de sobra. Los taqués hidráulicos agradecen aceite limpio."
+  },
+  "aceite_motor_litros": {
+   "valor": "3,6 con filtro · 3,4 sin filtro",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; AUTODATA",
+   "nota": "RESUELTO: el libro alemán (versión KAT) y auto-data (Marbella 0.9 Cat) coinciden. El 3,75 L era del Cinquecento y el 3,88 L del Panda 903."
+  },
+  "aceite_cambio_tipo": {
+   "valor": "SAE 80W-90 GL-4 (de origen ZC 80VV90)",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; SEAT-P; CINQ",
+   "nota": "No uses GL-5: es criterio de taller por los sincronizadores, no viene en las fuentes."
+  },
+  "aceite_cambio_litros": {
+   "valor": 2.95,
+   "fiab": "A",
+   "fuente": "LIBRO-DE",
+   "nota": "Caja de 5. La de 4 lleva 2,15 L. El 2,40 L citado en un foro y en el manual del Panda era de la caja de 4: no vale para la tuya. Llena hasta el borde del tapón de nivel."
+  },
+  "refrigerante_litros": {
+   "valor": 5.2,
+   "fiab": "A",
+   "fuente": "AUTODATA; SEAT-P",
+   "nota": "Coinciden auto-data (Marbella 0.9 Cat) y el manual SEAT (Panda 45). El 4,8 L es del Cinquecento, que tiene otro radiador."
+  },
+  "refrigerante_tipo": {
+   "valor": "Agua + anticongelante al 50 %",
+   "fiab": "B",
+   "fuente": "SEAT-P",
+   "nota": ""
+  },
+  "liquido_frenos": {
+   "valor": "DOT 4, 0,37 L",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; SEAT-P",
+   "nota": "El manual del Panda pedía DOT 3 (0,33 L)."
+  },
+  "deposito_litros": {
+   "valor": "35, de ellos 7-8 de reserva",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; ADAC; ULTI; AUTODATA",
+   "nota": ""
+  },
+  "lavaparabrisas": {
+   "valor": "Agua con un 3 % de detergente (2 L); en invierno, 50 % de anticongelante",
+   "fiab": "B",
+   "fuente": "SEAT-P",
+   "nota": ""
+  }
+ },
+ "reglajes": {
+  "taques": {
+   "valor": "Hidráulicos: sin reglaje",
+   "fiab": "A",
+   "fuente": "CAT-TAQ; CINQ",
+   "nota": "El 0,40/0,50 ± 0,05 mm venía del motor 1108 OHC (está en la misma ficha del foro). El 0,15/0,20 mm es del 843/903 de carburación (SEAT-P y FC-REGLAJE): solo vale si el coche lleva taqués mecánicos."
+  },
+  "taques_mecanicos_carburacion": {
+   "valor": "ADM 0,15 · ESC 0,20 mm en frío (0,60 mm para comprobar el calado)",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; SEAT-P; FC-REGLAJE",
+   "nota": "Solo para Marbella con taqués mecánicos (843/903, incluido el 903 KAT de carburador electrónico del Bucheli). No aplica a tu 899 SPI, que los lleva hidráulicos."
+  },
+  "bujia": {
+   "valor": "Champion RN9YCC, separación 0,8 mm. Equivalentes: Bosch WR7D, Marelli F7LCR (0,7-0,8 mm)",
+   "fiab": "B",
+   "fuente": "CINQ; LIBRO-DE",
+   "nota": "Las equivalencias son las del 903 KAT del Bucheli, con el mismo grado térmico."
+  },
+  "ralenti_rpm": {
+   "valor": "850 ± 50 (no regulable: lo controla la centralita)",
+   "fiab": "B",
+   "fuente": "CINQ",
+   "nota": ""
+  },
+  "avance_encendido": {
+   "valor": "11° ± 3° a 850 rpm",
+   "fiab": "B",
+   "fuente": "CINQ",
+   "nota": ""
+  },
+  "co_ralenti": {
+   "valor": "< 0,5 %",
+   "fiab": "B",
+   "fuente": "CINQ; ITV",
+   "nota": ""
+  },
+  "presion_gasolina": {
+   "valor": "1,1 ± 0,2 bar regulada",
+   "fiab": "B",
+   "fuente": "CINQ",
+   "nota": ""
+  },
+  "valvula_sobrepresion": {
+   "valor": "Abre a 2,6 bar",
+   "fiab": "B",
+   "fuente": "CINQ",
+   "nota": ""
+  },
+  "caudal_bomba_gasolina": {
+   "valor": "≥ 110 L/h",
+   "fiab": "B",
+   "fuente": "CINQ",
+   "nota": ""
+  },
+  "inyeccion_ralenti_ms": {
+   "valor": "1,5 ms de tiempo de inyección al ralentí",
+   "fiab": "B",
+   "fuente": "CINQ",
+   "nota": ""
+  },
+  "presion_aceite": {
+   "valor": "2,94-3,92 bar con el aceite a 100 °C",
+   "fiab": "C",
+   "fuente": "SEAT-P",
+   "nota": "Dato del 903. Muelle de la válvula de descarga: 4,61 ± 0,15 kg a 22,5 mm."
+  },
+  "termostato": {
+   "valor": "Empieza a abrir a 85 °C, abierto del todo a 89 °C, carrera ≥ 7,5 mm",
+   "fiab": "C",
+   "fuente": "SEAT-P",
+   "nota": "Dato del 903."
+  },
+  "termocontacto_ventilador": {
+   "valor": "Conecta a 90-94 °C, desconecta a 85-89 °C",
+   "fiab": "C",
+   "fuente": "SEAT-P",
+   "nota": "Dato del 903."
+  },
+  "prueba_radiador": {
+   "valor": "0,98 bar",
+   "fiab": "C",
+   "fuente": "SEAT-P",
+   "nota": "Dato del 903."
+  },
+  "presion_neumaticos": {
+   "valor": "2,0 bar delante y detrás",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; SEAT-P; PRES",
+   "nota": "Bucheli, para 135 SR 13 y 145/70 R13. El manual del Panda da 1,7/1,8 bar a media carga y 1,8/2,0 a plena carga."
+  },
+  "alineacion_delantera": {
+   "valor": "Caída 1°34,5' ± 30' · avance 1°40' ± 30' · convergencia −1,41 ± 2 mm (−6' ± 10')",
+   "fiab": "A",
+   "fuente": "LIBRO-DE",
+   "nota": "Marbella con caja de 5. El manual del Panda de 1980 daba otros valores (avance 3° ± 30'): usa los del Bucheli. La convergencia se regula en las bieletas."
+  },
+  "alineacion_trasera": {
+   "valor": "No regulable (eje rígido)",
+   "fiab": "B",
+   "fuente": "SEAT-P",
+   "nota": ""
+  },
+  "freno_mano": {
+   "valor": "Regulado cuando la palanca sube 4 o 5 dientes del trinquete",
+   "fiab": "B",
+   "fuente": "SEAT-P",
+   "nota": ""
+  },
+  "pedal_embrague": {
+   "valor": "15-20 mm por debajo del plano del pedal de freno (tuerca del cable en la caja)",
+   "fiab": "A",
+   "fuente": "LIBRO-DE",
+   "nota": "El manual del Panda decía «a la misma altura»."
+  },
+  "direccion_precarga": {
+   "valor": "Precarga del empujador 0,05-0,13 mm · par de giro del piñón 1,35 N·m · grasa ESTERAK 1",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; SEAT-P",
+   "nota": ""
+  },
+  "angulos_giro": {
+   "valor": "Rueda exterior 31° ± 1°30' · rueda interior 33°30' ± 1°30'",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; SEAT-P",
+   "nota": ""
+  }
+ },
+ "mantenimiento": {
+  "nota": "Propuesta para un clásico de pocos km: no existe plan oficial publicado. Lo que llegue antes, km o meses.",
+  "tareas": [
+   {
+    "tarea": "Aceite motor + filtro",
+    "valor": {
+     "km": 5000,
+     "meses": 12
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Cambio. Los taqués hidráulicos son sensibles al aceite viejo."
+   },
+   {
+    "tarea": "Nivel aceite, refrigerante, frenos",
+    "valor": {
+     "km": 1000,
+     "meses": 1
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Revisión antes de cada salida larga."
+   },
+   {
+    "tarea": "Filtro de aire",
+    "valor": {
+     "km": 15000,
+     "meses": 24
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Cambio."
+   },
+   {
+    "tarea": "Bujías",
+    "valor": {
+     "km": 15000,
+     "meses": 24
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Cambio y control de la separación (0,8 mm)."
+   },
+   {
+    "tarea": "Filtro de gasolina",
+    "valor": {
+     "km": 30000,
+     "meses": 48
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Cambio. Revisar los manguitos (la gasolina va a presión)."
+   },
+   {
+    "tarea": "Correa alternador/bomba de agua",
+    "valor": {
+     "km": 15000,
+     "meses": 24
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Revisar tensión y grietas; cambiar cada 4 años."
+   },
+   {
+    "tarea": "Líquido de frenos",
+    "valor": {
+     "km": null,
+     "meses": 24
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Cambio completo y purga."
+   },
+   {
+    "tarea": "Refrigerante",
+    "valor": {
+     "km": null,
+     "meses": 24
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Cambio. Comprobar el termostato y el electroventilador."
+   },
+   {
+    "tarea": "Aceite del cambio",
+    "valor": {
+     "km": 60000,
+     "meses": 48
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Revisar nivel cada 15 000 km."
+   },
+   {
+    "tarea": "Frenos (pastillas, discos, zapatas, tambores)",
+    "valor": {
+     "km": 10000,
+     "meses": 12
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Comprobar contra los límites de desgaste."
+   },
+   {
+    "tarea": "Latiguillos de freno",
+    "valor": {
+     "km": null,
+     "meses": 48
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Cambiar si están agrietados. El manual recomienda cambiar los dos a la vez."
+   },
+   {
+    "tarea": "Suspensión y ballestas",
+    "valor": {
+     "km": 10000,
+     "meses": 12
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Silentblocks, gemelas, abarcones y amortiguadores."
+   },
+   {
+    "tarea": "Dirección y rótulas",
+    "valor": {
+     "km": 10000,
+     "meses": 12
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Holguras, fuelles de la cremallera y guardapolvos."
+   },
+   {
+    "tarea": "Neumáticos",
+    "valor": {
+     "km": 5000,
+     "meses": 6
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Presión mensual. Cambiarlos a los 6-8 años aunque tengan dibujo."
+   },
+   {
+    "tarea": "Cadena de distribución",
+    "valor": {
+     "km": 60000,
+     "meses": null
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Escuchar si golpea en frío. No hay intervalo de cambio publicado."
+   },
+   {
+    "tarea": "Sonda lambda",
+    "valor": {
+     "km": 60000,
+     "meses": null
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Comprobar CO y lambda antes de cada ITV."
+   },
+   {
+    "tarea": "Batería y masas",
+    "valor": {
+     "km": null,
+     "meses": 12
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": "Limpiar los bornes y las masas al chasis y al motor."
+   },
+   {
+    "tarea": "Engrase de bisagras y cerraduras",
+    "valor": {
+     "km": null,
+     "meses": 12
+    },
+    "fiab": "C",
+    "fuente": "NOVAZ",
+    "nota": ""
+   }
+  ]
+ },
+ "pares": {
+  "unidad": "N·m",
+  "motor": {
+   "culata": {
+    "valor": "30 N·m + 90° + 90°",
+    "fiab": "B",
+    "fuente": "CINQ",
+    "nota": "CRÍTICO. Es el procedimiento del 899 (Cinquecento). El Bucheli da 60 N·m para el 903 de carburación y el manual SEAT del Panda 49 o 59 N·m: son otros tornillos y otro procedimiento, no los mezcles. Orden en espiral desde el centro."
+   },
+   "bancada": {
+    "valor": 69,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; CINQ; SEAT-P",
+    "nota": "Coinciden las tres fuentes."
+   },
+   "biela": {
+    "valor": 41,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; CINQ; SEAT-P",
+    "nota": "Coinciden las tres fuentes."
+   },
+   "volante": {
+    "valor": 44,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P; CINQ",
+    "nota": "El Cinquecento da 45."
+   },
+   "polea_cigueñal": {
+    "valor": 98,
+    "fiab": "B",
+    "fuente": "SEAT-P; CINQ; LIBRO-DE",
+    "nota": "Manual SEAT: 98 N·m (10 kgm); Cinquecento: 100. En la tabla del Bucheli aparece 98 N·m en la primera fila, etiquetada «alternador al bloque»: casi seguro es este par."
+   },
+   "piñon_arbol_levas": {
+    "valor": "45-49",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P; CINQ",
+    "nota": "49 N·m en el Bucheli y el manual SEAT (903); 45 N·m en el Cinquecento 899."
+   },
+   "soportes_eje_balancines": {
+    "valor": 39,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P; CINQ",
+    "nota": "40 en el Cinquecento."
+   },
+   "colector_escape": {
+    "valor": 20,
+    "fiab": "C",
+    "fuente": "LIBRO-DE",
+    "nota": "Bucheli pág. 122, leído de una foto inclinada: confírmalo."
+   },
+   "carter": {
+    "valor": 7.8,
+    "fiab": "C",
+    "fuente": "LIBRO-DE",
+    "nota": "Ídem."
+   },
+   "tapon_carter": {
+    "valor": 30,
+    "fiab": "C",
+    "fuente": "LIBRO-DE",
+    "nota": "Ídem."
+   },
+   "tapa_distribucion": {
+    "valor": 7.8,
+    "fiab": "C",
+    "fuente": "LIBRO-DE",
+    "nota": "Ídem."
+   },
+   "bomba_agua": {
+    "valor": 25,
+    "fiab": "C",
+    "fuente": "LIBRO-DE",
+    "nota": "Ídem."
+   },
+   "embrague_volante": {
+    "valor": 16,
+    "fiab": "C",
+    "fuente": "LIBRO-DE",
+    "nota": "Ídem."
+   },
+   "termostato_carcasa": {
+    "valor": 15,
+    "fiab": "C",
+    "fuente": "LIBRO-DE",
+    "nota": "Ídem."
+   },
+   "bomba_aceite": {
+    "valor": "15 (al bloque) · 4,9 (M6 y tapa)",
+    "fiab": "C",
+    "fuente": "LIBRO-DE",
+    "nota": "Ídem."
+   },
+   "manocontacto_aceite": {
+    "valor": 35,
+    "fiab": "C",
+    "fuente": "LIBRO-DE",
+    "nota": "Ídem."
+   },
+   "tapa_balancines": {
+    "valor": "4,5-8",
+    "fiab": "C",
+    "fuente": "LIBRO-DE; CINQ",
+    "nota": "El Cinquecento da 8; en la foto del Bucheli parece 4,5. Es una tapa de chapa: aprieta suave."
+   },
+   "bujias": {
+    "valor": "27-32",
+    "fiab": "C",
+    "fuente": "CINQ; LIBRO-DE",
+    "nota": "27 en el Cinquecento; en la foto del Bucheli parece 32."
+   },
+   "soportes_motor": {
+    "valor": "Soporte derecho M12: 88 · taco derecho a carrocería: tornillo M8 25, tuerca M8 15 · taco izquierdo a carrocería: 25 · soporte izquierdo M12: 88",
+    "fiab": "B",
+    "fuente": "LIBRO-DE",
+    "nota": "Final de la tabla de la pág. 122, bastante legible."
+   },
+   "sonda_lambda": {
+    "valor": null,
+    "fiab": "C",
+    "fuente": "",
+    "nota": "Pendiente: no encontrado en ninguna fuente.",
+    "etiqueta": "Sonda lambda",
+    "pendiente": true
+   },
+   "cuerpo_mariposa": {
+    "valor": null,
+    "fiab": "C",
+    "fuente": "",
+    "nota": "Pendiente: no encontrado en ninguna fuente.",
+    "etiqueta": "Cuerpo de mariposa / inyección",
+    "pendiente": true
+   }
+  },
+  "cambio": {
+   "cambio_motor": {
+    "valor": 78,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Caja al bloque motor."
+   },
+   "carcasa_campana": {
+    "valor": 25,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Carcasa a la campana del embrague."
+   },
+   "tapa_5a": {
+    "valor": "M8: 25 · M6: 10",
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Tapa de la 5.ª a la carcasa."
+   },
+   "tuercas_ejes": {
+    "valor": 118,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Tuercas de los ejes primario y secundario."
+   },
+   "brida_intermedia": {
+    "valor": 10,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "M6."
+   },
+   "tapa_muelles_bloqueo": {
+    "valor": 25,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Tapa de los muelles de retención de las varillas."
+   },
+   "brida_rodamiento_diferencial": {
+    "valor": 25,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "bloqueo_marcha_atras": {
+    "valor": 10,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "M6."
+   },
+   "horquillas": {
+    "valor": 10,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Horquillas a las varillas."
+   },
+   "chapa_eje_marcha_atras": {
+    "valor": 10,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "horquilla_marcha_atras": {
+    "valor": 35,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "corona_diferencial": {
+    "valor": 68,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Corona a la caja del diferencial."
+   },
+   "brida_fuelle_palier_izq": {
+    "valor": 10,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "horquilla_mando": {
+    "valor": 15,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Contratuerca: 18."
+   },
+   "varillaje": {
+    "valor": "Soporte del reenvío: 11 · bulón horquilla marcha atrás: 25 · tuerca carcasa: 25 · tapa del mando: 10 · brida fuelle palier dcho.: 7,8 · consola del mando a carrocería: 8",
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   }
+  },
+  "chasis": {
+   "tuerca_buje_delantero": {
+    "valor": 216,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "CRÍTICO. Bucheli, Marbella. El manual SEAT del Panda de 1980 daba 196 N·m y el Cinquecento 240: usa 216."
+   },
+   "tornillos_rueda": {
+    "valor": 86,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; RUEDA; CINQ",
+    "nota": "CRÍTICO. Delante y detrás."
+   },
+   "soporte_pinza": {
+    "valor": 62,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "CRÍTICO. Portapinzas a la mangueta."
+   },
+   "disco_buje": {
+    "valor": 64,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Disco a la brida del buje."
+   },
+   "latiguillo_pinza": {
+    "valor": 20,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "purgadores": {
+    "valor": 6,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Pinzas y bombines."
+   },
+   "brazo_carroceria": {
+    "valor": 39,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Brazo oscilante a la carrocería."
+   },
+   "brazo_rotula": {
+    "valor": 34,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Brazo oscilante a la rótula."
+   },
+   "vastago_amortiguador": {
+    "valor": 46,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Vástago del amortiguador al taco de goma."
+   },
+   "amortiguador_arriba": {
+    "valor": 59,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Amortiguador (McPherson) arriba, al paso de rueda."
+   },
+   "amortiguador_mangueta": {
+    "valor": 59,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "tirante_brazo": {
+    "valor": 69,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Tirante de reacción al brazo."
+   },
+   "tirante_soporte": {
+    "valor": 69,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Tirante al soporte."
+   },
+   "soporte_tirante_carroceria": {
+    "valor": 49,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "chapa_seguridad_tirante": {
+    "valor": 15,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "brazo_direccion_amortiguador": {
+    "valor": 26,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Brazo de dirección al amortiguador."
+   },
+   "ballesta_placa_eje": {
+    "valor": 39,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Placa de la ballesta (abarcón) al tubo del eje."
+   },
+   "ballesta_gemela": {
+    "valor": 29,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Gemela a la ballesta."
+   },
+   "ballesta_carroceria": {
+    "valor": 49,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Ballesta a la carrocería (perno delantero)."
+   },
+   "amortiguador_tras_placa": {
+    "valor": 69,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Amortiguador trasero a la placa de la ballesta."
+   },
+   "amortiguador_tras_arriba": {
+    "valor": 69,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Amortiguador trasero arriba, a la carrocería."
+   },
+   "rodamiento_trasero_eje": {
+    "valor": 70,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Rodamiento (buje) trasero al tubo del eje."
+   },
+   "tuberia_bombin": {
+    "valor": 20,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "tambor": {
+    "valor": 10,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Tambor a la brida."
+   },
+   "bombin_plato": {
+    "valor": 10,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "freno_mano_carroceria": {
+    "valor": 39,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "volante_direccion": {
+    "valor": 49,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P; CINQ",
+    "nota": ""
+   },
+   "columna_carroceria": {
+    "valor": 25,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Soporte de la columna a la carrocería."
+   },
+   "cruceta_caja": {
+    "valor": 27,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Abrazadera de la cruceta a la caja de dirección."
+   },
+   "contratuerca_rotula": {
+    "valor": 49,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Contratuerca de la rótula de dirección (tras ajustar la convergencia)."
+   },
+   "rotula_brazo": {
+    "valor": 34,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Rótula al brazo de dirección."
+   },
+   "bieleta_cremallera": {
+    "valor": "47-58",
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Bieleta axial a la cremallera."
+   }
+  }
+ },
+ "limites": {
+  "unidad": "mm",
+  "frenos": {
+   "disco_diametro": {
+    "valor": 227,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "disco_espesor_nuevo": {
+    "valor": "10,7-10,9",
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "disco_espesor_rectificado_min": {
+    "valor": 9.7,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "disco_espesor_limite": {
+    "valor": 9.0,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "disco_alabeo_max": {
+    "valor": 0.15,
+    "fiab": "B",
+    "fuente": "SEAT-P",
+    "nota": "Medido a ~2 mm del borde."
+   },
+   "pastillas_espesor_min": {
+    "valor": 1.5,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "tambor_diametro_nuevo": {
+    "valor": "185,24-185,53",
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "tambor_rectificado_max": {
+    "valor": 186.0,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "El manual del Panda daba 186,33. Usa el del Marbella, que es más conservador."
+   },
+   "tambor_limite": {
+    "valor": 186.3,
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "El manual del Panda daba 186,83."
+   },
+   "zapatas_espesor_min": {
+    "valor": 1.5,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "pinza_piston": {
+    "valor": 48,
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "bomba_freno": {
+    "valor": "19,05 (3/4\")",
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "bombines_traseros": {
+    "valor": "19,05 o 15,875",
+    "fiab": "C",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": "El Bucheli da 19,05 y el manual del Panda 15,875 (5/8\"): mide el tuyo antes de pedir bombines."
+   },
+   "regulador_presion": {
+    "valor": "60 bar delante → 35,5 ± 1,75 bar detrás",
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "grasas_frenos": {
+    "valor": "Deslizaderas: grasa PBC · montaje de bombines: RA 349",
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   }
+  },
+  "suspension": {
+   "muelle_delantero": {
+    "valor": "Libre 364 mm, hilo Ø 10 mm, 8 espiras útiles, hélice a derechas; dos clases (marca amarilla o verde)",
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": "Monta los dos de la misma clase."
+   },
+   "ballesta_flecha": {
+    "valor": "Apertura de la ballesta según carga: 113 mm a 100 kp · 93 mm a 134 kp · 25 mm a 250 kp · −12 mm a 312 kp. Tolerancias impresas: 19,5 ± 2 · 86 ± 7 · 120 ± 10",
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": "Carga aplicada en el centro del tubo del eje. La tabla del libro no deja claro a qué fila va cada tolerancia. El manual del Panda da una flecha de 86 ± 3 mm con 134 daN."
+   },
+   "grasa_rotulas": {
+    "valor": "Grasa de litio NLGI 3 para articulaciones y rodamientos",
+    "fiab": "A",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "rotulas": {
+    "valor": "Sin engrase (for life)",
+    "fiab": "B",
+    "fuente": "SEAT-P",
+    "nota": ""
+   }
+  },
+  "embrague": {
+   "disco": {
+    "valor": "Ø exterior 170 mm, Ø interior del forro 120 mm; mando por cable",
+    "fiab": "A",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   }
+  },
+  "motor_903_referencia": {
+   "cilindro": {
+    "valor": "Clases A 65,000-65,010 · B -65,020 · C -65,030 · D -65,040 · E -65,050",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": "Todo este bloque es del 903 de carburación (Bucheli, págs. 113-116). El 899 comparte bloque y diámetro, pero su carrera es 67,7 mm: confirma las cotas de cigüeñal, bielas y pistones antes de pedir piezas."
+   },
+   "ovalidad_conicidad": {
+    "valor": "0,005 máx.",
+    "fiab": "B",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "juego_bancada": {
+    "valor": "0,026-0,061",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "juego_axial_cigueñal": {
+    "valor": "0,060-0,260",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "muñequillas_bancada": {
+    "valor": "Estándar 50,785-50,805 · minoraciones: 50,531-50,551 · 50,277-50,297 · 50,023-50,043 · 49,769-49,789",
+    "fiab": "B",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "muñequillas_biela": {
+    "valor": "Estándar 39,985-40,005 · minoraciones: 39,731-39,751 · 39,477-39,497 · 39,223-39,243 · 38,969-38,989",
+    "fiab": "B",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "ancho_axial": {
+    "valor": "Estándar 28,080-28,120 · 1.ª sobremedida 28,207-28,247; ancho de la muñequilla de biela 26,975-27,025",
+    "fiab": "B",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "alojamientos": {
+    "valor": "Bancada 54,507-54,520 · taqués 14,010-14,028 · árbol de levas delante 50,505-50,725 (clases B-E), centro 46,420-46,450, detrás 35,921-35,951",
+    "fiab": "B",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "biela": {
+    "valor": "Ojo del bulón 19,940-19,960 · cabeza 43,657-43,673",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "piston": {
+    "valor": "Clases A 64,940-64,950 a E 64,980-64,990, medido a 31,65 mm de la cabeza · sobremedidas +0,2/+0,4/+0,6 · juego con el cilindro 0,050-0,070",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "bulon": {
+    "valor": "Alojamiento clases 1: 19,970-19,974 · 2: -19,978 · 3: -19,982 · sobremedida +0,2 · juego 0,008-0,016",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "segmentos_ranura": {
+    "valor": "Ancho de ranura 1,785-1,805 · 2,015-2,035 · 3,957-3,977; espesor 1,728-1,740 · 1,978-1,990 · 3,925-3,937; juego vertical 0,045-0,077 · 0,025-0,057 · 0,020-0,052",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "luz_segmentos": {
+    "valor": "1.º 0,200-0,450 · 2.º 0,200-0,350 · rascador 0,200-0,450",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": "El manual del Panda da 0,20-0,35 para los tres."
+   },
+   "peso_pistones": {
+    "valor": "Diferencia máxima ± 3,5 g (con segmentos y bulón)",
+    "fiab": "B",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "volante_motor": {
+    "valor": "Cota superficie de fricción-asiento del plato: 0,6 · rectificado máximo 1,0 · alabeo 0,05",
+    "fiab": "B",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "arbol_levas": {
+    "valor": "Apoyos: detrás 30,975-31,000 · centro 43,348-43,373 · delante 37,975-38,000; casquillos 31,026-31,046 · 43,404-43,424 · 38,025-38,050; alzada 5,1; alabeo 0,05",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": "La alzada puede ser distinta en el 899 con taqués hidráulicos."
+   },
+   "bomba_aceite": {
+    "valor": "Juego radial 0,050-0,140 · axial 0,020-0,105 · ancho de engranajes 29,956-29,986 · juego de flancos 0,080 · muelle de la válvula: 2,4-2,6 kp a 36,0 mm y 4,4-4,7 kp a 29,0 mm",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "bomba_agua": {
+    "valor": "Juego rodete-carcasa 0,800-1,200",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   },
+   "culata": {
+    "valor": "Alabeo máximo del plano 0,05",
+    "fiab": "B",
+    "fuente": "LIBRO-DE",
+    "nota": ""
+   },
+   "valvulas": {
+    "valor": "Guía: alojamiento 12,950-12,977, exterior 13,010-13,030 (sobremedidas +0,05/+0,1/+0,25), interior 7,022-7,040 · vástago 6,982-7,000 · juego 0,022-0,052 (límite 0,150) · cabeza ADM 28,8-29,1, ESC 25,8-26,1 · margen mínimo 1,0 · asiento 45° (correcciones 15° y 75°), ancho ADM 1,8 / ESC 2,2",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": "El libro imprime el vástago como «7,000-6,892»: será una errata, el manual SEAT da 6,982-7,000."
+   },
+   "balancines": {
+    "valor": "Alojamiento 15,010-15,030 · soporte 15,010-15,028 · eje 14,978-14,990",
+    "fiab": "B",
+    "fuente": "LIBRO-DE; SEAT-P",
+    "nota": ""
+   }
+  }
+ },
+ "electrica": {
+  "nota": "El manual SEAT es del Panda de 1980. El Marbella de inyección añade bomba eléctrica, relés de inyección, inmovilizador y otra caja de fusibles, así que los datos de ese manual valen solo como referencia.",
+  "bateria": {
+   "valor": "12 V, 32 Ah de origen · densidad 1,28 cargada / 1,20 a media carga / 1,12 descargada (32/24/16 °Bé) · carga máxima 3,2 A · 12,72 V cargada",
+   "fiab": "A",
+   "fuente": "LIBRO-DE; BAT",
+   "nota": "Hoy se suele montar una de 40-45 Ah, que cabe y va mejor. La densidad de descargada se lee «1,2» en la foto: por los 16 °Bé será 1,12."
+  },
+  "alternador": {
+   "valor": "45 A: Bosch K1-14V 20/45A (regulador EL 14V 4C), Marelli AA 125 R 14V 45A (regulador RTT 119AC) o Ducellier 45 A · empieza a cargar a 1000-1050 rpm · regulación 14,1 ± 0,1 V · rotor 2,9 Ω (Bosch), 3,1 ± 0,1 Ω (Marelli), 3,5 ± 0,2 Ω (Ducellier)",
+   "fiab": "A",
+   "fuente": "LIBRO-DE",
+   "nota": "Mira la placa del tuyo para saber de qué marca es."
+  },
+  "regulador": {
+   "valor": "Electrónico incorporado; 13,65-14 V (Marelli) o 13,6-14,4 V (Lucas)",
+   "fiab": "B",
+   "fuente": "SEAT-P",
+   "nota": ""
+  },
+  "motor_arranque": {
+   "valor": "Bosch DF 12 o Marelli E 76: 12 V, 0,7 kW, piñón de 9 dientes, corona de 116 · prueba de arranque: Bosch 410 A a 7,8 V; Marelli 340 ± 15 A a 7,1 ± 0,2 V · escobillas nuevas/mínimas: Bosch 13,75/11,5 mm, Marelli 10/8 mm",
+   "fiab": "A",
+   "fuente": "LIBRO-DE",
+   "nota": "Columnas de la pág. 120 leídas en foto inclinada."
+  },
+  "contactor_arranque": {
+   "valor": "Bobinado de atracción/retención: Bosch 0,44 ± 0,02 / 1,9 ± 0,5 Ω · Marelli 0,35 ± 0,02 / 1,2 ± 0,07 Ω",
+   "fiab": "A",
+   "fuente": "LIBRO-DE",
+   "nota": ""
+  },
+  "encendido": {
+   "valor": "Estático de chispa perdida, dos bobinas (1+4 y 2+3), mandado por la centralita; sin delco",
+   "fiab": "B",
+   "fuente": "IAW16F-DOC; FF-SPI-ENC",
+   "nota": ""
+  },
+  "bomba_gasolina": {
+   "valor": "Eléctrica, dentro del depósito, con relé mandado por la centralita",
+   "fiab": "C",
+   "fuente": "AUTODOC-REL; MF-INY",
+   "nota": "Así aparece en los catálogos y en un foro; confírmalo en el coche."
+  },
+  "rele_bomba": {
+   "valor": "En la caja de fusibles, bajo el salpicadero, lado del conductor",
+   "fiab": "C",
+   "fuente": "AUTODOC-REL",
+   "nota": "Es lo que dice una tienda de recambios. El número de relé está pendiente."
+  },
+  "fusibles_panda": {
+   "valor": "Panda 1980: 10 fusibles (A-H de 8 A, I y L de 16 A)",
+   "fiab": "C",
+   "fuente": "SEAT-P",
+   "nota": "El Marbella de inyección tiene otra caja: no lo uses para identificar fusibles."
+  },
+  "fusibles_marbella": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: tapa de la caja o esquema del Marbella. Hazle una foto a la tapa.",
+   "etiqueta": "Caja de fusibles y relés del Marbella 0.9i",
+   "pendiente": true
+  },
+  "bombillas": {
+   "valor": "Faros halógenos 60/65 W (impreso así: lo normal es H4 60/55) · posición delante 4 W, detrás 5 W · intermitentes 21 W · freno 21 W · marcha atrás 21 W · matrícula 5 W · antiniebla trasero 21 W · luz interior 5 W · cuadro 2 W · testigos 1,2 W (los de posición y carga, 3 W)",
+   "fiab": "A",
+   "fuente": "LIBRO-DE",
+   "nota": ""
+  },
+  "esquema_marbella": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no hay ninguno publicado en línea. Un usuario del foro de Fiat ofrece los esquemas del 899 de fábrica (Cinquecento) por mensaje privado.",
+   "etiqueta": "Esquema eléctrico del Marbella 0.9i",
+   "pendiente": true
+  },
+  "localizacion_averias": {
+   "valor": "El capítulo 55 del manual SEAT (localización de averías por circuitos: arranque, carga, luces, intermitentes, limpias, luneta, indicadores…) sirve como método de comprobación con lámpara de pruebas",
+   "fiab": "B",
+   "fuente": "SEAT-P",
+   "nota": "El método vale; los números de fusibles y conectores son del Panda."
+  }
+ },
+ "diagnostico_inyeccion": {
+  "identificacion": {
+   "nota": "El Marbella 0.9 Cat montó dos centralitas Marelli según la época. La de tu coche es la IAW 16S.S0 con inmovilizador.",
+   "variantes": [
+    {
+     "valor": "IAW 6F.SF · Marelli 61602.047.01 · motor 09 NCB · visto en un Marbella 0.9 Cat de 1993",
+     "fiab": "A",
+     "fuente": "DESG-6F",
+     "nota": "Sin inmovilizador conocido. La familia 6F es la misma que la del Cinquecento 900 (IAW 6F.S0) y del Panda 1.0 (6F.SH)."
+    },
+    {
+     "valor": "IAW 16S.S0 · Marelli 6160209401 (61602.094.01) · SEAT 6A0906018 · equivalente 6160211600 · con inmovilizador",
+     "fiab": "A",
+     "fuente": "ECUDIAG; ECUFILE",
+     "nota": "Procesador MC68HC11F1. Es la de los Marbella 0.9i de las últimas series."
+    },
+    {
+     "valor": "Tu coche: IAW 16S.S0 con inmovilizador, confirmada por el propietario. Cuadra con el motor 08 NCB y la fecha de la ficha (nov. 1996). La 6F.SF es de los 09 NCB anteriores.",
+     "fiab": "A",
+     "fuente": "PROPIETARIO; FICHA; ECUDIAG",
+     "nota": ""
+    }
+   ],
+   "familia": {
+    "valor": "6F y 16F son los sistemas monopunto Marelli de Fiat. La 16S.S0 parece la versión SEAT de la 16F (misma época, inmovilizador y procesador), pero no hay documentación que lo confirme.",
+    "fiab": "C",
+    "fuente": "MARELLI-GUIA; IAW16F-DOC; ECUFILE",
+    "nota": ""
+   }
+  },
+  "estrategia": [
+   {
+    "valor": "Densidad-velocidad: calcula el combustible con la presión del colector (MAP) y las rpm, y lo corrige en lazo cerrado con la sonda lambda",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   },
+   {
+    "valor": "Correcciones por temperatura del aire, del refrigerante, mariposa, tensión de batería y sonda lambda. Corte de inyección en retención y a altas rpm",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   },
+   {
+    "valor": "Encendido estático de chispa perdida: dos bobinas, una para los cilindros 1+4 y otra para 2+3, sin delco. Avance calculado con MAP, rpm y temperatura",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC; FF-SPI-ENC",
+    "nota": ""
+   },
+   {
+    "valor": "Rueda fónica de 60-2 dientes en la polea del cigüeñal",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   },
+   {
+    "valor": "Bomba de gasolina por relé, mandado por la centralita (se activa un momento al dar el contacto)",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC; MARELLI-GUIA",
+    "nota": ""
+   },
+   {
+    "valor": "Purga del cánister de carbón activo hacia la admisión mediante electroválvula",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   }
+  ],
+  "modo_emergencia": [
+   {
+    "valor": "Fallo del motor paso a paso: lo desactiva y limita el motor a 1200 rpm",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   },
+   {
+    "valor": "Fallo del MAP: usa presión atmosférica fija (1012 mbar)",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   },
+   {
+    "valor": "Fallo de la mariposa (TPS): calcula la posición con el MAP y las rpm",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   },
+   {
+    "valor": "Fallo de temperatura de aire o refrigerante: último valor válido o un valor por defecto",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   },
+   {
+    "valor": "Sin señal de rpm/PMS: el motor no arranca (no hay modo de emergencia)",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   },
+   {
+    "valor": "Batería fuera de rango: avería si pasa de 16,2 V o baja de 6 V",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   }
+  ],
+  "componentes": {
+   "inyector": {
+    "valor": "Marelli 213170623605 · 1,75 Ω ± 5 % a 20 °C · 465 cm³/min estático",
+    "fiab": "B",
+    "fuente": "FF-INY",
+    "nota": "Cita del manual de taller del Seicento (SPI). Es de baja impedancia: no lo cambies por un inyector Weber de 13-18 Ω."
+   },
+   "presion_gasolina": {
+    "valor": "1,1 ± 0,2 bar regulada; válvula de sobrepresión a 2,6 bar; bomba ≥ 110 L/h",
+    "fiab": "B",
+    "fuente": "CINQ",
+    "nota": ""
+   },
+   "sensor_temp_refrigerante": {
+    "valor": "Contradictorio: ~5 kΩ a 20 °C (10 kΩ a 0 °C) según el Cinquecento, o 2,2-2,8 kΩ a 20 °C (6,0-6,8 kΩ a 0 °C; 280-350 Ω a 80 °C) según la guía Marelli",
+    "fiab": "C",
+    "fuente": "CINQ; MARELLI-GUIA",
+    "nota": "Medir en frío y en caliente: lo importante es que baje de forma progresiva al calentarse. Está en el colector de admisión."
+   },
+   "sensor_temp_aire": {
+    "valor": "2,2-2,8 kΩ a 20 °C; 6,0-7,0 kΩ a 0 °C; 250-380 Ω a 80 °C",
+    "fiab": "C",
+    "fuente": "MARELLI-GUIA",
+    "nota": "Valores genéricos de la guía Marelli, sin asignar a la 6F. Está en el cuerpo de mariposa."
+   },
+   "potenciometro_mariposa": {
+    "valor": "0,25-0,30 V cerrada · 4,5-5,0 V abierta (alimentación 5 V)",
+    "fiab": "C",
+    "fuente": "MARELLI-GUIA",
+    "nota": "Genérico Marelli. Un documento del Cinquecento da 3,8-4,7 V a plena apertura."
+   },
+   "sensor_map": {
+    "valor": "4,5-4,8 V a 800 mmHg · 2,4-2,6 V a 500 mmHg · 0,25-0,30 V a 150 mmHg",
+    "fiab": "C",
+    "fuente": "MARELLI-GUIA",
+    "nota": "Genérico Marelli."
+   },
+   "motor_paso_a_paso": {
+    "valor": "45-65 Ω por bobinado; dos fases, cuatro hilos",
+    "fiab": "C",
+    "fuente": "MARELLI-GUIA; IAW16F-DOC",
+    "nota": "La resistencia es genérica Marelli."
+   },
+   "sensor_pms": {
+    "valor": "575-720 Ω a 20 °C; entrehierro 0,5-1,5 mm",
+    "fiab": "B",
+    "fuente": "CINQ",
+    "nota": "La guía Marelli genérica da 300-500 Ω. Señal de unos 12 V pico a pico."
+   },
+   "bobinas": {
+    "valor": "Primario 0,5-0,6 Ω (0,45-0,75 Ω según Marelli); secundario 12-16 kΩ",
+    "fiab": "C",
+    "fuente": "CINQ; MARELLI-GUIA",
+    "nota": "El primario coincide en las dos fuentes; el secundario solo viene en la guía genérica."
+   },
+   "calefactor_lambda": {
+    "valor": "2,5-4,5 Ω a 20 °C",
+    "fiab": "B",
+    "fuente": "CINQ",
+    "nota": ""
+   },
+   "sonda_lambda": {
+    "valor": "Banda estrecha, 0-1 V: oscila por encima y por debajo de 0,45 V en lazo cerrado",
+    "fiab": "C",
+    "fuente": "FF-IAW",
+    "nota": "El umbral de 0,45 V es el estándar de las sondas de circonio, no viene en la fuente."
+   },
+   "electrovalvula_canister": {
+    "valor": "25-55 Ω",
+    "fiab": "C",
+    "fuente": "MARELLI-GUIA",
+    "nota": ""
+   }
+  },
+  "patillaje": {
+   "nota": "No hay ningún patillaje publicado de la IAW 16S.S0. Este es el de la IAW 16F (Cinquecento/Seicento 899, misma familia y época, también con inmovilizador por línea serie). Úsalo como punto de partida y confirma cada pin en tu coche con la columna «Cómo comprobarlo» antes de cortar, puentear o alimentar nada. Rellena «Verificado» cuando lo compruebes.",
+   "fiab": "C",
+   "fuente": "IAW16F-DOC; FF-PIN",
+   "fiab_nota": "B como patillaje de la 16F; C para tu 16S.S0 hasta que lo compruebes. Las pruebas de la columna «Cómo comprobarlo» son una guía de taller construida con los valores de la sección 9.4.",
+   "conector": "35 pines (16F). En la 16S.S0 sin confirmar: cuéntalos.",
+   "pines": [
+    {
+     "pin": 1,
+     "funcion": "Bobina 1, cilindros 1+4 (mando a masa)",
+     "color_16F": "blanco/verde",
+     "como_comprobarlo": "Sin contacto y conector suelto: entre el pin y el borne + de la bobina, 0,5-0,6 Ω (el primario). Ojo: la alimentación de la bobina puede venir del relé principal, que no se activa con la centralita desenchufada.",
+     "verificado": null
+    },
+    {
+     "pin": 2,
+     "funcion": "Motor paso a paso, fase B",
+     "color_16F": "verde",
+     "como_comprobarlo": "Las cuatro fases forman dos bobinados: busca la pareja con 45-65 Ω entre sí.",
+     "verificado": null
+    },
+    {
+     "pin": 3,
+     "funcion": "Motor paso a paso, fase D",
+     "color_16F": "azul/amarillo",
+     "como_comprobarlo": "Ídem. Entre fases de bobinados distintos no debe haber continuidad.",
+     "verificado": null
+    },
+    {
+     "pin": 4,
+     "funcion": "Mando del relé principal (mantenimiento de alimentación)",
+     "color_16F": "azul/rojo",
+     "como_comprobarlo": "Continuidad con la bobina del relé principal.",
+     "verificado": null
+    },
+    {
+     "pin": 5,
+     "funcion": "Entrada de cambio automático",
+     "color_16F": "sin cable",
+     "como_comprobarlo": "No se usa con cambio manual.",
+     "verificado": null
+    },
+    {
+     "pin": 6,
+     "funcion": "Testigo de inyección (mando a masa)",
+     "color_16F": "gris/rojo",
+     "como_comprobarlo": "Contacto dado y conector suelto: ~12 V a través de la bombilla del testigo.",
+     "verificado": null
+    },
+    {
+     "pin": 7,
+     "funcion": "Inmovilizador: línea serie con el cajetín",
+     "color_16F": "—",
+     "como_comprobarlo": "Continuidad con el conector del cajetín del inmovilizador. Es el único cable entre los dos.",
+     "verificado": null
+    },
+    {
+     "pin": 8,
+     "funcion": "Relé del aire acondicionado (+)",
+     "color_16F": "verde",
+     "como_comprobarlo": "Sin A/A suele estar vacío.",
+     "verificado": null
+    },
+    {
+     "pin": 9,
+     "funcion": "Sin conectar",
+     "color_16F": "—",
+     "como_comprobarlo": "",
+     "verificado": null
+    },
+    {
+     "pin": 10,
+     "funcion": "Diagnosis, línea L",
+     "color_16F": "azul claro/azul",
+     "como_comprobarlo": "Continuidad con el conector de diagnosis de 3 pines.",
+     "verificado": null
+    },
+    {
+     "pin": 11,
+     "funcion": "Sensor PMS (−)",
+     "color_16F": "azul/rojo",
+     "como_comprobarlo": "Entre 11 y 28: 575-720 Ω (la resistencia del sensor).",
+     "verificado": null
+    },
+    {
+     "pin": 12,
+     "funcion": "Sonda lambda (−)",
+     "color_16F": "marrón/verde",
+     "como_comprobarlo": "Continuidad con la masa de señal de la sonda.",
+     "verificado": null
+    },
+    {
+     "pin": 13,
+     "funcion": "Sensor de temperatura del refrigerante",
+     "color_16F": "violeta/blanco",
+     "como_comprobarlo": "Entre 13 y la masa de sensores: resistencia del NTC, baja al calentarse. Enchufado y con contacto: 2-3 V en frío.",
+     "verificado": null
+    },
+    {
+     "pin": 14,
+     "funcion": "Alimentación de sensores +5 V",
+     "color_16F": "azul claro/negro",
+     "como_comprobarlo": "Enchufado y con contacto: 5,0 V respecto a masa.",
+     "verificado": null
+    },
+    {
+     "pin": 15,
+     "funcion": "Diagnosis, línea K",
+     "color_16F": "blanco/rojo",
+     "como_comprobarlo": "Continuidad con el conector de diagnosis de 3 pines.",
+     "verificado": null
+    },
+    {
+     "pin": 16,
+     "funcion": "Masa de señales",
+     "color_16F": "negro",
+     "como_comprobarlo": "Conector suelto: continuidad a masa del motor (< 1 Ω).",
+     "verificado": null
+    },
+    {
+     "pin": 17,
+     "funcion": "Masa principal (motor)",
+     "color_16F": "verde/negro (dudoso)",
+     "como_comprobarlo": "Conector suelto: continuidad a masa del motor (< 1 Ω).",
+     "verificado": null
+    },
+    {
+     "pin": 18,
+     "funcion": "Inyector (mando a masa)",
+     "color_16F": "rosa/negro",
+     "como_comprobarlo": "Sin contacto y conector suelto: entre el pin y la alimentación del inyector, unos 1,75 Ω (el inyector) más el cable.",
+     "verificado": null
+    },
+    {
+     "pin": 19,
+     "funcion": "Bobina 2, cilindros 2+3 (mando a masa)",
+     "color_16F": "azul claro/rojo",
+     "como_comprobarlo": "Como el pin 1, con la otra bobina.",
+     "verificado": null
+    },
+    {
+     "pin": 20,
+     "funcion": "Motor paso a paso, fase A",
+     "color_16F": "azul/blanco",
+     "como_comprobarlo": "Como el pin 2.",
+     "verificado": null
+    },
+    {
+     "pin": 21,
+     "funcion": "Motor paso a paso, fase C",
+     "color_16F": "blanco",
+     "como_comprobarlo": "Como el pin 2.",
+     "verificado": null
+    },
+    {
+     "pin": 22,
+     "funcion": "Electroválvula del cánister (mando a masa)",
+     "color_16F": "naranja/negro",
+     "como_comprobarlo": "Entre el pin y su alimentación: 25-55 Ω.",
+     "verificado": null
+    },
+    {
+     "pin": 23,
+     "funcion": "Relé de la bomba de gasolina (mando a masa)",
+     "color_16F": "negro/violeta",
+     "como_comprobarlo": "Continuidad con la bobina del relé de la bomba. Puentear a masa con contacto dado debe hacer sonar la bomba.",
+     "verificado": null
+    },
+    {
+     "pin": 24,
+     "funcion": "Relé del aire acondicionado (−)",
+     "color_16F": "amarillo",
+     "como_comprobarlo": "Sin A/A suele estar vacío.",
+     "verificado": null
+    },
+    {
+     "pin": 25,
+     "funcion": "Sin conectar",
+     "color_16F": "—",
+     "como_comprobarlo": "",
+     "verificado": null
+    },
+    {
+     "pin": 26,
+     "funcion": "Positivo de contacto (+15)",
+     "color_16F": "naranja (dudoso)",
+     "como_comprobarlo": "~12 V solo con el contacto dado.",
+     "verificado": null
+    },
+    {
+     "pin": 27,
+     "funcion": "Sin conectar",
+     "color_16F": "—",
+     "como_comprobarlo": "",
+     "verificado": null
+    },
+    {
+     "pin": 28,
+     "funcion": "Sensor PMS (+)",
+     "color_16F": "amarillo/negro",
+     "como_comprobarlo": "Con 11: 575-720 Ω. Al dar arranque, señal alterna de unos voltios.",
+     "verificado": null
+    },
+    {
+     "pin": 29,
+     "funcion": "Sonda lambda (señal +)",
+     "color_16F": "azul/amarillo",
+     "como_comprobarlo": "Motor caliente al ralentí: oscila entre ~0,1 y ~0,9 V.",
+     "verificado": null
+    },
+    {
+     "pin": 30,
+     "funcion": "Potenciómetro de mariposa (señal)",
+     "color_16F": "rosa",
+     "como_comprobarlo": "Enchufado y con contacto: ~0,3 V cerrada y sube sin saltos hasta ~4,5 V abierta.",
+     "verificado": null
+    },
+    {
+     "pin": 31,
+     "funcion": "Sensor de temperatura del aire",
+     "color_16F": "violeta",
+     "como_comprobarlo": "Entre 31 y la masa de sensores: unos 2,5 kΩ a 20 °C.",
+     "verificado": null
+    },
+    {
+     "pin": 32,
+     "funcion": "Sensor MAP (señal)",
+     "color_16F": "amarillo/rojo",
+     "como_comprobarlo": "Contacto dado sin arrancar: ~4,5 V (presión atmosférica). Al ralentí baja mucho.",
+     "verificado": null
+    },
+    {
+     "pin": 33,
+     "funcion": "Sin conectar",
+     "color_16F": "—",
+     "como_comprobarlo": "",
+     "verificado": null
+    },
+    {
+     "pin": 34,
+     "funcion": "Masa secundaria (motor)",
+     "color_16F": "gris/negro",
+     "como_comprobarlo": "Conector suelto: continuidad a masa del motor (< 1 Ω).",
+     "verificado": null
+    },
+    {
+     "pin": 35,
+     "funcion": "Alimentación desde el relé principal (+30)",
+     "color_16F": "marrón/blanco",
+     "como_comprobarlo": "~12 V con el relé principal activado (motor arrancando o en marcha). Con el conector suelto, el relé no entra.",
+     "verificado": null
+    }
+   ]
+  },
+  "codigos_averia_16F": {
+   "nota": "Códigos validados de la IAW 16F, por grupos (hexadecimal). El testigo solo se enciende si la avería está filtrada y validada; al dar el contacto se enciende 4 s como prueba.",
+   "fiab": "B",
+   "fuente": "IAW16F-DOC",
+   "entradas": {
+    "01": "Potenciómetro de mariposa",
+    "02": "Sensor MAP",
+    "04": "Sonda lambda",
+    "08": "Temperatura del refrigerante",
+    "10": "Temperatura del aire",
+    "20": "Tensión de batería"
+   },
+   "salidas": {
+    "01": "Inyector",
+    "02": "Bobina 1",
+    "04": "Bobina 2",
+    "08": "Motor paso a paso (o cánister: el documento se contradice)",
+    "20": "Relé del A/A",
+    "40": "Relé de la bomba de gasolina"
+   },
+   "funcionales": {
+    "01": "Autocalibración",
+    "02": "RAM",
+    "04": "EPROM",
+    "08": "EEPROM",
+    "10": "Microcontrolador",
+    "20": "Señal de rpm/PMS"
+   }
+  },
+  "pruebas_activas_16F": {
+   "fiab": "B",
+   "fuente": "IAW16F-DOC",
+   "pruebas": {
+    "80": "Relé de la bomba de gasolina (30 s)",
+    "81": "Inyector (4 ms, 5 veces)",
+    "82": "Bobina 1 (2 ms, 5 veces)",
+    "83": "Bobina 2 (2 ms, 5 veces)",
+    "84": "Borrar averías de la EEPROM",
+    "85": "Cánister (20 ms, 7 veces)",
+    "86": "Corte de régimen a 3750 rpm (2 s)",
+    "87": "Relé del A/A (30 s)",
+    "8C": "Motor paso a paso"
+   }
+  },
+  "diagnosis": {
+   "conector": {
+    "valor": "Conector Fiat de 3 pines; con IAW Scan2 hace falta un adaptador OBD-2 → Fiat 3 pines",
+    "fiab": "C",
+    "fuente": "IAWSCAN",
+    "nota": "Falta confirmar dónde está en el Marbella."
+   },
+   "protocolo": {
+    "valor": "Código ISO a 1200 baudios al dar el contacto; diálogo a 7812,5 baudios por las líneas K (pin 15) y L (pin 10)",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   },
+   "herramienta": {
+    "valor": "IAW Scan2 con cable KKL (FTDI) + adaptador Fiat 3 pines",
+    "fiab": "C",
+    "fuente": "IAWSCAN",
+    "nota": "Lista oficialmente la 6F y la 16F: si tu coche lleva la 6F.SF, lo más probable es que la lea. La 16S no está en la lista."
+   }
+  },
+  "inmovilizador": {
+   "sistema": {
+    "valor": "Inmovilizador con transpondedor: chip en la llave, antena en el bombín y cajetín propio, separado de la centralita de motor. La centralita solo inyecta y da chispa si el cajetín valida el código de la llave.",
+    "fiab": "B",
+    "fuente": "ECUDIAG; IAW16F-DOC; RECEURO",
+    "nota": "Que el cajetín es una pieza aparte lo dicen los vendedores de la 16S.S0 («hay que desconectar la caja de inmovilizador») y hay cajetines del Marbella 0.9 08NCB en desguace."
+   },
+   "transpondedor": {
+    "valor": "TEMIC 11 o Philips ID33 (código fijo)",
+    "fiab": "A",
+    "fuente": "TRANSP",
+    "nota": "Catálogo de transpondedores para el Marbella 1997-1998. Es la misma familia que los Ibiza, Inca, Córdoba y Toledo de 1995-98."
+   },
+   "enlace_centralita": {
+    "valor": "Un solo cable de línea serie entre el cajetín y la centralita (pin 7 en la 16F)",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC; FF-PIN",
+    "nota": "Confírmalo en la 16S.S0."
+   },
+   "contador": {
+    "valor": "La centralita cuenta los contactos desde el último fallo de inmovilizador",
+    "fiab": "B",
+    "fuente": "IAW16F-DOC",
+    "nota": ""
+   },
+   "arranque_emergencia": {
+    "valor": "Código de 5 cifras de la tarjeta, introducido con el pedal del acelerador: dar contacto, esperar a que parpadee el testigo, pisar a fondo y soltar al contar cada cifra en los destellos",
+    "fiab": "C",
+    "fuente": "IAW16F-DOC; FIAT-CODE",
+    "nota": "Es el procedimiento de la 16F y del Fiat CODE. No he encontrado si SEAT entregaba tarjeta de código con el Marbella: busca una tarjeta de plástico con la documentación."
+   },
+   "llaves": {
+    "valor": "Programación con equipo de diagnosis (como los SEAT de la época). Un cerrajero puede copiar el transpondedor de código fijo a partir de una llave buena.",
+    "fiab": "C",
+    "fuente": "AUTOTRON; TRANSP",
+    "nota": "Antes de que se te pierda la única llave, haz una copia."
+   },
+   "memoria": {
+    "valor": "Datos del inmovilizador en la EEPROM interna del microcontrolador MC68HC11F1 de la centralita (volcado de 512 bytes). Se lee en placa con programador (Xprog, UPA) alimentando la centralita a 12 V.",
+    "fiab": "C",
+    "fuente": "ECUFILE; IMMOOFF; DIAGCOCHES",
+    "nota": "Un listado habla de un chip 24C02. Antes de tocar nada, haz copia de la EEPROM."
+   },
+   "centralita_desguace": {
+    "valor": "Una 16S.S0 usada no arranca con tu cajetín: hay que adaptarla (traspasar los datos de la tuya) o anularle el inmovilizador y desconectar el cajetín.",
+    "fiab": "B",
+    "fuente": "ECUDIAG; TOPLLAVES; ECUFILE",
+    "nota": ""
+   },
+   "sintomas": {
+    "valor": "Llave no reconocida: el motor no arranca o arranca y se para en 2-3 s. Prueba con la otra llave antes de culpar a la centralita.",
+    "fiab": "C",
+    "fuente": "FOROS-INMO",
+    "nota": "Comportamiento descrito para SEAT de la época, no para el Marbella en concreto."
+   },
+   "ubicacion_cajetin": {
+    "valor": null,
+    "fiab": "C",
+    "fuente": "",
+    "nota": "Pendiente: busca un módulo pequeño bajo el salpicadero, cerca de la columna de dirección, con cable hacia el bombín. Hazle foto a su etiqueta.",
+    "etiqueta": "Ubicación del cajetín del inmovilizador",
+    "pendiente": true
+   },
+   "pineado_cajetin": {
+    "valor": null,
+    "fiab": "C",
+    "fuente": "",
+    "nota": "Pendiente: no está publicado. Identifica alimentación, masa, antena del bombín y la línea serie a la centralita.",
+    "etiqueta": "Pineado del cajetín del inmovilizador",
+    "pendiente": true
+   },
+   "testigo": {
+    "valor": null,
+    "fiab": "C",
+    "fuente": "",
+    "nota": "Pendiente: comprobar en el cuadro qué testigo se enciende o parpadea al dar contacto.",
+    "etiqueta": "Testigo del inmovilizador y su comportamiento",
+    "pendiente": true
+   }
+  },
+  "averias": [
+   {
+    "valor": "Se cala en caliente y no arranca hasta que se enfría: sensor PMS. A menudo no deja código.",
+    "fiab": "C",
+    "fuente": "FF-SENS",
+    "nota": ""
+   },
+   {
+    "valor": "CO alto, mezcla rica o suspende la ITV: sensor de temperatura del refrigerante, luego sonda lambda.",
+    "fiab": "C",
+    "fuente": "FF-SENS",
+    "nota": ""
+   },
+   {
+    "valor": "Ralentí bajo o inestable, o se cala al soltar el acelerador: motor paso a paso o cuerpo de mariposa sucio. Si falla el motor paso a paso, la centralita limita a 1200 rpm.",
+    "fiab": "C",
+    "fuente": "IAW16F-DOC; IT-SPI",
+    "nota": ""
+   },
+   {
+    "valor": "Tirones y petardeos por el escape (SPI de Fiat): bujías, cables y bobinas; después, la presión de gasolina.",
+    "fiab": "C",
+    "fuente": "IT-SPI",
+    "nota": ""
+   },
+   {
+    "valor": "Golpeteo de taqués: cambiar el aceite (con limpiador); si sigue, cambiar los taqués hidráulicos.",
+    "fiab": "C",
+    "fuente": "IT-TAQ",
+    "nota": ""
+   },
+   {
+    "valor": "Tras montar la culata funciona mal (bujías negras y húmedas): taqués hidráulicos sin purgar o bloqueados.",
+    "fiab": "C",
+    "fuente": "IT-TAQ",
+    "nota": ""
+   },
+   {
+    "valor": "Centralita de desguace que no arranca: el inmovilizador (solo IAW 16S.S0).",
+    "fiab": "C",
+    "fuente": "ECUDIAG",
+    "nota": ""
+   },
+   {
+    "valor": "Fallos intermitentes: revisar conectores y masas antes de cambiar piezas.",
+    "fiab": "C",
+    "fuente": "FF-SENS",
+    "nota": ""
+   }
+  ]
+ },
+ "itv": {
+  "co_ralenti": {
+   "valor": "≤ 0,5 % vol.",
+   "fiab": "B",
+   "fuente": "ITV",
+   "nota": "Para matriculados antes del 1/7/2002, si el fabricante no da otro valor."
+  },
+  "co_ralenti_acelerado": {
+   "valor": "≤ 0,3 % vol. a ≥ 2000 rpm",
+   "fiab": "B",
+   "fuente": "ITV",
+   "nota": ""
+  },
+  "lambda_ralenti_acelerado": {
+   "valor": "1 ± 0,03",
+   "fiab": "B",
+   "fuente": "ITV",
+   "nota": ""
+  },
+  "historico": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: confirmar en el Reglamento de Vehículos Históricos (RD 892/2013).",
+   "etiqueta": "Periodicidad de ITV como histórico (cumple 30 años el 12/12/2026)",
+   "pendiente": true
+  }
+ },
+ "recambios": {
+  "filtro_aceite": {
+   "valor": "Mann-Filter W 714/2",
+   "fiab": "A",
+   "fuente": "MANN",
+   "nota": "Catálogo para Marbella 028A 0.9 CAT y 08NCB. La equivalencia Bosch no está confirmada."
+  },
+  "filtro_aire": {
+   "valor": "Aerofiltro redondo: alto 55-59 mm, Ø interior 181-182, Ø exterior 215-235 mm. Deportivo: BMC 155/06",
+   "fiab": "C",
+   "fuente": "AEROF; BMC",
+   "nota": "BMC es A (catálogo del Marbella 0.9 cat). La referencia de filtro de papel está pendiente."
+  },
+  "bujia": {
+   "valor": "Champion RN9YCC · Bosch WR7D · Marelli F7LCR",
+   "fiab": "B",
+   "fuente": "CINQ; LIBRO-DE",
+   "nota": ""
+  },
+  "taques_hidraulicos": {
+   "valor": "INA 420 0033 10 · Febi 19368 · Ajusa 85018400 · AE FOL119/FOL161 · Ruville 265804",
+   "fiab": "B",
+   "fuente": "CAT-TAQ",
+   "nota": "Para el 1170A1.046. Hay de Ø 11 y Ø 12 mm según el número de motor: medir antes de pedir."
+  },
+  "centralita": {
+   "valor": "IAW 16S.S0 6160209401 / SEAT 6A0906018 (con inmovilizador) o IAW 6F.SF 61602.047.01",
+   "fiab": "A",
+   "fuente": "ECUDIAG; DESG-6F",
+   "nota": "Pídela con la referencia de la etiqueta de la tuya."
+  },
+  "inyector": {
+   "valor": "Magneti Marelli 213170623605 (1,75 Ω)",
+   "fiab": "B",
+   "fuente": "FF-INY",
+   "nota": "Inyector SPI del Cinquecento/Seicento: confirma que es el mismo antes de pedirlo."
+  },
+  "filtro_gasolina": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Filtro de gasolina",
+   "pendiente": true
+  },
+  "pastillas_freno": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Pastillas de freno",
+   "pendiente": true
+  },
+  "discos_freno": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Discos de freno (Ø 227)",
+   "pendiente": true
+  },
+  "zapatas": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Zapatas traseras",
+   "pendiente": true
+  },
+  "kit_cadena": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Kit de cadena de distribución",
+   "pendiente": true
+  },
+  "bomba_agua": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Bomba de agua",
+   "pendiente": true
+  },
+  "termostato": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Termostato",
+   "pendiente": true
+  },
+  "correa": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Correa de alternador",
+   "pendiente": true
+  },
+  "sonda_lambda": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Sonda lambda",
+   "pendiente": true
+  },
+  "sensor_pms": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Sensor PMS",
+   "pendiente": true
+  },
+  "sensor_temperatura": {
+   "valor": null,
+   "fiab": "C",
+   "fuente": "",
+   "nota": "Pendiente: no encontrado en ninguna fuente.",
+   "etiqueta": "Sensor de temperatura del refrigerante",
+   "pendiente": true
+  }
+ },
+ "pendientes": [
+  {
+   "dato": "Pineado real de tu IAW 16S.S0",
+   "como_cerrarlo": "Recorre la tabla de la sección 9.5 con el polímetro y marca cada pin como verificado. Cuenta los pines del conector."
+  },
+  {
+   "dato": "Cajetín del inmovilizador: ubicación, etiqueta y pineado",
+   "como_cerrarlo": "Foto del cajetín y de su conector; identificar alimentación, masa, antena del bombín y la línea a la centralita."
+  },
+  {
+   "dato": "Tarjeta de código del inmovilizador",
+   "como_cerrarlo": "Buscar entre la documentación del coche una tarjeta con un código de 5 cifras. Sin ella no hay arranque de emergencia."
+  },
+  {
+   "dato": "Apriete de culata 30 N·m + 90° + 90°",
+   "como_cerrarlo": "Una sola fuente (foro del Cinquecento, sin cita del manual). Confirmar con el Haynes del Cinquecento antes de montar la culata."
+  },
+  {
+   "dato": "Sensor de temperatura del refrigerante: 5 kΩ o 2,5 kΩ a 20 °C",
+   "como_cerrarlo": "Medir el tuyo a temperatura ambiente y en caliente, y anotarlo."
+  },
+  {
+   "dato": "Resistencias y tensiones de sensores y actuadores de la 6F/16S (aire, mariposa, MAP, paso a paso)",
+   "como_cerrarlo": "Solo hay valores genéricos Marelli. Medir los del coche cuando funcione bien y guardarlos como referencia."
+  },
+  {
+   "dato": "Caja de fusibles y relés del Marbella 0.9i",
+   "como_cerrarlo": "Foto de la tapa de la caja y de los relés."
+  },
+  {
+   "dato": "Esquema eléctrico del Marbella 0.9i",
+   "como_cerrarlo": "Manual SEAT del Marbella (no está en línea) o los esquemas del 899 de fábrica de Fiat."
+  },
+  {
+   "dato": "Ubicación del conector de diagnosis y si IAW Scan2 lee tu centralita",
+   "como_cerrarlo": "Probarlo con un cable KKL y el adaptador Fiat de 3 pines."
+  },
+  {
+   "dato": "Equivalencias NGK/Bosch de bujía y referencias de frenos, cadena, bomba y sensores",
+   "como_cerrarlo": "Catálogo TecDoc filtrando por 08 NCB o 09 NCB."
+  },
+  {
+   "dato": "Pares del motor de la pág. 122 del Bucheli (columna izquierda)",
+   "como_cerrarlo": "Foto plana de esa columna: la foto inclinada no deja alinear bien cada par con su tornillo."
+  },
+  {
+   "dato": "Cotas internas específicas del 899 (carrera 67,7)",
+   "como_cerrarlo": "Las del Bucheli son del 903. Haynes del Cinquecento o ETAI."
+  },
+  {
+   "dato": "Diámetro de los bombines traseros (19,05 o 15,875)",
+   "como_cerrarlo": "Medirlo en el coche o leer la marca del bombín."
+  },
+  {
+   "dato": "Periodicidad de ITV como histórico",
+   "como_cerrarlo": "RD 892/2013."
+  }
+ ]
+}

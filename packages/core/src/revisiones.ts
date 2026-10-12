@@ -295,11 +295,11 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 	},
 	{
 		id: 'seat-marbella',
-		nombre: 'SEAT Marbella (903/899 cc, mecánica Fiat 127)',
+		nombre: 'SEAT Marbella 0.9i SPI (899 cc, 08 NCB)',
 		descripcion:
-			'Plan para los motores 903 cc (carburador) y 899 cc (inyección monopunto y catalizador), de varillas y cadena de distribución. Es un motor que pide cuidados frecuentes: el reglaje de válvulas es lo que más alarga su vida.',
+			'Plan para el Marbella de inyección monopunto con catalizador: taqués hidráulicos (no se reglan) y encendido estático sin delco. Para un clásico de pocos km manda casi siempre el tiempo.',
 		fuente:
-			'Propuesta del taller basada en la mecánica Fiat 127/Panda y en las recomendaciones conocidas del modelo (reglaje de las 8 válvulas cada 10.000 km). Sin manual oficial: ajústala con el manual de taller si lo consigues.',
+			'Propuesta del taller con los datos del manual del Marbella (Bucheli) y del motor 899 de Fiat; no hay plan oficial publicado. En el 903 de carburación hay que añadir el reglaje de válvulas (ADM 0,15 / ESC 0,20 mm en frío) y la revisión del delco.',
 		sugerirSi: /marbella/i,
 		tipo: 'coche',
 		niveles: [
@@ -308,10 +308,10 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 				nombre: 'Comprobación mensual',
 				cadaDias: null,
 				cadaMeses: 1,
-				cadaKm: null,
+				cadaKm: 1000,
 				avisoKm: 0,
 				avisoDias: 5,
-				tareas: ['Presión de neumáticos', 'Nivel de aceite (este motor consume algo: vigílalo)', 'Nivel de refrigerante y líquido de frenos', 'Luces e intermitentes', 'Arrancarlo y dejarlo coger temperatura si lleva parado'],
+				tareas: ['Presión de neumáticos: 2,0 bar delante y detrás, en frío', 'Nivel de aceite (vigila el consumo)', 'Nivel de refrigerante y de líquido de frenos', 'Luces e intermitentes', 'Si lleva parado, arrancarlo y dejar que coja temperatura'],
 				incluye: [],
 				heredaDe: []
 			},
@@ -323,63 +323,77 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 				cadaKm: 5000,
 				avisoKm: 500,
 				avisoDias: 30,
-				tareas: ['Cambiar aceite 15W-40 (o 10W-40 semisintético)', 'Cambiar filtro de aceite'],
+				tareas: ['Cambiar aceite: 15W-40 o 10W-40 API SG o superior, 3,6 L con filtro', 'Cambiar filtro de aceite (Mann W 714/2)', 'Neumáticos: desgaste, grietas y edad (cambiarlos a los 6-8 años aunque tengan dibujo)'],
 				incluye: ['M1'],
-				heredaDe: ['aceite']
+				heredaDe: ['aceite'],
+				notas: 'Los taqués hidráulicos son sensibles al aceite viejo.'
 			},
 			{
 				codigo: 'M3',
-				nombre: 'Puesta a punto',
+				nombre: 'Revisión anual',
 				cadaDias: null,
 				cadaMeses: 12,
 				cadaKm: 10000,
 				avisoKm: 750,
 				avisoDias: 30,
 				tareas: [
-					'Reglaje de las 8 válvulas (en frío)',
-					'Cambiar bujías',
-					'Cambiar filtro de aire',
-					'Tapa y rotor del delco: limpiar y revisar (la humedad lo para)',
-					'Platinos y avance de encendido, si lleva encendido por contactos',
-					'Alimentación: ralentí y mezcla (inyección monopunto en el 899 cc, carburador en el 903 cc)',
-					'Correa del alternador: tensión y grietas',
-					'Frenos: zapatas traseras y pastillas',
+					'Frenos contra los límites: pastillas y zapatas 1,5 mm de forro, disco 9 mm, tambor Ø 186,3 mm',
+					'Suspensión y ballestas: silentblocks, gemelas, abarcones y amortiguadores',
+					'Dirección y rótulas: holguras, fuelles de la cremallera y guardapolvos',
+					'Inyección: testigo, CO al ralentí (< 0,5 %) y lambda; el ralentí no se regula (lo controla la centralita)',
+					'Taqués hidráulicos: escuchar si golpetean en frío (no se reglan)',
+					'Batería y masas: limpiar los bornes y las masas al chasis y al motor',
+					'Engrasar bisagras y cerraduras',
 					'Bajos: óxido en pisos, largueros y pasos de rueda'
 				],
 				incluye: ['M2'],
-				heredaDe: ['válvulas', 'puesta a punto', 'bujías']
+				heredaDe: [],
+				notas: 'El 899 SPI lleva taqués hidráulicos y encendido sin delco: no hay reglaje de válvulas ni platinos.'
 			},
 			{
 				codigo: 'M4',
-				nombre: 'Líquidos cada 2 años',
+				nombre: 'Cada 2 años',
 				cadaDias: null,
 				cadaMeses: 24,
-				cadaKm: null,
-				avisoKm: 0,
+				cadaKm: 15000,
+				avisoKm: 1000,
 				avisoDias: 30,
-				tareas: ['Cambiar líquido de frenos DOT 4 y purgar', 'Cambiar refrigerante', 'Revisar manguitos y abrazaderas'],
-				incluye: [],
-				heredaDe: ['frenos', 'refrigerante']
+				tareas: [
+					'Cambiar filtro de aire',
+					'Cambiar bujías: Champion RN9YCC (o Bosch WR7D), separación 0,8 mm',
+					'Correa del alternador y bomba de agua: tensión y grietas',
+					'Cambiar líquido de frenos DOT 4 (0,37 L) y purgar',
+					'Cambiar refrigerante: 5,2 L al 50 % de anticongelante; comprobar termostato y electroventilador',
+					'Aceite de la caja: nivel hasta el borde del tapón',
+					'Revisar manguitos y abrazaderas'
+				],
+				incluye: ['M3'],
+				heredaDe: ['frenos', 'refrigerante', 'bujías']
 			},
 			{
 				codigo: 'M5',
-				nombre: 'Revisión mayor',
+				nombre: 'Cada 4 años',
 				cadaDias: null,
 				cadaMeses: 48,
-				cadaKm: 40000,
+				cadaKm: 30000,
 				avisoKm: 2000,
 				avisoDias: 60,
-				tareas: [
-					'Cadena de distribución: ruido y tensión (cambiar si suena)',
-					'Cambiar filtro de gasolina',
-					'Cables de bujía',
-					'Aceite de la caja de cambios',
-					'Silentblocks y amortiguadores',
-					'Compresión de cilindros',
-					'Sonda lambda y catalizador (899 cc)'
-				],
-				incluye: ['M3'],
-				heredaDe: ['cadena', 'distribución']
+				tareas: ['Cambiar filtro de gasolina y revisar sus manguitos (va a presión)', 'Cambiar los latiguillos de freno (los dos a la vez)', 'Cambiar la correa del alternador', 'Cambiar aceite de la caja de 5: 2,95 L de SAE 80W-90 GL-4', 'Cables de bujía y bobinas'],
+				incluye: ['M4'],
+				heredaDe: []
+			},
+			{
+				codigo: 'M6',
+				nombre: 'Revisión mayor',
+				cadaDias: null,
+				cadaMeses: null,
+				cadaKm: 60000,
+				avisoKm: 3000,
+				avisoDias: 60,
+				tareas: ['Cadena de distribución: escuchar si golpea en frío (no hay intervalo de cambio publicado)', 'Sonda lambda y catalizador: CO y lambda antes de la ITV', 'Compresión de cilindros', 'Soportes del motor y silentblocks'],
+				incluye: [],
+				heredaDe: ['cadena', 'distribución'],
+				notas: 'Sin intervalo oficial: propuesta del taller.'
 			}
 		]
 	}
