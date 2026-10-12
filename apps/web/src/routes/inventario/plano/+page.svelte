@@ -56,14 +56,16 @@
 		delete provisional[id];
 	}
 	async function girar(m: Mueble) {
-		const fd: Record<string, string | number> = { id: m.id, tipo: m.tipo, codigo: m.codigo, nombre: m.nombre, x: m.x, y: m.y, ancho: m.ancho, fondo: m.fondo, niveles: m.niveles, notas: m.notas ?? '' };
+		// Con su disposición a medida (si no, al girarlo perdería sus cajones)
+		const fd: Record<string, string | number> = { id: m.id, tipo: m.tipo, codigo: m.codigo, nombre: m.nombre, x: m.x, y: m.y, ancho: m.ancho, fondo: m.fondo, niveles: m.niveles, notas: m.notas ?? '', disposicion: m.disposicion ? JSON.stringify(m.disposicion) : '' };
 		if (!m.girado) fd.girado = 'on';
 		await accion('/inventario/plano?/mueble', Object.fromEntries(Object.entries(fd).map(([k, v]) => [k, typeof v === 'number' ? String(v).replace('.', ',') : v])));
 	}
+	// Quitar se confirma en la misma hoja (el confirm() del navegador a veces no sale encima de una hoja abierta)
+	let confirmandoQuitar = $state(false);
 	async function quitar(m: Mueble) {
-		if (!confirm(`¿Quitar ${m.codigo} · ${m.nombre} del plano?${cuentas[m.id] ? ` Sus ${cuentas[m.id]} artículos se quedan en la zona, sin mueble.` : ''}`)) return;
-		await accion('/inventario/plano?/borrarMueble', { id: m.id });
-		hMueble = false;
+		if (await accion('/inventario/plano?/borrarMueble', { id: m.id })) hMueble = false;
+		confirmandoQuitar = false;
 	}
 
 	// Hojas
@@ -74,6 +76,7 @@
 	function tocarMueble(id: number) {
 		if (!editando) return goto(`/inventario/mueble/${id}`);
 		editado = data.plano.muebles.find((m) => m.id === id) ?? null;
+		confirmandoQuitar = false;
 		posicion = null;
 		hMueble = true;
 	}
@@ -218,10 +221,20 @@
 	{/key}
 	{#if editado}
 		{@const m = editado}
-		<div class="mt-3 grid grid-cols-2 gap-2">
-			<button class="btn" onclick={() => girar(m).then(() => (hMueble = false))}><RotateCw size={16} /> Girar 90°</button>
-			<button class="btn text-vencido" onclick={() => quitar(m)}><Trash2 size={16} /> Quitar</button>
-		</div>
+		{#if confirmandoQuitar}
+			<div class="mt-3 flex flex-col gap-2 rounded-lg border border-vencido/40 bg-vencido/5 p-3 text-sm">
+				<p>¿Quitar <strong>{m.codigo} · {m.nombre}</strong> del plano?{cuentas[m.id] ? ` Sus ${cuentas[m.id]} cosas se quedan en la zona, sin mueble.` : ''}</p>
+				<div class="grid grid-cols-2 gap-2">
+					<button class="btn" onclick={() => (confirmandoQuitar = false)}>No</button>
+					<button class="btn btn-peligro" onclick={() => quitar(m)}><Trash2 size={16} /> Sí, quitar</button>
+				</div>
+			</div>
+		{:else}
+			<div class="mt-3 grid grid-cols-2 gap-2">
+				<button class="btn" onclick={() => girar(m).then(() => (hMueble = false))}><RotateCw size={16} /> Girar 90°</button>
+				<button class="btn text-vencido" onclick={() => (confirmandoQuitar = true)}><Trash2 size={16} /> Quitar</button>
+			</div>
+		{/if}
 	{/if}
 </Hoja>
 

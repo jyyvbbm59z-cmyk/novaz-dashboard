@@ -41,8 +41,18 @@ export function enviar(opts: { alTerminar?: (datos: Record<string, unknown>) => 
 export async function accion(ruta: string, campos: Record<string, string | number | boolean>, el?: Element | null) {
 	const fd = new FormData();
 	for (const [k, v] of Object.entries(campos)) fd.set(k, String(v));
-	const res = await fetch(ruta, { method: 'POST', body: fd, headers: { 'x-sveltekit-action': 'true' } });
-	const result = deserialize(await res.text());
+	let result: ReturnType<typeof deserialize>;
+	try {
+		const res = await fetch(ruta, { method: 'POST', body: fd, headers: { 'x-sveltekit-action': 'true' } });
+		const texto = await res.text();
+		// Si la sesión de Access ha caducado llega su página de entrada (HTML), no la respuesta de la acción
+		if (!texto.trimStart().startsWith('{')) throw new Error(res.ok ? 'Respuesta inesperada' : `HTTP ${res.status}`);
+		result = deserialize(texto);
+	} catch (e) {
+		avisar('No se ha podido hacer: recarga la página (puede que haya caducado la sesión) y vuelve a probar', 'error');
+		registrar({ evento: 'accion_error', nombre: ruta, datos: { mensaje: (e as Error).message } });
+		return null;
+	}
 	if (result.type === 'success') {
 		const datos = (result.data ?? {}) as Record<string, unknown>;
 		if (typeof datos.mensaje === 'string') avisar(datos.mensaje);
