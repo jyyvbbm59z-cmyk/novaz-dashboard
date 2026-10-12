@@ -356,9 +356,9 @@ export async function responderConsulta(locals: Locals, i: Extract<Intencion, { 
 			cargarAlertas(db, { hoy, urgenteDias: ajustes.urgenteDias, incluirOk: true })
 		]);
 		const t = await estadoTaller(db, hoy, alertas);
-		t.listaCompra = t.listaCompra.filter((c) => c.vehiculoId == null || veVehiculo(locals.yo, c.vehiculoId));
+		t.listaCompra = t.listaCompra.filter((c) => (c.vehiculoId == null || veVehiculo(locals.yo, c.vehiculoId)) && (!c.local || locals.permisos.includes('local')));
 		if (!t.listaCompra.length) return 'La lista de la compra está vacía.';
-		const estimado = manual.reduce((x, m) => x + (m.precio ?? 0), 0);
+		const estimado = locals.permisos.includes('dinero') ? manual.reduce((x, m) => x + (m.precio ?? 0), 0) : 0;
 		return [`<b>Lista de la compra</b> (${t.listaCompra.length})`, ...t.listaCompra.map((c) => `- ${esc(c.texto)} <i>(${esc(c.para)})</i>`), ...(estimado ? ['', `Estimado: ${euros(estimado, { redondo: true })}`] : [])].join('\n');
 	}
 	if (i.tema === 'agenda') {

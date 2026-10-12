@@ -37,13 +37,13 @@ export async function estadoTaller(db: DB, hoy: string, alertas: Alerta[]) {
 			: []
 	]);
 	const cantidad = (c: number | null, u: string | null) => (c ? ` × ${c.toLocaleString('es-ES')}${u && u !== 'ud' ? ` ${u}` : ''}` : '');
-	/** vehiculoId: para qué vehículo es (para que cada uno vea solo lo de los suyos); null = del taller. */
-	const listaCompra: { texto: string; para: string; vehiculoId: number | null }[] = [
-		...auto.map((i) => ({ texto: i.texto, para: i.motivo === 'stock' ? `reponer (${i.detalle})` : i.detalle, vehiculoId: i.vehiculoId })),
+	/** vehiculoId: para qué vehículo es (para que cada uno vea solo lo de los suyos); null = del taller. local: es para una tarea del local. */
+	const listaCompra: { texto: string; para: string; vehiculoId: number | null; local: boolean }[] = [
+		...auto.map((i) => ({ texto: i.texto, para: i.motivo === 'stock' ? `reponer (${i.detalle})` : i.detalle, vehiculoId: i.vehiculoId, local: false })),
 		...manual.map((m) => {
 			const p = m.pendienteId ? pends.find((x) => x.id === m.pendienteId) : null;
 			const t = m.tareaLocalId ? tareasCompra.find((x) => x.id === m.tareaLocalId) : null;
-			return { vehiculoId: p?.vehiculoId ?? m.vehiculoId ?? null, texto: `${m.texto}${cantidad(m.cantidad, m.unidad)}`, para: p ? `${p.tipo === 'mejora' ? 'mejora' : 'avería'}: ${p.titulo} (${p.vehiculo})` : t ? `local: ${t.titulo}` : 'apuntado a mano' };
+			return { vehiculoId: p?.vehiculoId ?? m.vehiculoId ?? null, local: m.tareaLocalId != null, texto: `${m.texto}${cantidad(m.cantidad, m.unidad)}`, para: p ? `${p.tipo === 'mejora' ? 'mejora' : 'avería'}: ${p.titulo} (${p.vehiculo})` : t ? `local: ${t.titulo}` : 'apuntado a mano' };
 		})
 	];
 

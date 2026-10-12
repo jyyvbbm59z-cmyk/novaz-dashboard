@@ -84,7 +84,8 @@ export const load = async ({ locals }) => {
 			href: `/flota/${se.vehiculoId}?pestana=mantenimiento#sesion`,
 			orden: diasEntre(hoy, se.fecha)
 		});
-	t.listaCompra = t.listaCompra.filter((c) => c.vehiculoId == null || !locals.yo?.vehiculos || locals.yo.vehiculos.includes(c.vehiculoId));
+	// De la compra: lo de sus vehículos y del taller; lo de las tareas del local, solo con «El local»
+	t.listaCompra = t.listaCompra.filter((c) => (c.vehiculoId == null || !locals.yo?.vehiculos || locals.yo.vehiculos.includes(c.vehiculoId)) && (!c.local || ver('local')));
 	if (ver('inventario') && t.listaCompra.length)
 		asuntos.push({
 			clave: 'compras',

@@ -19,7 +19,7 @@ export interface DatosInforme {
 	nuevas: Set<string>;
 	local: { titulo: string; zona: string | null; fechaLimite: string | null; prioridad: string }[];
 	compras: number;
-	listaCompra: { texto: string; para: string; vehiculoId?: number | null }[];
+	listaCompra: { texto: string; para: string; vehiculoId?: number | null; local?: boolean }[];
 	fueraDeSitio: number;
 	finanzas: { tesoreria: number; gastoMes: number; gastoAnio: number; ingresosAnio: number; diasCuadre: number | null } | null;
 	flota: { alias: string; mensual: number; porKm: number | null; completo: boolean }[];
@@ -140,6 +140,8 @@ export function recortarInforme(d: DatosInforme, permisos: readonly string[], ve
 	// Con vehículos privados de otros: solo lo de los suyos y los del taller
 	const suyo = (id: number) => !vehiculos || vehiculos.ids.includes(id);
 	const suyoAlias = (a: string) => !vehiculos || vehiculos.alias.includes(a);
+	// De la compra: lo de sus vehículos y del taller; lo de las tareas del local, solo con «El local»
+	const compraSuya = (c: DatosInforme['listaCompra'][number]) => (c.vehiculoId == null || suyo(c.vehiculoId)) && (!c.local || ve('local'));
 	return {
 		...d,
 		alertas: ve('vehiculos') ? d.alertas.filter((a) => suyo(a.vehiculoId)) : [],
@@ -148,8 +150,8 @@ export function recortarInforme(d: DatosInforme, permisos: readonly string[], ve
 		flota: ve('vehiculos') && ve('dinero') ? d.flota.filter((f) => suyoAlias(f.alias)) : [],
 		finanzas: ve('dinero') ? d.finanzas : null,
 		local: ve('local') ? d.local : [],
-		listaCompra: ve('inventario') ? d.listaCompra.filter((c) => c.vehiculoId == null || suyo(c.vehiculoId)) : [],
-		compras: ve('inventario') ? d.listaCompra.filter((c) => c.vehiculoId == null || suyo(c.vehiculoId)).length : 0,
+		listaCompra: ve('inventario') ? d.listaCompra.filter(compraSuya) : [],
+		compras: ve('inventario') ? d.listaCompra.filter(compraSuya).length : 0,
 		fueraDeSitio: ve('inventario') ? d.fueraDeSitio : 0
 	};
 }

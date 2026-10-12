@@ -117,7 +117,7 @@
 <Cabecera antetitulo="Taller" titulo="Lista de la compra" />
 
 <form method="POST" action="?/anadir" use:enhance={enviar()} class="mb-5 flex gap-2">
-	<input name="texto" class="input flex-1" placeholder="Añadir: lija de 400 · 6 €" required />
+	<input name="texto" class="input flex-1" placeholder={data.verDinero ? "Añadir: lija de 400 · 6 €" : "Añadir: lija de 400"} required />
 	<input name="cantidad" class="input w-20" inputmode="decimal" placeholder="Cant." />
 	<button class="btn btn-acento btn-icono h-11 w-11 shrink-0" aria-label="Añadir"><Plus size={20} /></button>
 </form>
@@ -146,7 +146,7 @@
 			{:else}
 				<button class="min-w-0 flex-1 text-left hover:text-acento" onclick={() => f.editar && editar(f.editar)}>
 					<span class="block truncate text-sm font-medium">{f.texto}</span>
-					<span class="block truncate text-xs text-texto-3">{f.detalle || 'Toca para editar o poner precio'}</span>
+					<span class="block truncate text-xs text-texto-3">{f.detalle || (data.verDinero ? 'Toca para editar o poner precio' : 'Toca para editar')}</span>
 				</button>
 			{/if}
 			{#if f.precio}<span class="cifra shrink-0 text-sm text-texto-2">≈ {euros(f.precio, { redondo: true })}</span>{/if}
@@ -221,7 +221,7 @@
 			<div class="grid grid-cols-2 gap-3">
 				<label class="campo"><span>Cantidad</span><input name="cantidad" class="input" inputmode="decimal" value="1" /></label>
 				<label class="campo"><span>Unidad</span><select name="unidad" class="input">{#each ['ud', 'L', 'ml', 'kg', 'g', 'm', 'juego'] as u (u)}<option selected={(compra.unidad ?? 'ud') === u}>{u}</option>{/each}</select></label>
-				<label class="campo"><span>Importe total (€)</span><input name="importe" class="input" inputmode="decimal" bind:value={importeCompra} placeholder="Opcional" /></label>
+				{#if data.verDinero}<label class="campo"><span>Importe total (€)</span><input name="importe" class="input" inputmode="decimal" bind:value={importeCompra} placeholder="Opcional" /></label>{/if}
 				<label class="campo"><span>Tienda</span><input name="proveedor" class="input" bind:value={tiendaCompra} /></label>
 				<label class="campo"><span>Fecha</span><input type="date" name="fecha" class="input" bind:value={fechaCompra} /></label>
 			</div>
@@ -232,13 +232,13 @@
 				</label>
 				{#if alInventario}
 					<select name="tipoArticulo" class="input"><option value="recambio">Es un recambio</option><option value="consumible">Es un consumible</option></select>
-				{:else if compra.destino}
+				{:else if compra.destino && data.verDinero}
 					<p class="text-xs text-texto-2">El gasto se apunta a {compra.destino}.</p>
 				{/if}
 			{:else}
 				<p class="text-xs text-texto-3">Se sumará a lo que ya tienes en el inventario.</p>
 			{/if}
-			<p class="text-xs text-texto-3">Con importe, el gasto se apunta solo en la contabilidad.</p>
+			{#if data.verDinero}<p class="text-xs text-texto-3">Con importe, el gasto se apunta solo en la contabilidad.</p>{/if}
 			<button class="btn btn-acento h-12">Guardar</button>
 		</form>
 	{/if}
@@ -250,10 +250,10 @@
 			<form method="POST" action="?/editar" use:enhance={enviar({ alTerminar: () => (hEditar = false) })} class="flex flex-col gap-4">
 				<input type="hidden" name="id" value={editando.id} />
 				<label class="campo"><span>Qué</span><input name="texto" class="input" required value={editando.texto} /></label>
-				<div class="grid grid-cols-3 gap-3">
+				<div class="grid {data.verDinero ? 'grid-cols-3' : 'grid-cols-2'} gap-3">
 					<label class="campo"><span>Cantidad</span><input name="cantidad" class="input" inputmode="decimal" value={editando.cantidad ?? ''} /></label>
 					<label class="campo"><span>Unidad</span><input name="unidad" class="input" value={editando.unidad ?? ''} placeholder="ud" /></label>
-					<label class="campo"><span>Precio (€)</span><input name="precioEstimado" class="input" inputmode="decimal" value={eurosInput(editando.precioEstimadoCent)} placeholder="≈" /></label>
+					{#if data.verDinero}<label class="campo"><span>Precio (€)</span><input name="precioEstimado" class="input" inputmode="decimal" value={eurosInput(editando.precioEstimadoCent)} placeholder="≈" /></label>{/if}
 				</div>
 				<button class="btn btn-acento h-11">Guardar</button>
 			</form>

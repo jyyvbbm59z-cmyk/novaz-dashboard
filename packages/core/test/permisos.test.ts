@@ -47,6 +47,12 @@ describe('informe por persona', () => {
 		expect(r.listaCompra.length).toBe(1);
 		expect(recortarInforme(d, ['vehiculos', 'inventario', 'local', 'dinero', 'ajustes']).finanzas?.tesoreria).toBe(52037);
 	});
+	it('la compra de las tareas del local, solo con «El local»', () => {
+		const conLocal = { ...d, listaCompra: [{ texto: 'Lija', para: 'apuntado a mano' }, { texto: 'Pintura', para: 'local: Pintar', local: true }] };
+		expect(recortarInforme(conLocal, ['vehiculos', 'inventario']).listaCompra.map((c) => c.texto)).toEqual(['Lija']);
+		expect(recortarInforme(conLocal, ['vehiculos', 'inventario']).compras).toBe(1);
+		expect(recortarInforme(conLocal, ['inventario', 'local']).listaCompra.length).toBe(2);
+	});
 	it('con privados de otros: solo las obras de los suyos y los del taller', () => {
 		const conObras = { ...d, obras: [{ nombre: 'Vespa', vehiculoId: 3, avance: 0.1 }, { nombre: 'Marbella', vehiculoId: 6, avance: 0 }] };
 		expect(recortarInforme(conObras, ['vehiculos'], { ids: [1, 6], alias: [] }).obras?.map((o) => o.nombre)).toEqual(['Marbella']);

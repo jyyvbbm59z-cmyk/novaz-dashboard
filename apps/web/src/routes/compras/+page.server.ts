@@ -19,6 +19,8 @@ export const load = async ({ locals }) => {
 			const p = planes.find((x) => x.id === a.planId)!;
 			return { vehiculoId: a.vehiculoId, vehiculo: a.vehiculo, codigo: p.codigo, nombre: p.nombre, tareas: p.tareas, nivel: a.nivel, dias: a.dias };
 		});
+	const local = locals.permisos.includes('local');
+	const dinero = locals.permisos.includes('dinero');
 	// De dónde viene cada cosa: una avería de un vehículo o una tarea del local
 	const [pends, tareas] = await Promise.all([
 		locals.db
@@ -34,7 +36,7 @@ export const load = async ({ locals }) => {
 	// Cada grupo enlaza a su origen exacto (la tarjeta de la mejora, avería o tarea) para ver el contexto y editarlo
 	const origenes: { clave: string; titulo: string; detalle: string; href: string; presupuesto: number | null }[] = [
 		...soloVisibles(locals.yo, pends, (p) => p.vehiculoId).map((p) => ({ clave: `p${p.id}`, titulo: p.titulo, detalle: `${p.vehiculo} · ${p.tipo === 'mejora' ? 'mejora' : 'avería'}`, href: `/flota/${p.vehiculoId}?pestana=historial#pend-${p.id}`, presupuesto: p.presupuesto })),
-		...tareas.map((t) => ({ clave: `t${t.id}`, titulo: t.titulo, detalle: 'El local', href: `/local#tarea-${t.id}`, presupuesto: null }))
+		...(local ? tareas : []).map((t) => ({ clave: `t${t.id}`, titulo: t.titulo, detalle: 'El local', href: `/local#tarea-${t.id}`, presupuesto: null }))
 	];
 	// Lo automático: el precio de la última compra del artículo (por la cantidad que toca)
 	const automaticos = listaCompraAutomatica(articulos, revisiones).map((i) => {
@@ -45,10 +47,20 @@ export const load = async ({ locals }) => {
 			href: i.motivo === 'revision' && i.vehiculoId ? `/flota/${i.vehiculoId}?pestana=mantenimiento` : '/inventario/reserva'
 		};
 	});
-	// Quien solo ve sus vehículos: lo del taller y lo de los suyos, no lo de los demás
+	// Lo del taller y lo de sus vehículos (no lo de los privados de otros); lo de las tareas del local, solo con «El local»
 	const deOtro = (m: (typeof manual)[number]) =>
-		(m.vehiculoId != null && !veVehiculo(locals.yo, m.vehiculoId)) || (m.pendienteId != null && !soloVisibles(locals.yo, pends, (p) => p.vehiculoId).some((p) => p.id === m.pendienteId));
-	return { automaticos, manual: manual.filter((m) => !deOtro(m)), origenes };
+		(m.vehiculoId != null && !veVehiculo(locals.yo, m.vehiculoId)) ||
+		(m.pendienteId != null && !soloVisibles(locals.yo, pends, (p) => p.vehiculoId).some((p) => p.id === m.pendienteId)) ||
+		(m.tareaLocalId != null && !local);
+	const visibles = manual.filter((m) => !deOtro(m));
+	if (dinero) return { verDinero: true, automaticos, manual: visibles, origenes };
+	// Sin «Dinero»: ni precios ni presupuestos (no llegan al navegador)
+	return {
+		verDinero: false,
+		automaticos: automaticos.map((i) => ({ ...i, precioEstimadoCent: null })),
+		manual: visibles.map((m) => ({ ...m, precioEstimadoCent: null })),
+		origenes: origenes.map((o) => ({ ...o, presupuesto: null }))
+	};
 };
 
 /** Marca algo como comprado: suma al inventario (creando el artículo si no existe) y apunta el gasto. */
@@ -105,14 +117,16 @@ export const actions = {
 		const f = leer(await request.formData());
 		// También aquí el precio puede ir al final: «Lija de 400 · 6 €»
 		const { texto, precioCent } = separarPrecio(f.obligatorio('texto', 'qué comprar'));
-		await locals.db.insert(s.listaCompra).values({ texto, cantidad: f.decimal('cantidad'), unidad: f.texto('unidad'), precioEstimadoCent: precioCent });
+		await locals.db.insert(s.listaCompra).values({ texto, cantidad: f.decimal('cantidad'), unidad: f.texto('unidad'), precioEstimadoCent: locals.permisos.includes('dinero') ? precioCent : null });
 		return {};
 	}),
 	editar: accion(async ({ request, locals }) => {
 		const f = leer(await request.formData());
+		// Sin «Dinero» no ve el precio: no se lo pisa
+		const precio = locals.permisos.includes('dinero') ? { precioEstimadoCent: f.euros('precioEstimado') } : {};
 		await locals.db
 			.update(s.listaCompra)
-			.set({ texto: f.obligatorio('texto', 'qué comprar'), cantidad: f.decimal('cantidad'), unidad: f.texto('unidad'), precioEstimadoCent: f.euros('precioEstimado') })
+			.set({ texto: f.obligatorio('texto', 'qué comprar'), cantidad: f.decimal('cantidad'), unidad: f.texto('unidad'), ...precio })
 			.where(eq(s.listaCompra.id, f.id('id')));
 		return { mensaje: 'Guardado' };
 	}),
