@@ -12,8 +12,17 @@
 		vehiculo = null,
 		hoy,
 		accion = '',
-		textoBoton = 'Guardar'
-	}: { catalogo: Catalogos; vehiculo?: Vehiculo | null; hoy: string; accion?: string; textoBoton?: string } = $props();
+		textoBoton = 'Guardar',
+		privado: privadoIni = null
+	}: {
+		catalogo: Catalogos;
+		vehiculo?: Vehiculo | null;
+		hoy: string;
+		accion?: string;
+		textoBoton?: string;
+		/** Si hay usuarios: ¿es privado (suyo) o del taller? null = no se pregunta. */
+		privado?: boolean | null;
+	} = $props();
 
 	const ini = (() => ({
 		tipoId: vehiculo?.tipoId ?? catalogo.tipos[0]?.id,
@@ -23,6 +32,7 @@
 	let tipoId = $state(ini.tipoId);
 	let propietario = $state<'novaz' | 'tercero'>(ini.propietario);
 	let contactoId = $state(ini.contactoId);
+	let privado = $state((() => privadoIni)());
 	const tipo = $derived(catalogo.tipos.find((t) => t.id === Number(tipoId)));
 </script>
 
@@ -66,6 +76,21 @@
 			<label class="campo"><span>Km actuales</span><input name="km" class="input" inputmode="numeric" placeholder="0" /></label>
 		{/if}
 	</div>
+
+	{#if privado != null}
+		<fieldset class="flex flex-col gap-2">
+			<legend class="etiqueta mb-2">Quién lo lleva</legend>
+			<input type="hidden" name="privado" value={privado ? 'si' : 'no'} />
+			<div class="inline-flex w-fit rounded-lg border border-borde bg-superficie-2 p-1">
+				{#each [[false, 'Del taller'], [true, 'Privado, mío']] as [v, t] (t)}
+					<button type="button" class="rounded-md px-4 py-1.5 text-sm font-medium {privado === v ? 'bg-superficie-3 text-texto' : 'text-texto-3'}" onclick={() => (privado = v as boolean)}>{t}</button>
+				{/each}
+			</div>
+			<span class="text-xs text-texto-3">
+				{privado ? 'Solo tú lo editas y solo a ti te salen sus avisos; los demás lo ven en solo lectura.' : 'Común: todos los que llevan vehículos lo ven, lo editan y les salen sus avisos.'}
+			</span>
+		</fieldset>
+	{/if}
 
 	<fieldset class="flex flex-col gap-3">
 		<legend class="etiqueta mb-2">Propietario</legend>

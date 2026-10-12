@@ -3,7 +3,7 @@
 	import Icono from '$comp/Icono.svelte';
 	import Placa from '$comp/Placa.svelte';
 	import { compararNivel } from '@novaz/core';
-	import { LayoutGrid, List, Plus } from '@lucide/svelte';
+	import { LayoutGrid, List, Lock, Plus } from '@lucide/svelte';
 
 	let { data } = $props();
 	const cat = $derived(data.catalogo);
@@ -16,12 +16,14 @@
 
 	const estado = (id: number | null) => cat.estados.find((e) => e.id === id);
 	const tipoDe = (id: number) => cat.tipos.find((t) => t.id === id);
+	const ajeno = (id: number) => data.ajenos.includes(id);
 
 	const lista = $derived(
 		data.vehiculos
 			.filter((v) => (tipo == null || v.tipoId === tipo) && (propietario === 'todos' || v.propietario === propietario))
 			.filter((v) => verFinales || !estado(v.estadoId)?.final)
-			.sort((a, b) => (orden === 'alertas' ? compararNivel(a.nivel, b.nivel) : 0) || a.alias.localeCompare(b.alias, 'es'))
+			// Los privados de otros, al final
+			.sort((a, b) => Number(ajeno(a.id)) - Number(ajeno(b.id)) || (orden === 'alertas' ? compararNivel(a.nivel, b.nivel) : 0) || a.alias.localeCompare(b.alias, 'es'))
 	);
 	const finales = $derived(data.vehiculos.filter((v) => estado(v.estadoId)?.final).length);
 </script>
@@ -73,7 +75,7 @@
 		{#each lista as v (v.id)}
 			{@const e = estado(v.estadoId)}
 			{@const av = data.aviso[v.id]}
-			<a href="/flota/{v.id}" class="tarjeta group flex overflow-hidden transition hover:border-texto-3/40 {v.portada ? 'flex-col' : ''}">
+			<a href="/flota/{v.id}" class="tarjeta group flex overflow-hidden transition hover:border-texto-3/40 {v.portada ? 'flex-col' : ''} {ajeno(v.id) ? 'opacity-75' : ''}">
 				{#if v.portada}
 					<!-- Con foto: la foto manda -->
 					<div class="relative aspect-[2/1] overflow-hidden bg-superficie-2">
@@ -88,7 +90,7 @@
 				{/if}
 				<div class="flex min-w-0 flex-1 flex-col gap-1 p-3.5">
 					<div class="flex items-baseline justify-between gap-2">
-						<h2 class="truncate text-lg">{v.alias}</h2>
+						<h2 class="flex min-w-0 items-center gap-1.5 truncate text-lg">{v.alias}{#if data.deQuien[v.id] === 'ti'}<Lock size={13} class="shrink-0 text-texto-3" aria-label="Privado" />{/if}</h2>
 						{#if v.km != null}<span class="cifra shrink-0 text-sm text-texto-2">{v.km.toLocaleString('es-ES')} km</span>{/if}
 					</div>
 					<div class="flex min-w-0 items-center gap-2 text-xs text-texto-3">
@@ -96,7 +98,9 @@
 						{#if e}<span class="punto" style="background:{e.color}"></span><span class="shrink-0">{e.nombre}</span>{/if}
 						{#if v.propietario === 'tercero' && !v.portada}<span class="truncate">· de {v.contacto ?? 'un tercero'}</span>{:else}<span class="truncate">· {[v.marca, v.modelo, v.anio].filter(Boolean).join(' ')}</span>{/if}
 					</div>
-					{#if v.restauracion}
+					{#if ajeno(v.id)}
+						<p class="mt-0.5 flex items-center gap-1.5 truncate text-xs text-texto-3"><Lock size={12} class="shrink-0" /> De {data.deQuien[v.id]} · solo lectura</p>
+					{:else if v.restauracion}
 						<div class="mt-1 flex items-center gap-2.5">
 							<div class="h-1.5 flex-1 overflow-hidden rounded-full bg-superficie-3">
 								<div class="h-full rounded-full" style="width:{Math.round(v.restauracion.avance * 100)}%; background: var(--acento)"></div>

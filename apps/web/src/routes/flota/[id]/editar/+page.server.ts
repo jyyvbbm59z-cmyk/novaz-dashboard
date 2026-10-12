@@ -4,19 +4,24 @@ import { eq, sql } from 'drizzle-orm';
 import { borrarAdjuntos } from '$lib/server/adjuntos';
 import { accion } from '$lib/server/form';
 import { datosVehiculo } from '$lib/server/vehiculos';
+import { esAjeno } from '$lib/server/usuarios';
 
 export const load = async ({ params, locals }) => {
 	const v = await locals.db.select().from(s.vehiculos).where(eq(s.vehiculos.id, Number(params.id))).get();
 	if (!v) error(404, 'Vehículo no encontrado');
-	return { vehiculo: v };
+	if (esAjeno(locals.yo, v.id)) redirect(303, `/flota/${v.id}`);
+	return { vehiculo: v, privado: locals.yo?.id ? v.usuarioId != null : null };
 };
 
 export const actions = {
 	guardar: accion(async ({ request, params, locals }) => {
-		const datos = await datosVehiculo(locals.db, await request.formData());
+		const fd = await request.formData();
+		const datos = await datosVehiculo(locals.db, fd);
+		const privado = fd.get('privado');
+		const dueno = privado && locals.yo?.id ? { usuarioId: privado === 'si' ? locals.yo.id : null } : {};
 		await locals.db
 			.update(s.vehiculos)
-			.set({ ...datos, actualizado: sql`(datetime('now'))` })
+			.set({ ...datos, ...dueno, actualizado: sql`(datetime('now'))` })
 			.where(eq(s.vehiculos.id, Number(params.id)));
 		redirect(303, `/flota/${params.id}?pestana=datos`);
 	}),

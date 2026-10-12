@@ -16,8 +16,9 @@
 		accionBorrar = '?/borrarAdjunto',
 		accionPortada,
 		portadaId = null,
-		columnas = 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6'
-	}: { adjuntos: Adj[]; accionBorrar?: string; accionPortada?: string; portadaId?: number | null; columnas?: string } = $props();
+		columnas = 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6',
+		editable = true
+	}: { adjuntos: Adj[]; accionBorrar?: string; accionPortada?: string; portadaId?: number | null; columnas?: string; editable?: boolean } = $props();
 
 	const fotos = $derived(adjuntos.filter((a) => a.mime.startsWith('image/')));
 	const docs = $derived(adjuntos.filter((a) => !a.mime.startsWith('image/')));
@@ -67,7 +68,7 @@
 				<FileText size={18} class="text-texto-3" />
 				<a href="/archivos/{d.clave}" target="_blank" class="flex-1 truncate hover:underline">{d.pie ?? d.nombre}</a>
 				<a href="/archivos/{d.clave}?descargar" class="btn btn-fantasma btn-icono h-8 w-8" aria-label="Descargar"><Download size={16} /></a>
-				<button class="btn btn-fantasma btn-icono btn-peligro h-8 w-8" onclick={() => borrar(d.id)} aria-label="Borrar"><Trash2 size={16} /></button>
+{#if editable}<button class="btn btn-fantasma btn-icono btn-peligro h-8 w-8" onclick={() => borrar(d.id)} aria-label="Borrar"><Trash2 size={16} /></button>{/if}
 			</li>
 		{/each}
 	</ul>
@@ -86,7 +87,7 @@
 						</button>
 					{/if}
 					<a href="/archivos/{f.clave}?descargar" class="btn btn-fantasma btn-icono text-white" aria-label="Descargar"><Download size={18} /></a>
-					<button class="btn btn-fantasma btn-icono text-white" onclick={() => borrar(f.id)} aria-label="Borrar"><Trash2 size={18} /></button>
+					{#if editable}<button class="btn btn-fantasma btn-icono text-white" onclick={() => borrar(f.id)} aria-label="Borrar"><Trash2 size={18} /></button>{/if}
 					<button class="btn btn-fantasma btn-icono text-white" onclick={() => dlg.close()} aria-label="Cerrar"><X size={20} /></button>
 				</div>
 			</div>

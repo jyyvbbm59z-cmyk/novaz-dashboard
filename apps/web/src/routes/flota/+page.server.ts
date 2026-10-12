@@ -1,6 +1,6 @@
 import { compararNivel, textoDias } from '@novaz/core';
 import { resumenVehiculos } from '$lib/server/datos';
-import { soloVisibles } from '$lib/server/usuarios';
+import * as s from '@novaz/core/schema';
 
 export const load = async ({ locals, parent }) => {
 	const { alertas } = await parent();
@@ -11,5 +11,9 @@ export const load = async ({ locals, parent }) => {
 		const cuando = a.tipo === 'vencimiento' && a.dias != null ? textoDias(a.dias) : a.tipo === 'pendiente' ? 'por reparar' : a.detalle;
 		aviso[a.vehiculoId] = { texto: `${a.titulo} · ${cuando}`, nivel: a.nivel };
 	}
-	return { vehiculos: soloVisibles(locals.yo, await resumenVehiculos(locals.db, alertas), (v) => v.id), aviso };
+	// Se ven todos; los privados de otros, marcados y en solo lectura
+	const [vehiculos, usuarios] = await Promise.all([resumenVehiculos(locals.db, alertas), locals.db.select({ id: s.usuarios.id, nombre: s.usuarios.nombre }).from(s.usuarios)]);
+	const deQuien: Record<number, string> = {};
+	for (const v of vehiculos) if (v.usuarioId != null) deQuien[v.id] = v.usuarioId === locals.yo?.id ? 'ti' : (usuarios.find((u) => u.id === v.usuarioId)?.nombre ?? 'otro usuario');
+	return { vehiculos, aviso, deQuien, ajenos: locals.yo?.ajenos ?? [] };
 };

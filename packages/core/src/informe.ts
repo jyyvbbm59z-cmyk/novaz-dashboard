@@ -26,7 +26,7 @@ export interface DatosInforme {
 	/** Vehículos en uso sin lectura de km reciente. */
 	kmSinActualizar: { alias: string; ultima: string | null }[];
 	/** Solo los lunes. */
-	obras?: { nombre: string; avance: number }[];
+	obras?: { nombre: string; vehiculoId: number; avance: number }[];
 }
 
 const DIAS_KM_ANTIGUO = 45;
@@ -137,14 +137,14 @@ const NIVEL: Record<string, string> = { vencido: 'VENCIDO', urgente: 'URGENTE', 
 /** El informe de una persona: solo lo de sus áreas (sin «Dinero», ni finanzas ni costes; sin «El local», sin sus tareas…). */
 export function recortarInforme(d: DatosInforme, permisos: readonly string[], vehiculos: { ids: number[]; alias: string[] } | null = null): DatosInforme {
 	const ve = (p: string) => permisos.includes(p);
-	// Quien solo ve sus vehículos: solo los avisos de los suyos
+	// Con vehículos privados de otros: solo lo de los suyos y los del taller
 	const suyo = (id: number) => !vehiculos || vehiculos.ids.includes(id);
 	const suyoAlias = (a: string) => !vehiculos || vehiculos.alias.includes(a);
 	return {
 		...d,
 		alertas: ve('vehiculos') ? d.alertas.filter((a) => suyo(a.vehiculoId)) : [],
 		kmSinActualizar: ve('vehiculos') ? d.kmSinActualizar.filter((k) => suyoAlias(k.alias)) : [],
-		obras: ve('vehiculos') && !vehiculos ? d.obras : undefined,
+		obras: ve('vehiculos') ? d.obras?.filter((o) => suyo(o.vehiculoId)) : undefined,
 		flota: ve('vehiculos') && ve('dinero') ? d.flota.filter((f) => suyoAlias(f.alias)) : [],
 		finanzas: ve('dinero') ? d.finanzas : null,
 		local: ve('local') ? d.local : [],

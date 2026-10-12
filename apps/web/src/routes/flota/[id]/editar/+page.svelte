@@ -10,7 +10,7 @@
 <div class="mx-auto max-w-2xl">
 	<a href="/flota/{data.vehiculo.id}" class="text-sm text-texto-3 hover:text-texto">← {data.vehiculo.alias}</a>
 	<h1 class="mt-2 mb-6 text-4xl">Editar vehículo</h1>
-	<VehiculoForm catalogo={data.catalogo} vehiculo={data.vehiculo} hoy={data.hoy} accion="?/guardar" />
+	<VehiculoForm catalogo={data.catalogo} vehiculo={data.vehiculo} hoy={data.hoy} accion="?/guardar" privado={data.privado} />
 
 	<form
 		method="POST"

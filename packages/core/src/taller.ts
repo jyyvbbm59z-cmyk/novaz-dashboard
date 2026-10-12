@@ -11,7 +11,7 @@ export async function estadoTaller(db: DB, hoy: string, alertas: Alerta[]) {
 		db.select().from(s.articulos),
 		db.select({ articuloId: s.stock.articuloId, cantidad: s.stock.cantidad }).from(s.stock),
 		db.select().from(s.listaCompra).where(eq(s.listaCompra.comprado, false)),
-		db.select({ id: s.restauraciones.id, nombre: s.restauraciones.nombre }).from(s.restauraciones).where(inArray(s.restauraciones.estado, ['en_curso', 'pausada']))
+		db.select({ id: s.restauraciones.id, nombre: s.restauraciones.nombre, vehiculoId: s.restauraciones.vehiculoId }).from(s.restauraciones).where(inArray(s.restauraciones.estado, ['en_curso', 'pausada']))
 	]);
 	const cant = existencias(movs);
 	const inventario = articulos.map((a) => ({ ...a, cantidad: cant.get(a.id) ?? 0 }));
@@ -60,7 +60,7 @@ export async function estadoTaller(db: DB, hoy: string, alertas: Alerta[]) {
 		fueraDeSitio: inventario.filter((a) => a.tipo === 'herramienta' && (a.estado === 'perdida' || a.estado === 'prestada')).length,
 		obras: obras.map((o) => {
 			const ts = tareasObra.filter((t) => obraDeFase.get(t.faseId) === o.id);
-			return { nombre: o.nombre, avance: ts.length ? ts.filter((t) => t.hecha).length / ts.length : 0 };
+			return { nombre: o.nombre, vehiculoId: o.vehiculoId, avance: ts.length ? ts.filter((t) => t.hecha).length / ts.length : 0 };
 		})
 	};
 }

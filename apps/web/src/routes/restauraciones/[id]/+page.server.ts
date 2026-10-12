@@ -1,7 +1,7 @@
 import { diasEntre } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { error, redirect } from '@sveltejs/kit';
-import { veVehiculo } from '$lib/server/usuarios';
+import { esAjeno } from '$lib/server/usuarios';
 import { and, asc, desc, eq, inArray, max, or } from 'drizzle-orm';
 import { borrarEntrada, borrarMovimiento, guardarEntrada, guardarMovimiento, marcarTarea } from '$lib/server/acciones';
 import { cargarInventario } from '$lib/server/inventario';
@@ -12,7 +12,7 @@ export const load = async ({ params, locals }) => {
 	const id = Number(params.id);
 	const { db, hoy } = locals;
 	const r = await db.select().from(s.restauraciones).where(eq(s.restauraciones.id, id)).get();
-	if (!r || !veVehiculo(locals.yo, r.vehiculoId)) error(404, 'Restauración no encontrada');
+	if (!r) error(404, 'Restauración no encontrada');
 
 	const [vehiculo, fases, entradas, movs] = await Promise.all([
 		db.select().from(s.vehiculos).where(eq(s.vehiculos.id, r.vehiculoId)),
@@ -66,6 +66,8 @@ export const load = async ({ params, locals }) => {
 	// Sin permiso de «Dinero»: ni gastos, ni presupuesto, ni lo invertido (no llegan al navegador)
 	const dinero = locals.permisos.includes('dinero');
 	return {
+		/** Vehículo privado de otro: se ve, pero no se toca (el servidor tampoco deja). */
+		soloLectura: esAjeno(locals.yo, r.vehiculoId),
 		verDinero: dinero,
 		restauracion: dinero ? r : { ...r, presupuestoCent: null },
 		vehiculo: dinero ? vehiculo[0] : { ...vehiculo[0], valorEstimadoCent: null },

@@ -9,12 +9,11 @@
 	type U = (typeof data.usuarios)[number];
 	let hoja = $state(false);
 	let editado = $state<U | null>(null);
-	let alcance = $state<'todos' | 'suyos'>('todos');
 	function abrir(u: U | null) {
 		editado = u;
-		alcance = u?.alcance ?? 'suyos';
 		hoja = true;
 	}
+	const nombreDe = (id: number | null) => data.usuarios.find((u) => u.id === id)?.nombre;
 	const suyos = (id: number) => data.vehiculosTodos.filter((v) => v.usuarioId === id);
 	async function borrar(u: U) {
 		if (!confirm(`¿Borrar a ${u.nombre}? Sus vehículos se quedan en la app, sin dueño, y su libreta de gastos se borra.`)) return;
@@ -26,7 +25,7 @@
 <svelte:head><title>Usuarios · Ajustes</title></svelte:head>
 
 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-	<p class="max-w-2xl text-sm text-texto-3">Cada persona entra con su email (Cloudflare Access le manda un código, sin contraseñas) y ve solo sus áreas. Con su chat de Telegram, el bot le hace caso y le manda su parte con solo lo suyo.</p>
+	<p class="max-w-2xl text-sm text-texto-3">Cada persona entra con su email (Cloudflare Access le manda un código, sin contraseñas) y ve solo sus áreas. Los vehículos son del taller (comunes) o privados de alguien: los privados de otros se ven en solo lectura y no salen en su inicio, agenda ni avisos.</p>
 	<button class="btn btn-acento h-10" onclick={() => abrir(null)}><Plus size={16} /> Añadir usuario</button>
 </div>
 
@@ -39,7 +38,7 @@
 				<p class="truncate text-xs text-texto-3">{u.email}{u.telegramChatId ? ' · Telegram ✓' : ''}</p>
 				<div class="mt-1.5 flex flex-wrap gap-1">
 					{#each u.permisos as p (p)}<span class="chip h-6 px-2 text-[0.68rem]">{NOMBRE_PERMISO[p].nombre}</span>{/each}
-					<span class="chip h-6 px-2 text-[0.68rem] {u.alcance === 'suyos' ? 'border-pronto/50 text-pronto' : ''}">{u.alcance === 'suyos' ? `Solo sus vehículos${suyos(u.id).length ? `: ${suyos(u.id).map((v) => v.alias).join(', ')}` : ' (ninguno aún)'}` : 'Todos los vehículos'}</span>
+					{#if suyos(u.id).length}<span class="chip h-6 px-2 text-[0.68rem] border-pronto/50 text-pronto">Privados: {suyos(u.id).map((v) => v.alias).join(', ')}</span>{/if}
 				</div>
 			</div>
 			<button class="btn btn-fantasma btn-icono h-9 w-9" onclick={() => abrir(u)} aria-label="Editar {u.nombre}"><Pencil size={15} /></button>
@@ -55,7 +54,6 @@
 	{#key editado?.id ?? 'nuevo'}
 		<form method="POST" action="?/guardar" use:enhance={enviar({ alTerminar: () => (hoja = false) })} class="flex flex-col gap-4">
 			{#if editado}<input type="hidden" name="id" value={editado.id} />{/if}
-			<input type="hidden" name="alcance" value={alcance} />
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 				<label class="campo"><span>Nombre *</span><input name="nombre" class="input" required value={editado?.nombre ?? ''} placeholder="Paco" /></label>
 				<label class="campo"><span>Email (con el que entra) *</span><input name="email" type="email" class="input" required value={editado?.email ?? ''} placeholder="paco@gmail.com" /></label>
@@ -72,17 +70,12 @@
 			</fieldset>
 
 			<fieldset class="flex flex-col gap-2">
-				<span class="text-sm font-medium">Vehículos</span>
-				<div class="grid grid-cols-2 gap-1 rounded-lg border border-borde bg-superficie-2 p-1">
-					{#each [['suyos', 'Solo los suyos'], ['todos', 'Todos']] as [v, t] (v)}
-						<button type="button" class="rounded-md py-1.5 text-sm font-semibold {alcance === v ? 'bg-superficie-3 text-texto shadow-sm' : 'text-texto-3'}" onclick={() => (alcance = v as 'todos' | 'suyos')}>{t}</button>
-					{/each}
-				</div>
-				<span class="text-xs text-texto-3">Marca los que son suyos: los verá aunque solo vea «los suyos», llevará su libreta de gastos y lo que dé de alta será suyo.</span>
+				<span class="text-sm font-medium">Sus vehículos privados</span>
+				<span class="text-xs text-texto-3">Los marcados son suyos: solo él los edita, solo a él le salen sus avisos y lleva su libreta de gastos. Los demás los ven en solo lectura. Los no marcados de nadie son del taller (comunes).</span>
 				<div class="flex flex-wrap gap-2">
 					{#each data.vehiculosTodos as v (v.id)}
 						<label class="chip h-8 cursor-pointer px-3 has-[:checked]:border-acento has-[:checked]:bg-acento/10 has-[:checked]:text-texto">
-							<input type="checkbox" name="vehiculoIds" value={v.id} checked={editado ? v.usuarioId === editado.id : false} class="accent-[var(--acento)]" />{v.alias}
+							<input type="checkbox" name="vehiculoIds" value={v.id} checked={editado ? v.usuarioId === editado.id : false} class="accent-[var(--acento)]" />{v.alias}{#if v.usuarioId != null && v.usuarioId !== editado?.id}<span class="text-[0.68rem] text-texto-3">· de {nombreDe(v.usuarioId)}</span>{/if}
 						</label>
 					{/each}
 				</div>

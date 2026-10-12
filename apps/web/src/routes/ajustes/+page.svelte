@@ -76,7 +76,7 @@
 		</div>
 		<p class="text-xs text-texto-3">El chat de Telegram de cada persona va en su ficha de <a href="/ajustes/usuarios" class="text-acento">Usuarios</a> (o en <a href="/perfil" class="text-acento">Mi perfil</a>). El parte le llega a cada uno con solo lo suyo.</p>
 		<fieldset class="flex flex-col gap-2">
-			<span class="text-sm font-medium">Qué te manda el bot</span>
+			<span class="text-sm font-medium">Qué manda el bot <span class="font-normal text-texto-3">(por defecto: cada uno lo cambia en Mi perfil)</span></span>
 			{#each [['parte', 'Un informe cada mañana', 'Vencimientos, mantenimiento, taller, finanzas y coste de la flota. Lo que entra en aviso ese día va marcado.'], ['umbrales', 'Solo cuando algo vence', 'Un aviso a 30, 7 y 1 días y el día que vence. Si no pasa nada, silencio.']] as [v, t, d] (v)}
 				<label class="flex cursor-pointer items-start gap-3 rounded-lg border border-borde p-3 text-sm has-[:checked]:border-acento has-[:checked]:bg-acento/5">
 					<input type="radio" name="modoAvisos" value={v} checked={(v === 'parte') === a.parteDiario} class="mt-0.5 h-4 w-4 accent-[var(--acento)]" />

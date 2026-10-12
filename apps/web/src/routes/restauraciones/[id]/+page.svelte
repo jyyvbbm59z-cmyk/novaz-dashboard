@@ -12,10 +12,12 @@
 	import { accion, enviar } from '$lib/enviar';
 	import { euros, eurosInput, fechaLarga } from '@novaz/core';
 	import type { Entrada, Movimiento } from '@novaz/core/schema';
-	import { ArrowDown, ArrowUp, Check, ChevronDown, Flag, NotebookPen, Pencil, Plus, ReceiptText, Settings2, Trash2 } from '@lucide/svelte';
+	import { ArrowDown, ArrowUp, Check, ChevronDown, Flag, NotebookPen, Pencil, Plus, ReceiptText, Settings2, Trash2, Eye } from '@lucide/svelte';
 	import { Paperclip } from '@lucide/svelte';
 
 	let { data } = $props();
+	/** Vehículo privado de otro: solo lectura. */
+	const lee = $derived(data.soloLectura);
 	const r = $derived(data.restauracion);
 	const res = $derived(data.resumen);
 	const v = $derived(data.vehiculo);
@@ -77,7 +79,7 @@
 <header class="mt-2 flex flex-wrap items-end justify-between gap-4">
 	<div class="min-w-0">
 		<div class="mb-2 flex flex-wrap items-center gap-2">
-			<form method="POST" action="?/estado" use:enhance={enviar()}>
+			<form method="POST" action="?/estado" use:enhance={enviar()} class:hidden={data.soloLectura}>
 				<select name="estado" class="chip cursor-pointer appearance-none pr-2.5 [field-sizing:content]" onchange={(e) => (e.currentTarget.value === 'terminada' ? ((e.currentTarget.value = r.estado), (hTerminar = true)) : e.currentTarget.form?.requestSubmit())}>
 					{#each ESTADOS as [val, t] (val)}<option value={val} selected={r.estado === val}>{t}</option>{/each}
 				</select>
@@ -88,7 +90,7 @@
 		<h1 class="titulo-pagina">{r.nombre}</h1>
 		{#if r.descripcion}<p class="mt-2 max-w-2xl text-sm whitespace-pre-line text-texto-2">{r.descripcion}</p>{/if}
 	</div>
-	<div class="flex gap-2">
+	<div class="flex gap-2" class:hidden={data.soloLectura}>
 		<button class="btn btn-icono" onclick={() => (hDatos = true)} aria-label="Ajustes de la restauración"><Settings2 size={18} /></button>
 		{#if r.estado !== 'terminada'}<button class="btn" onclick={() => (hTerminar = true)}><Flag size={16} /> Terminar</button>{/if}
 	</div>
@@ -149,7 +151,10 @@
 	</section>
 {/if}
 
-<div class="mt-4 grid grid-cols-3 gap-2 sm:flex">
+{#if data.soloLectura}
+	<p class="tarjeta mt-4 flex items-center gap-2.5 border-pronto/40 px-4 py-3 text-sm text-texto-2"><Eye size={16} class="shrink-0 text-pronto" /> Es de un vehículo privado de otro usuario: puedes verla, pero no apuntar ni cambiar nada.</p>
+{/if}
+<div class="mt-4 grid grid-cols-3 gap-2 sm:flex" class:hidden={data.soloLectura}>
 	<button class="btn btn-acento h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((entradaEdit = null), (faseEntrada = actual ?? null), (hEntrada = true))}><NotebookPen size={18} /><span class="text-xs sm:text-sm">Diario</span></button>
 	<SubirArchivos entidad="restauracion" entidadId={r.id} vehiculoId={v.id} camara clase="btn h-auto flex-col gap-1 py-2 text-xs sm:h-10 sm:flex-row sm:py-0 sm:text-sm" />
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((gastoEdit = null), (hGasto = true))}><ReceiptText size={18} /><span class="text-xs sm:text-sm">Gasto</span></button>
@@ -209,24 +214,24 @@
 						<ul class="flex flex-col px-2 py-1">
 							{#each f.tareas as t (t.id)}
 								<li class="group flex items-center gap-1 rounded-lg hover:bg-superficie-2">
-									<button class="flex min-w-0 flex-1 items-center gap-3 px-2 py-2 text-left" onclick={(e) => alternar(t, e.currentTarget.firstElementChild!)}>
+									<button class="flex min-w-0 flex-1 items-center gap-3 px-2 py-2 text-left" disabled={lee} onclick={(e) => alternar(t, e.currentTarget.firstElementChild!)}>
 										<span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition {hecha(t) ? 'border-acento bg-acento text-black' : 'border-texto-3'}">
 											{#if hecha(t)}<Check size={13} strokeWidth={3.5} />{/if}
 										</span>
 										<span class="text-sm {hecha(t) ? 'text-texto-3 line-through' : ''}">{t.titulo}</span>
 									</button>
-									<span class="flex opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
+									<span class="flex opacity-0 transition group-hover:opacity-100 focus-within:opacity-100" class:hidden={lee}>
 										<button class="btn btn-fantasma btn-icono h-7 w-7" onclick={() => renombrarTarea(t.id, t.titulo)} aria-label="Renombrar"><Pencil size={13} /></button>
 										<button class="btn btn-fantasma btn-icono btn-peligro h-7 w-7" onclick={() => borrar('?/borrarTarea', t.id, 'la tarea')} aria-label="Borrar"><Trash2 size={13} /></button>
 									</span>
 								</li>
 							{/each}
 						</ul>
-						<form method="POST" action="?/nuevaTarea" use:enhance={enviar()} class="flex gap-2 px-4 pt-1 pb-3">
+						<form method="POST" action="?/nuevaTarea" use:enhance={enviar()} class="flex gap-2 px-4 pt-1 pb-3" class:hidden={lee}>
 							<input type="hidden" name="faseId" value={f.id} />
 							<input name="titulo" class="input h-9 text-sm" placeholder="＋ Nueva tarea" required />
 						</form>
-						<div class="flex items-center gap-1 border-t border-borde px-2 py-1.5">
+						<div class="flex items-center gap-1 border-t border-borde px-2 py-1.5" class:hidden={lee}>
 							<button class="btn btn-fantasma h-8 px-2 text-xs" onclick={() => ((entradaEdit = null), (faseEntrada = f.id), (hEntrada = true))}><NotebookPen size={14} /> Diario</button>
 							<span class="ml-auto flex">
 								<button class="btn btn-fantasma btn-icono h-8 w-8" disabled={i === 0} onclick={() => accion('?/moverFase', { id: f.id, dir: 'arriba' })} aria-label="Mover antes"><ArrowUp size={14} class="lg:-rotate-90" /></button>
@@ -238,7 +243,7 @@
 					</div>
 				</section>
 			{/each}
-			<form method="POST" action="?/nuevaFase" use:enhance={enviar()} class="tarjeta flex gap-2 border-dashed p-3">
+			<form method="POST" action="?/nuevaFase" use:enhance={enviar()} class="tarjeta flex gap-2 border-dashed p-3" class:hidden={lee}>
 				<input name="nombre" class="input h-10" placeholder="Nueva fase" required />
 				<button class="btn btn-icono shrink-0" aria-label="Añadir fase"><Plus size={18} /></button>
 			</form>
@@ -259,13 +264,13 @@
 						<div class="group mt-1 flex items-start gap-2">
 							<h3 class="flex-1 font-sans text-base font-semibold tracking-normal normal-case">{e.titulo}</h3>
 							<span class="flex opacity-60 group-hover:opacity-100">
-								<button class="btn btn-fantasma btn-icono h-8 w-8" onclick={() => ((entradaEdit = e), (hEntrada = true))} aria-label="Editar"><Pencil size={15} /></button>
-								<button class="btn btn-fantasma btn-icono btn-peligro h-8 w-8" onclick={() => borrar('?/borrarEntrada', e.id, 'esta entrada')} aria-label="Borrar"><Trash2 size={15} /></button>
+								{#if !lee}<button class="btn btn-fantasma btn-icono h-8 w-8" onclick={() => ((entradaEdit = e), (hEntrada = true))} aria-label="Editar"><Pencil size={15} /></button>
+								<button class="btn btn-fantasma btn-icono btn-peligro h-8 w-8" onclick={() => borrar('?/borrarEntrada', e.id, 'esta entrada')} aria-label="Borrar"><Trash2 size={15} /></button>{/if}
 							</span>
 						</div>
 						{#if e.texto}<p class="mt-1 text-sm leading-relaxed whitespace-pre-line text-texto-2">{e.texto}</p>{/if}
-						{#if e.adjuntos.length}<div class="mt-3 max-w-lg"><Galeria adjuntos={e.adjuntos} accionPortada="?/portada" portadaId={v.portadaId} columnas="grid-cols-3 sm:grid-cols-4" /></div>{/if}
-						<div class="mt-2"><SubirArchivos entidad="entrada" entidadId={e.id} vehiculoId={v.id} texto="Añadir foto" clase="text-xs text-texto-3 hover:text-texto inline-flex items-center gap-1.5 [&_svg]:size-3.5" /></div>
+						{#if e.adjuntos.length}<div class="mt-3 max-w-lg"><Galeria adjuntos={e.adjuntos} accionPortada={data.soloLectura ? undefined : '?/portada'} portadaId={v.portadaId} editable={!data.soloLectura} columnas="grid-cols-3 sm:grid-cols-4" /></div>{/if}
+						<div class="mt-2" class:hidden={data.soloLectura}><SubirArchivos entidad="entrada" entidadId={e.id} vehiculoId={v.id} texto="Añadir foto" clase="text-xs text-texto-3 hover:text-texto inline-flex items-center gap-1.5 [&_svg]:size-3.5" /></div>
 					</li>
 				{/each}
 			</ol>
@@ -273,7 +278,7 @@
 	{:else if pestana === 'gastos'}
 		<div class="mb-4 flex items-center justify-between">
 			<p class="text-sm text-texto-2">Total: <strong class="cifra text-lg text-texto">{euros(res.gasto)}</strong></p>
-			<button class="btn" onclick={() => ((gastoEdit = null), (hGasto = true))}><Plus size={16} /> Gasto</button>
+			{#if !lee}<button class="btn" onclick={() => ((gastoEdit = null), (hGasto = true))}><Plus size={16} /> Gasto</button>{/if}
 		</div>
 		{#if data.movimientos.length}
 			<ul class="tarjeta lista-filas">
@@ -304,11 +309,11 @@
 			</div>
 		{/if}
 		<div class="mb-4 flex gap-2">
-			<SubirArchivos entidad="restauracion" entidadId={r.id} vehiculoId={v.id} camara />
-			<SubirArchivos entidad="restauracion" entidadId={r.id} vehiculoId={v.id} texto="Subir archivos" />
+			{#if !data.soloLectura}<SubirArchivos entidad="restauracion" entidadId={r.id} vehiculoId={v.id} camara />
+			<SubirArchivos entidad="restauracion" entidadId={r.id} vehiculoId={v.id} texto="Subir archivos" />{/if}
 		</div>
 		{#if data.adjuntos.length}
-			<Galeria adjuntos={data.adjuntos} accionPortada="?/portada" portadaId={v.portadaId} />
+			<Galeria adjuntos={data.adjuntos} accionPortada={data.soloLectura ? undefined : '?/portada'} portadaId={v.portadaId} editable={!data.soloLectura} />
 		{:else}
 			<div class="vacio">Sin fotos. Haz la del estado original antes de tocar nada.</div>
 		{/if}

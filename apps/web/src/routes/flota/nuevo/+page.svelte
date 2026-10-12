@@ -8,5 +8,5 @@
 <div class="mx-auto max-w-2xl">
 	<a href="/flota" class="text-sm text-texto-3 hover:text-texto">← Flota</a>
 	<h1 class="mt-2 mb-6 text-4xl">Nuevo vehículo</h1>
-	<VehiculoForm catalogo={data.catalogo} hoy={data.hoy} textoBoton="Dar de alta" />
+	<VehiculoForm catalogo={data.catalogo} hoy={data.hoy} textoBoton="Dar de alta" privado={data.privado} />
 </div>

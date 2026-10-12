@@ -47,4 +47,10 @@ describe('informe por persona', () => {
 		expect(r.listaCompra.length).toBe(1);
 		expect(recortarInforme(d, ['vehiculos', 'inventario', 'local', 'dinero', 'ajustes']).finanzas?.tesoreria).toBe(52037);
 	});
+	it('con privados de otros: solo las obras de los suyos y los del taller', () => {
+		const conObras = { ...d, obras: [{ nombre: 'Vespa', vehiculoId: 3, avance: 0.1 }, { nombre: 'Marbella', vehiculoId: 6, avance: 0 }] };
+		expect(recortarInforme(conObras, ['vehiculos'], { ids: [1, 6], alias: [] }).obras?.map((o) => o.nombre)).toEqual(['Marbella']);
+		expect(recortarInforme(conObras, ['vehiculos']).obras?.length).toBe(2);
+		expect(recortarInforme(conObras, ['inventario']).obras).toBeUndefined();
+	});
 });

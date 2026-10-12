@@ -59,6 +59,8 @@ export interface ResumenVehiculo {
 	anio: number | null;
 	matricula: string | null;
 	propietario: 'novaz' | 'tercero';
+	/** Dueño si es privado (null = del taller). */
+	usuarioId: number | null;
 	tipoId: number;
 	estadoId: number | null;
 	contacto: string | null;
@@ -117,6 +119,7 @@ export async function resumenVehiculos(db: DB, alertas: Alerta[]): Promise<Resum
 			anio: v.anio,
 			matricula: v.matricula,
 			propietario: v.propietario,
+			usuarioId: v.usuarioId,
 			tipoId: v.tipoId,
 			estadoId: v.estadoId,
 			contacto,

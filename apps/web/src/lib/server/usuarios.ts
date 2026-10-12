@@ -1,5 +1,6 @@
 // Quién es quién: el email que da Cloudflare Access → su ficha de usuario y sus permisos.
 import { normalizarPermisos, PERMISOS, type Ajustes, type Permiso } from '@novaz/core';
+import type { PreferenciasUsuario } from '@novaz/core/schema';
 import * as s from '@novaz/core/schema';
 import { eq, sql } from 'drizzle-orm';
 
@@ -11,17 +12,32 @@ export interface Yo {
 	nombre: string;
 	permisos: Permiso[];
 	telegramChatId: string | null;
-	/** Vehículos que puede ver: null = todos; si no, solo estos (los suyos). */
+	preferencias: PreferenciasUsuario;
+	/**
+	 * Vehículos con los que trabaja (los suyos y los del taller): los que le salen en Inicio, agenda, avisos, bot y «+».
+	 * null = todos (no hay privados de otros).
+	 */
 	vehiculos: number[] | null;
+	/** Vehículos privados de otros usuarios: los ve en solo lectura. */
+	ajenos: number[];
+}
+
+/** Reparto de vehículos para un usuario: privados de otros (solo lectura) y el resto (con los que trabaja). */
+async function repartoVehiculos(db: DB, uid: number) {
+	const todos = await db.select({ id: s.vehiculos.id, usuarioId: s.vehiculos.usuarioId }).from(s.vehiculos);
+	const ajenos = todos.filter((v) => v.usuarioId != null && v.usuarioId !== uid).map((v) => v.id);
+	return { ajenos, vehiculos: ajenos.length ? todos.filter((v) => !ajenos.includes(v.id)).map((v) => v.id) : null };
 }
 
 async function comoYo(db: DB, u: s.Usuario): Promise<Yo> {
-	const vehiculos = u.alcance === 'suyos' ? (await db.select({ id: s.vehiculos.id }).from(s.vehiculos).where(eq(s.vehiculos.usuarioId, u.id))).map((v) => v.id) : null;
-	return { id: u.id, email: u.email, nombre: u.nombre, permisos: normalizarPermisos(u.permisos), telegramChatId: u.telegramChatId, vehiculos };
+	return { id: u.id, email: u.email, nombre: u.nombre, permisos: normalizarPermisos(u.permisos), telegramChatId: u.telegramChatId, preferencias: u.preferencias ?? {}, ...(await repartoVehiculos(db, u.id)) };
 }
 
-/** ¿Puede ver este vehículo? */
+/** ¿Trabaja con este vehículo (suyo o del taller)? Los privados de otros solo los ve. */
 export const veVehiculo = (yo: Pick<Yo, 'vehiculos'> | null, vehiculoId: number) => !yo || yo.vehiculos == null || yo.vehiculos.includes(vehiculoId);
+
+/** ¿Es un vehículo privado de otro usuario (solo lectura para él)? */
+export const esAjeno = (yo: Pick<Yo, 'ajenos'> | null, vehiculoId: number | null | undefined) => !!yo && vehiculoId != null && yo.ajenos.includes(vehiculoId);
 
 /**
  * El usuario de un email. Si aún no hay ninguno, el primero que entra es el administrador (con todo) y se queda
@@ -42,7 +58,7 @@ export async function identificar(db: DB, email: string, ajustes: Ajustes): Prom
 }
 
 /** En desarrollo, sin Access: administrador de mentira (o el usuario que diga USUARIO_DEV, para probar permisos). */
-export const yoLocal = (ajustes: Ajustes): Yo => ({ id: 0, email: 'local', nombre: 'Local', permisos: [...PERMISOS], telegramChatId: ajustes.telegramChatId || null, vehiculos: null });
+export const yoLocal = (ajustes: Ajustes): Yo => ({ id: 0, email: 'local', nombre: 'Local', permisos: [...PERMISOS], telegramChatId: ajustes.telegramChatId || null, preferencias: {}, vehiculos: null, ajenos: [] });
 
 /** El usuario dueño de un chat de Telegram (el bot solo hace caso a usuarios dados de alta). */
 export async function usuarioDeChat(db: DB, chatId: string, ajustes: Ajustes): Promise<Yo | null> {
@@ -53,12 +69,12 @@ export async function usuarioDeChat(db: DB, chatId: string, ajustes: Ajustes): P
 	return !hay?.n && ajustes.telegramChatId === chatId ? yoLocal(ajustes) : null;
 }
 
-/** Solo lo de los vehículos que ve (si los ve todos, todo). */
-export function soloVisibles<T>(yo: Pick<Yo, 'vehiculos'> | null, xs: T[], vehiculoDe: (x: T) => number | null | undefined): T[] {
-	if (!yo || yo.vehiculos == null) return xs;
-	const ids = new Set(yo.vehiculos);
+/** Solo lo de sus vehículos y los del taller (fuera lo de los privados de otros). Lo que no es de ningún vehículo se queda. */
+export function soloVisibles<T>(yo: Pick<Yo, 'ajenos'> | null, xs: T[], vehiculoDe: (x: T) => number | null | undefined): T[] {
+	if (!yo?.ajenos.length) return xs;
+	const fuera = new Set(yo.ajenos);
 	return xs.filter((x) => {
 		const v = vehiculoDe(x);
-		return v != null && ids.has(v);
+		return v == null || !fuera.has(v);
 	});
 }

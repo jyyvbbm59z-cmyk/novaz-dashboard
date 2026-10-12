@@ -27,7 +27,6 @@ export const actions = {
 			email,
 			nombre: f.obligatorio('nombre', 'nombre'),
 			permisos,
-			alcance: f.texto('alcance') === 'suyos' ? ('suyos' as const) : ('todos' as const),
 			telegramChatId: f.texto('telegramChatId')?.replace(/\s/g, '') || null,
 			activo: f.texto('activo') !== 'no'
 		};

@@ -54,16 +54,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (!yo) return sinAcceso(event.locals.usuario, event.locals.ajustes.nombreTaller);
 		event.locals.yo = yo;
 		event.locals.permisos = yo.permisos;
-		// Quien solo ve sus vehículos no entra en los de otros (ni en contactos, que son del taller)
-		if (yo.vehiculos) {
-			const v = event.url.pathname.match(/^\/flota\/(\d+)/);
-			const r = event.url.pathname.match(/^\/restauraciones\/(\d+)/);
-			const deObra = r ? (await event.locals.db.select({ v: s.restauraciones.vehiculoId }).from(s.restauraciones).where(eq(s.restauraciones.id, Number(r[1]))).get())?.v : null;
-			if ((v && !yo.vehiculos.includes(Number(v[1]))) || (r && (deObra == null || !yo.vehiculos.includes(deObra))) || /^\/contactos(\/|$)/.test(event.url.pathname)) {
-				if (event.request.method === 'GET') return new Response(null, { status: 303, headers: { location: '/flota' } });
-				return new Response('Ese vehículo no es tuyo', { status: 403 });
-			}
-		}
+		// Los vehículos privados de otros se ven, pero no se tocan
+		if (yo.ajenos.length && event.request.method !== 'GET' && (await tocaAjeno(event.locals.db, event.url.pathname, event.request, yo.ajenos)))
+			return new Response('Ese vehículo es privado de otro usuario: solo puedes verlo', { status: 403, headers: { 'content-type': 'text/plain; charset=utf-8' } });
 		const hace = permisoDeRuta(event.url.pathname);
 		if (hace && !yo.permisos.includes(hace)) {
 			if (event.request.method === 'GET' && event.request.headers.get('accept')?.includes('text/html')) return new Response(null, { status: 303, headers: { location: '/' } });
@@ -78,7 +71,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		});
 	}
 
-	const { tema, acento } = event.locals.ajustes;
+	// Su apariencia (si la ha elegido) manda sobre la del taller
+	const tema = event.locals.yo?.preferencias.tema ?? event.locals.ajustes.tema;
+	const acento = event.locals.yo?.preferencias.acento ?? event.locals.ajustes.acento;
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>
 			html
@@ -86,6 +81,21 @@ export const handle: Handle = async ({ event, resolve }) => {
 				.replace('%novaz.estilo%', HEX.test(acento) ? `--acento:${acento}` : '')
 	});
 };
+
+/** ¿Esta escritura toca un vehículo privado de otro? Por la ruta (/flota/N, /restauraciones/N) o por el vehiculoId del formulario. */
+async function tocaAjeno(db: App.Locals['db'], ruta: string, request: Request, ajenos: number[]) {
+	const v = ruta.match(/^\/flota\/(\d+)/);
+	if (v) return ajenos.includes(Number(v[1]));
+	const r = ruta.match(/^\/restauraciones\/(\d+)/);
+	if (r) {
+		const obra = await db.select({ v: s.restauraciones.vehiculoId }).from(s.restauraciones).where(eq(s.restauraciones.id, Number(r[1]))).get();
+		return obra != null && ajenos.includes(obra.v);
+	}
+	const tipo = request.headers.get('content-type') ?? '';
+	if (!/form-urlencoded|multipart\/form-data/.test(tipo)) return false;
+	const f = await request.clone().formData().catch(() => null);
+	return !!f?.getAll('vehiculoId').some((x) => ajenos.includes(Number(x)));
+}
 
 /** Página para alguien que entra por Access pero no está dado de alta en la app. */
 function sinAcceso(email: string, taller: string) {

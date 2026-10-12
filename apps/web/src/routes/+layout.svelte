@@ -83,7 +83,7 @@
 
 	// Cada uno ve solo sus áreas (el servidor, además, no deja entrar en las otras)
 	const puede = (p: Permiso) => data.permisos.includes(p);
-	const AREAS = $derived(TODAS.map((a) => ({ ...a, paginas: a.paginas.filter((p) => puede(p.permiso) && !(data.soloSuyos && p.href === '/contactos')) })).filter((a) => a.paginas.length));
+	const AREAS = $derived(TODAS.map((a) => ({ ...a, paginas: a.paginas.filter((p) => puede(p.permiso)) })).filter((a) => a.paginas.length));
 	const area = (titulo: string) => AREAS.find((a) => a.titulo === titulo);
 	const ajustesHref = $derived(puede('ajustes') ? '/ajustes' : '/perfil');
 
@@ -99,9 +99,10 @@
 		[
 			{ href: '/', texto: 'Inicio', icono: House, on: ruta === '/' || dentro('/agenda') },
 			area('Vehículos') ? { href: '/flota', texto: 'Vehículos', icono: CarFront, on: areaActiva?.titulo === 'Vehículos' } : undefined,
-			null,
 			area('Taller') ? { href: area('Taller')!.paginas[0].href, texto: 'Taller', icono: Warehouse, on: areaActiva?.titulo === 'Taller' } : undefined,
-			area('Dinero') ? { href: '/contabilidad', texto: 'Dinero', icono: BookOpenText, on: areaActiva?.titulo === 'Dinero' } : undefined
+			area('Dinero') ? { href: '/contabilidad', texto: 'Dinero', icono: BookOpenText, on: areaActiva?.titulo === 'Dinero' } : undefined,
+			// El «+» siempre en la esquina derecha, tenga los menús que tenga
+			null
 		].filter((x) => x !== undefined)
 	);
 	const urgentes = $derived(data.alertas.filter((a) => a.nivel === 'vencido' || a.nivel === 'urgente').length);

@@ -1,0 +1,1 @@
+ALTER TABLE `usuarios` ADD `preferencias` text DEFAULT '{}' NOT NULL;

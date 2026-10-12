@@ -139,7 +139,7 @@ export const vehiculos = sqliteTable(
 		notas: text('notas'),
 		campos: text('campos', { mode: 'json' }).$type<Record<string, unknown>>().notNull().default({}),
 		portadaId: integer('portada_id'),
-		/** Usuario de la app dueño del vehículo (p. ej. un amigo con sus coches): lo ve aunque solo vea «los suyos». */
+		/** Dueño del vehículo si es privado (solo él lo edita; los demás lo ven en solo lectura). Null = del taller (común). */
 		usuarioId: integer('usuario_id'),
 		/** Lo que valdría hoy (para restauraciones: comparar inversión con valor de venta). */
 		valorEstimadoCent: integer('valor_estimado_cent'),
@@ -747,6 +747,14 @@ export const botAcciones = sqliteTable('bot_acciones', {
 
 // ─── Usuarios ─────────────────────────────────────────────────────────────────
 
+export interface PreferenciasUsuario {
+	tema?: 'oscuro' | 'claro' | 'sistema';
+	acento?: string;
+	/** Qué le manda el bot cada mañana: el parte, solo los avisos de vencimientos o nada. */
+	avisos?: 'parte' | 'umbrales' | 'ninguno';
+	resumenSemanal?: boolean;
+}
+
 /** Quién entra (por su email de Cloudflare Access) y qué puede ver. */
 export const usuarios = sqliteTable('usuarios', {
 	id: id(),
@@ -756,8 +764,10 @@ export const usuarios = sqliteTable('usuarios', {
 	permisos: text('permisos', { mode: 'json' }).$type<string[]>().notNull().default([]),
 	/** Su chat de Telegram: el bot le hace caso y le manda su parte, con solo lo suyo. */
 	telegramChatId: text('telegram_chat_id'),
-	/** Qué vehículos ve: todos, o solo los suyos (los que tienen su usuario como dueño). */
+	/** Obsoleto (ya no se usa): ahora los vehículos son del taller o privados de su dueño, y los privados de otros se ven en solo lectura. */
 	alcance: text('alcance', { enum: ['todos', 'suyos'] }).notNull().default('todos'),
+	/** Sus preferencias: apariencia (tema, color) y notificaciones (parte diario, solo avisos o nada; resumen de los lunes). */
+	preferencias: text('preferencias', { mode: 'json' }).$type<PreferenciasUsuario>().notNull().default({}),
 	activo: bool('activo').notNull().default(true),
 	creado: creado()
 });

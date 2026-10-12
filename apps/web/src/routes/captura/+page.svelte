@@ -17,6 +17,7 @@
 	let vehiculoId = $state<number | null>(null);
 	// Gastos y repostajes son dinero: solo con ese permiso
 	const dinero = $derived(data.permisos.includes('dinero'));
+	const local = $derived(data.permisos.includes('local'));
 	let que = $state<'entrada' | 'foto' | 'gasto' | 'km' | 'tarea' | 'pendiente' | 'repostaje' | null>(null);
 	let hecho = $state(false);
 
@@ -34,6 +35,8 @@
 	);
 	const vehiculo = $derived(data.vehiculosMenu.find((v) => v.id === vehiculoId));
 	const obra = $derived(data.obras.find((o) => o.vehiculoId === vehiculoId));
+	// Sin «Dinero», sus gastos van a la libreta de sus vehículos privados
+	const libreta = $derived(!dinero && vehiculo?.usuarioId != null && vehiculo.usuarioId === data.yo?.id);
 	const tipoDe = (id: number) => cat.tipos.find((t) => t.id === id);
 
 	function listo() {
@@ -51,21 +54,21 @@
 
 <div class="mx-auto max-w-xl">
 	{#if !vehiculo}
-		<a href="/contabilidad/nuevo" class="tarjeta mb-6 flex items-center gap-4 p-4 transition hover:border-acento/50 active:scale-[0.99]">
+		{#if dinero}<a href="/contabilidad/nuevo" class="tarjeta mb-6 flex items-center gap-4 p-4 transition hover:border-acento/50 active:scale-[0.99]">
 			<span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-acento/15 text-acento"><ReceiptText size={24} /></span>
 			<span class="flex-1">
 				<span class="block font-semibold">Una factura o dinero</span>
 				<span class="block text-xs text-texto-3">Luz, agua, IBI, un cobro, tu aportación… te guío paso a paso</span>
 			</span>
-		</a>
-		<a href="/local?nueva" class="tarjeta mb-6 -mt-3 flex items-center gap-4 p-4 transition hover:border-acento/50 active:scale-[0.99]">
+		</a>{/if}
+		{#if local}<a href="/local?nueva" class="tarjeta mb-6 {dinero ? '-mt-3' : ''} flex items-center gap-4 p-4 transition hover:border-acento/50 active:scale-[0.99]">
 			<span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-superficie-3 text-texto-2"><Warehouse size={24} /></span>
 			<span class="flex-1">
 				<span class="block font-semibold">Algo del local</span>
 				<span class="block text-xs text-texto-3">Una pared que pintar, una humedad, el extintor…</span>
 			</span>
-		</a>
-		<h2 class="mb-3 text-lg">O de un vehículo</h2>
+		</a>{/if}
+		<h2 class="mb-3 text-lg">{dinero || local ? 'O de un vehículo' : '¿De qué vehículo?'}</h2>
 		{#if !vehiculos.length}
 			<div class="vacio">No hay vehículos. <a href="/flota/nuevo" class="text-acento">Da de alta el primero</a>.</div>
 		{/if}
@@ -106,6 +109,12 @@
 						<span class="font-semibold">{t}</span>
 					</button>
 				{/each}
+				{#if libreta}
+					<a href="/flota/{vehiculo.id}?pestana=libreta" class="tarjeta flex h-28 flex-col items-start justify-between p-4 text-left transition active:scale-[0.98]">
+						<ReceiptText size={26} class="text-texto-2" />
+						<span class="font-semibold">Gasto <span class="text-xs font-normal text-texto-3">· tu libreta</span></span>
+					</a>
+				{/if}
 				<SubirArchivos
 					entidad={obra ? 'restauracion' : 'vehiculo'}
 					entidadId={obra ? obra.id : vehiculo.id}

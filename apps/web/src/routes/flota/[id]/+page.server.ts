@@ -44,6 +44,7 @@ import { borrarRepostaje, guardarRepostaje } from '$lib/server/repostajes';
 import { avanceRestauraciones, comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 import { borrarGastoSimple, guardarGastoSimple } from '$lib/server/libreta';
+import { esAjeno } from '$lib/server/usuarios';
 import { borradorConIa, cargarFicha, fijarDato, guardarDato, guardarProcedimiento, importarFicha } from '$lib/server/ficha';
 
 export const load = async ({ params, locals }) => {
@@ -252,10 +253,12 @@ export const load = async ({ params, locals }) => {
 	};
 	// La libreta de gastos del dueño (solo la ve él)
 	const dueno = v.usuarioId != null && v.usuarioId === locals.yo?.id;
+	// Privado: de quién es (si es de otro, solo lectura)
+	const privadoDe = v.usuarioId != null ? ((await db.select({ nombre: s.usuarios.nombre }).from(s.usuarios).where(eq(s.usuarios.id, v.usuarioId)).get())?.nombre ?? 'otro usuario') : null;
 	const libreta = dueno
 		? await db.select().from(s.gastosPersonales).where(and(eq(s.gastosPersonales.vehiculoId, id), eq(s.gastosPersonales.usuarioId, locals.yo!.id))).orderBy(desc(s.gastosPersonales.fecha), desc(s.gastosPersonales.id))
 		: [];
-	const extra = { esDueno: dueno, libreta, resumenLibreta: dueno ? resumenLibreta(libreta, lecturas, hoy) : null };
+	const extra = { esDueno: dueno, soloLectura: esAjeno(locals.yo, id), privadoDe, libreta, resumenLibreta: dueno ? resumenLibreta(libreta, lecturas, hoy) : null };
 	if (locals.permisos.includes('dinero')) return { ...datos, ...extra, verDinero: true as const };
 	// Sin permiso de «Dinero»: fuera gastos, costes, importes, presupuestos y facturas (no llegan al navegador)
 	return {

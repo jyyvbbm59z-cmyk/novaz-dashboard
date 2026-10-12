@@ -12,13 +12,16 @@
 		ficha,
 		entradas,
 		verDinero,
-		base
+		base,
+		editable = true
 	}: {
 		ficha: { plantilla: DatoPlantilla[]; datos: DatoTecnico[]; procedimientos: Procedimiento[]; sugerencias: Sugerencia[] };
 		entradas: { id: number; titulo: string; texto: string | null; fecha: string; clase: string }[];
 		verDinero: boolean;
 		/** Ruta del vehículo («/flota/5») para los enlaces de exportar y dossier. */
 		base: string;
+		/** false = solo lectura (vehículo privado de otro). */
+		editable?: boolean;
 	} = $props();
 
 	type Fila = { clave: string; nombre: string; seccion: string; unidad: string | null; ayuda: string | null; dato: DatoTecnico | null };
@@ -87,15 +90,17 @@
 <!-- Acciones -->
 <div class="mb-4 flex flex-wrap items-center gap-2">
 	<p class="mr-auto text-sm text-texto-2">{rellenos} {rellenos === 1 ? 'dato' : 'datos'}{sinVerificar ? ` · ${sinVerificar} sin verificar` : ''}</p>
-	<form method="POST" action="?/borradorIA" use:enhance={enviar()}><button class="btn h-9 text-sm" title="Propone valores típicos para los huecos vacíos (sin verificar)"><Sparkles size={15} /> Borrador con IA</button></form>
-	<button class="btn h-9 text-sm" onclick={() => ((json = ''), (hImportar = true))}><FileUp size={15} /> Importar</button>
+	{#if editable}
+		<form method="POST" action="?/borradorIA" use:enhance={enviar()}><button class="btn h-9 text-sm" title="Propone valores típicos para los huecos vacíos (sin verificar)"><Sparkles size={15} /> Borrador con IA</button></form>
+		<button class="btn h-9 text-sm" onclick={() => ((json = ''), (hImportar = true))}><FileUp size={15} /> Importar</button>
+	{/if}
 	<a href="{base}/ficha.json" download class="btn h-9 text-sm" data-sveltekit-reload><Download size={15} /> Exportar</a>
 	<a href="{base}/dossier" class="btn h-9 text-sm"><FileDown size={15} /> Dossier PDF</a>
 	{#if verDinero}<a href="{base}/dossier?costes=1" class="text-xs text-texto-3 hover:text-texto">(con costes)</a>{/if}
 </div>
 
 <!-- Lo aprendido de tus mantenimientos -->
-{#if ficha.sugerencias.length}
+{#if editable && ficha.sugerencias.length}
 	<section class="tarjeta mb-5 border-acento/40 p-4">
 		<p class="etiqueta mb-2 flex items-center gap-1.5"><Sparkles size={13} /> Aprendido de tus mantenimientos</p>
 		<ul class="flex flex-col gap-2">
@@ -122,7 +127,7 @@
 						{@const d = f.dato}
 						{@const pista = d && !d.verificado && sec.clave === 'pares'}
 						<li>
-							<button class="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-superficie-2" onclick={() => editar(f)}>
+							<button class="flex w-full items-center gap-3 px-3.5 py-2.5 text-left {editable ? 'hover:bg-superficie-2' : 'cursor-default'}" onclick={() => editable && editar(f)}>
 								<span class="min-w-0 flex-1">
 									<span class="block text-sm {d ? 'font-medium' : 'text-texto-3'}">{f.nombre}</span>
 									{#if d?.detalle || d?.fuente}<span class="line-clamp-2 block text-xs text-texto-3">{[d.detalle, d.fuente].filter(Boolean).join(' · ')}</span>{:else if !d && f.ayuda}<span class="block truncate text-xs text-texto-3/70">{f.ayuda}</span>{/if}
@@ -144,7 +149,7 @@
 	{/each}
 	<div class="flex flex-wrap gap-2">
 		<button class="btn h-9 text-sm" onclick={() => (verVacios = !verVacios)}>{verVacios ? 'Ocultar huecos vacíos' : `Ver huecos vacíos (${filas.filter((f) => !f.dato).length})`}</button>
-		<button class="btn h-9 text-sm" onclick={() => editar(null)}><Plus size={15} /> Otro dato</button>
+		{#if editable}<button class="btn h-9 text-sm" onclick={() => editar(null)}><Plus size={15} /> Otro dato</button>{/if}
 	</div>
 	{#if !rellenos && !ficha.sugerencias.length}
 		<div class="vacio">
@@ -157,7 +162,7 @@
 <section class="mt-7">
 	<div class="mb-2 flex items-center justify-between gap-2">
 		<p class="etiqueta flex items-center gap-1.5"><BookOpen size={13} /> Procedimientos{ficha.procedimientos.length ? ` · ${ficha.procedimientos.length}` : ''}</p>
-		<button class="text-xs font-semibold text-acento hover:underline" onclick={nuevoProc}>＋ Nuevo</button>
+		{#if editable}<button class="text-xs font-semibold text-acento hover:underline" onclick={nuevoProc}>＋ Nuevo</button>{/if}
 	</div>
 	{#if ficha.procedimientos.length}
 		<ul class="tarjeta lista-filas">
@@ -269,7 +274,7 @@
 				{/each}
 			</ol>
 			{#if p.notas}<p class="text-sm text-texto-3">{p.notas}</p>{/if}
-			<div class="grid grid-cols-2 gap-2">
+			<div class="grid grid-cols-2 gap-2 {editable ? '' : 'hidden'}">
 				<button class="btn" onclick={() => editarProc(p)}><Pencil size={15} /> Editar</button>
 				<button class="btn text-vencido" onclick={() => confirm(`¿Borrar «${p.titulo}»?`) && accion('?/borrarProcedimiento', { id: p.id }).then(() => (hProc = false))}><Trash2 size={15} /> Borrar</button>
 			</div>
