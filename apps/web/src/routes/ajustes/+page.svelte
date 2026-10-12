@@ -74,11 +74,7 @@
 			<label class="campo"><span>Urgente a partir de (días)</span><input name="urgenteDias" class="input" inputmode="numeric" value={a.urgenteDias} /></label>
 			<label class="campo"><span>Zona horaria</span><input name="zonaHoraria" class="input" value={a.zonaHoraria} /></label>
 		</div>
-		<label class="campo">
-			<span>Chat ID de Telegram</span>
-			<input name="telegramChatId" class="input font-mono" value={a.telegramChatId ?? ''} placeholder="123456789" />
-			<span class="text-xs text-texto-3">Escribe a tu bot y consulta el ID con @userinfobot. El token del bot va como secreto en Cloudflare.</span>
-		</label>
+		<p class="text-xs text-texto-3">El chat de Telegram de cada persona va en su ficha de <a href="/ajustes/usuarios" class="text-acento">Usuarios</a> (o en <a href="/perfil" class="text-acento">Mi perfil</a>). El parte le llega a cada uno con solo lo suyo.</p>
 		<fieldset class="flex flex-col gap-2">
 			<span class="text-sm font-medium">Qué te manda el bot</span>
 			{#each [['parte', 'Un informe cada mañana', 'Vencimientos, mantenimiento, taller, finanzas y coste de la flota. Lo que entra en aviso ese día va marcado.'], ['umbrales', 'Solo cuando algo vence', 'Un aviso a 30, 7 y 1 días y el día que vence. Si no pasa nada, silencio.']] as [v, t, d] (v)}
@@ -91,7 +87,7 @@
 		<label class="flex items-center gap-3 text-sm"><input type="checkbox" name="resumenSemanal" checked={a.resumenSemanal} class="h-5 w-5 accent-[var(--acento)]" /> Los lunes, además, cómo van las obras</label>
 		<div class="flex flex-wrap gap-2">
 			<button class="btn btn-acento">Guardar</button>
-			<button class="btn" formaction="?/probarTelegram"><Send size={16} /> {a.parteDiario ? 'Enviarme el informe de hoy' : 'Probar'}</button>
+			<button class="btn" formaction="?/probarTelegram"><Send size={16} /> {a.parteDiario ? 'Enviarme mi informe de hoy' : 'Probar'}</button>
 		</div>
 		{#if data.bot}
 			<div class="flex flex-col gap-2 rounded-lg border border-borde p-3 text-sm">

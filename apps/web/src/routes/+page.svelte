@@ -22,7 +22,7 @@
 	<p class="etiqueta first-letter:uppercase">{fecha}</p>
 	<div class="flex items-end justify-between gap-3">
 		<h1 class="titulo-pagina">Hoy</h1>
-		<a href="/agenda" class="btn h-9 text-sm"><CalendarDays size={16} /> Agenda</a>
+		{#if data.permisos.includes('vehiculos')}<a href="/agenda" class="btn h-9 text-sm"><CalendarDays size={16} /> Agenda</a>{/if}
 	</div>
 	<p class="mt-1 text-sm text-texto-2">
 		{#if atencion}<strong class="text-texto">{atencion} {atencion === 1 ? 'asunto requiere' : 'asuntos requieren'} atención</strong> · {/if}{data.asuntos.length
@@ -75,17 +75,20 @@
 	</section>
 
 	<div class="flex flex-col gap-4">
-		<!-- Dinero en una línea -->
+		<!-- Dinero en una línea (solo quien tiene permiso) -->
+		{#if data.dinero}
+		{@const dinero = data.dinero}
 		<a href="/contabilidad" class="tarjeta block p-4 transition hover:border-texto-3/40">
 			<p class="etiqueta flex items-center gap-1.5"><Landmark size={13} /> En el banco</p>
-			<p class="cifra mt-1 text-4xl {data.dinero.disponible < 0 ? 'nivel-vencido' : ''}">{euros(data.dinero.disponible)}</p>
+			<p class="cifra mt-1 text-4xl {dinero.disponible < 0 ? 'nivel-vencido' : ''}">{euros(dinero.disponible)}</p>
 			<p class="mt-1 text-xs text-texto-3">
-				Gastado en {mes}: <span class="text-texto-2">{euros(data.dinero.gastoMes, { redondo: true })}</span> · en {data.hoy.slice(0, 4)}: <span class="text-texto-2">{euros(data.dinero.gastoAnio, { redondo: true })}</span>
+				Gastado en {mes}: <span class="text-texto-2">{euros(dinero.gastoMes, { redondo: true })}</span> · en {data.hoy.slice(0, 4)}: <span class="text-texto-2">{euros(dinero.gastoAnio, { redondo: true })}</span>
 			</p>
-			{#if data.dinero.disponible < 0 || data.dinero.diasCuadre == null || data.dinero.diasCuadre > 30}
-				<p class="mt-2 text-xs nivel-urgente">{data.dinero.disponible < 0 ? '¿En el banco pone otra cifra? Cuádralo en Tesorería.' : 'Hace tiempo que no cuadras con el banco.'}</p>
+			{#if dinero.disponible < 0 || dinero.diasCuadre == null || dinero.diasCuadre > 30}
+				<p class="mt-2 text-xs nivel-urgente">{dinero.disponible < 0 ? '¿En el banco pone otra cifra? Cuádralo en Tesorería.' : 'Hace tiempo que no cuadras con el banco.'}</p>
 			{/if}
 		</a>
+		{/if}
 
 		<!-- Obras -->
 		{#if data.obras.length}

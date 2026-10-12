@@ -15,6 +15,8 @@
 	const cat = $derived(data.catalogo);
 
 	let vehiculoId = $state<number | null>(null);
+	// Gastos y repostajes son dinero: solo con ese permiso
+	const dinero = $derived(data.permisos.includes('dinero'));
 	let que = $state<'entrada' | 'foto' | 'gasto' | 'km' | 'tarea' | 'pendiente' | 'repostaje' | null>(null);
 	let hecho = $state(false);
 
@@ -97,7 +99,7 @@
 
 		{#if !que}
 			<div class="grid grid-cols-2 gap-2.5">
-				{#each [['entrada', obra ? 'Diario de obra' : 'Entrada', NotebookPen], ['pendiente', 'Avería o mejora', CircleAlert], ['gasto', 'Gasto', ReceiptText], ...(obra ? [] : [['repostaje', 'Repostaje', Fuel]]), ['km', 'Kilómetros', Gauge], ...(obra?.tareas.length ? [['tarea', 'Tarea hecha', ListChecks]] : [])] as [id, t, I] (id)}
+				{#each [['entrada', obra ? 'Diario de obra' : 'Entrada', NotebookPen], ['pendiente', 'Avería o mejora', CircleAlert], ...(dinero ? [['gasto', 'Gasto', ReceiptText]] : []), ...(obra || !dinero ? [] : [['repostaje', 'Repostaje', Fuel]]), ['km', 'Kilómetros', Gauge], ...(obra?.tareas.length ? [['tarea', 'Tarea hecha', ListChecks]] : [])] as [id, t, I] (id)}
 					{@const C = I as typeof NotebookPen}
 					<button class="tarjeta flex h-28 flex-col items-start justify-between p-4 text-left transition active:scale-[0.98] {id === 'entrada' ? 'border-acento/50' : ''}" onclick={() => (que = id as typeof que)}>
 						<C size={26} class={id === 'entrada' ? 'text-acento' : 'text-texto-2'} />

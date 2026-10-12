@@ -17,7 +17,7 @@
 	import SubirArchivos from '$comp/SubirArchivos.svelte';
 	import VencimientoForm from '$comp/VencimientoForm.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { diasEntre, euros, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad, REVISION_PRE_ITV, lineaConPrecio, type RevisionMejora } from '@novaz/core';
+	import { diasEntre, euros, eurosInput, NOMBRE_GASTO_SIMPLE, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad, REVISION_PRE_ITV, lineaConPrecio, type RevisionMejora } from '@novaz/core';
 	import FacturaForm from '$comp/FacturaForm.svelte';
 	import type { Entrada, Movimiento, Pendiente, Vencimiento } from '@novaz/core/schema';
 	import { Check, CircleAlert, Download, FileText, Fuel, Gauge, Scale, ListChecks, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
@@ -40,15 +40,34 @@
 		data.vencimientos.filter((x) => x.estado === 'vigente' && x.fechaVence >= data.hoy).sort((x, y) => x.fechaVence.localeCompare(y.fechaVence))[0] ?? null
 	);
 
-	const PESTANAS = [
+	const TODAS_PESTANAS = [
 		['historial', 'Historial'],
 		['papeles', 'Papeles'],
 		['mantenimiento', 'Mantenimiento'],
 		['gastos', 'Gastos'],
+		['libreta', 'Mis gastos'],
 		['fotos', 'Fotos'],
 		['datos', 'Datos'],
 		['obras', 'Restauraciones']
 	] as const;
+	// Sin permiso de «Dinero» no hay pestaña de gastos
+	const PESTANAS = $derived(TODAS_PESTANAS.filter(([id]) => (id !== 'gastos' || data.verDinero) && (id !== 'libreta' || data.esDueno)));
+
+	// Libreta de gastos del dueño (sencilla, aparte de la contabilidad)
+	let hLibreta = $state(false);
+	let gastoLib = $state<(typeof data.libreta)[number] | null>(null);
+	let catLibreta = $state('combustible');
+	function abrirLibreta(cat = 'combustible', g: (typeof data.libreta)[number] | null = null) {
+		gastoLib = g;
+		catLibreta = g?.categoria ?? cat;
+		hLibreta = true;
+	}
+	const mesesLibreta = $derived.by(() => {
+		const m = new Map<string, typeof data.libreta>();
+		for (const g of data.libreta) m.set(g.fecha.slice(0, 7), [...(m.get(g.fecha.slice(0, 7)) ?? []), g]);
+		return [...m.entries()];
+	});
+	const nombreMes = (ym: string) => new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${ym}-15T12:00:00Z`));
 	const pestana = $derived(page.url.searchParams.get('pestana') ?? 'historial');
 
 	// Hojas
@@ -203,13 +222,19 @@
 		<p class="cifra mt-1 text-3xl">{data.km?.toLocaleString('es-ES') ?? '—'}</p>
 		<p class="text-xs text-texto-3">{kmMes ? `~${kmMes.toLocaleString('es-ES')} km/mes` : 'Toca para actualizar'}</p>
 	</button>
-	{#if enUso && data.usoMes.total}
+	{#if data.usoMes && enUso && data.usoMes.total}
 		<a href="?pestana=gastos" class="tarjeta p-4 transition hover:border-texto-3/40">
 			<p class="etiqueta">Cuesta al mes</p>
 			<p class="cifra mt-1 text-3xl">{euros(data.usoMes.total, { redondo: true })}</p>
 			<p class="text-xs text-texto-3">{data.usoMes.porKm != null ? `${(data.usoMes.porKm / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €/km` : 'Uso estimado'}</p>
 		</a>
-	{:else}
+	{:else if data.resumenLibreta && !data.verDinero}
+		<a href="?pestana=libreta" class="tarjeta p-4 transition hover:border-texto-3/40">
+			<p class="etiqueta">Mis gastos {data.hoy.slice(0, 4)}</p>
+			<p class="cifra mt-1 text-3xl">{euros(data.resumenLibreta.anio, { redondo: true })}</p>
+			<p class="text-xs text-texto-3">Este mes: {euros(data.resumenLibreta.mes, { redondo: true })}{data.resumenLibreta.porKm != null ? ` · ${(data.resumenLibreta.porKm / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €/km` : ''}</p>
+		</a>
+	{:else if data.verDinero}
 		<a href="?pestana=gastos" class="tarjeta p-4 transition hover:border-texto-3/40">
 			<p class="etiqueta">{activa ? 'Invertido' : 'Gastado en total'}</p>
 			<p class="cifra mt-1 text-3xl">{euros(data.totales.gasto, { redondo: true })}</p>
@@ -230,11 +255,13 @@
 			<p class="text-xs text-texto-3">Sin papeles registrados</p>
 		{/if}
 	</a>
-	<a href="?pestana=gastos" class="tarjeta p-4 transition hover:border-texto-3/40">
-		<p class="etiqueta">Gasto {data.hoy.slice(0, 4)}</p>
-		<p class="cifra mt-1 text-3xl">{euros(data.totales.gastoAnio, { redondo: true })}</p>
-		<p class="text-xs text-texto-3">Total {euros(data.totales.gasto, { redondo: true })}</p>
-	</a>
+	{#if data.verDinero}
+		<a href="?pestana=gastos" class="tarjeta p-4 transition hover:border-texto-3/40">
+			<p class="etiqueta">Gasto {data.hoy.slice(0, 4)}</p>
+			<p class="cifra mt-1 text-3xl">{euros(data.totales.gastoAnio, { redondo: true })}</p>
+			<p class="text-xs text-texto-3">Total {euros(data.totales.gasto, { redondo: true })}</p>
+		</a>
+	{/if}
 </section>
 
 {#if activa}
@@ -250,12 +277,12 @@
 {/if}
 
 <!-- Acciones -->
-<div class="mt-4 grid {enUso ? 'grid-cols-6' : 'grid-cols-5'} gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
+<div class="mt-4 grid auto-cols-fr grid-flow-col gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
 	<button class="btn btn-acento flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0 h-auto" onclick={() => nuevaEntrada()}><NotebookPen size={18} /><span class="text-xs sm:text-sm">Entrada</span></button>
 	<SubirArchivos entidad="vehiculo" entidadId={v.id} vehiculoId={v.id} camara clase="btn flex-col gap-1 py-2 h-auto sm:h-10 sm:flex-row sm:py-0 text-xs sm:text-sm" />
-	{#if enUso}<button class="btn h-auto flex-col gap-1 px-1 py-2 sm:h-10 sm:flex-row sm:px-4 sm:py-0" onclick={() => (hRepostaje = true)}><Fuel size={18} /><span class="text-[0.68rem] sm:text-sm">Repostar</span></button>{/if}
+	{#if enUso && (data.verDinero || data.esDueno)}<button class="btn h-auto flex-col gap-1 px-1 py-2 sm:h-10 sm:flex-row sm:px-4 sm:py-0" onclick={() => (data.verDinero ? (hRepostaje = true) : abrirLibreta('combustible'))}><Fuel size={18} /><span class="text-[0.68rem] sm:text-sm">Repostar</span></button>{/if}
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => (hKm = true)}><Gauge size={18} /><span class="text-xs sm:text-sm">Km</span></button>
-	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((gastoEdit = null), (hGasto = true))}><ReceiptText size={18} /><span class="text-xs sm:text-sm">Gasto</span></button>
+	{#if data.verDinero || data.esDueno}<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => (data.verDinero ? ((gastoEdit = null), (hGasto = true)) : abrirLibreta('otros'))}><ReceiptText size={18} /><span class="text-xs sm:text-sm">Gasto</span></button>{/if}
 	<button class="btn h-auto flex-col gap-1 py-2 sm:h-10 sm:flex-row sm:py-0" onclick={() => ((pendEdit = null), (tipoPendiente = 'averia'), (hPendiente = true))}><CircleAlert size={18} /><span class="text-xs sm:text-sm">Avería</span></button>
 	<a href="/flota/{v.id}/editar" class="btn hidden sm:inline-flex sm:ml-auto"><Pencil size={16} /> Editar</a>
 </div>
@@ -284,8 +311,11 @@
 			</div>
 			{#if data.porReparar.length}
 				<div class="flex flex-col gap-2">
-					{#each data.porReparar as p (p.id)}
+					{#each data.porReparar as p, i (p.id)}
 						{@const m = data.mejoras[p.id]}
+						{#if p.tipo === 'mejora' && (i === 0 || data.porReparar[i - 1].tipo !== 'mejora')}
+							<p class="etiqueta mt-3 flex items-center gap-2 text-pronto">Mejoras planificadas</p>
+						{/if}
 						<article id="pend-{p.id}" class="tarjeta destino scroll-mt-24 p-3.5" style="border-left: 3px solid {p.tipo === 'mejora' ? 'var(--pronto)' : PRIORIDAD[p.prioridad].color}">
 							<div class="flex items-start gap-3">
 								<div class="min-w-0 flex-1">
@@ -324,7 +354,7 @@
 				{#if facturando}
 					<button class="btn btn-fantasma h-8 text-xs" onclick={salirFacturar}>Cancelar</button>
 				{:else}
-					<button class="btn h-8 text-xs" onclick={() => (facturando = true)}><FileText size={14} /> Facturar</button>
+					{#if data.verDinero}<button class="btn h-8 text-xs" onclick={() => (facturando = true)}><FileText size={14} /> Facturar</button>{/if}
 				{/if}
 			</div>
 		{/if}
@@ -562,7 +592,7 @@
 				</details>
 			{/if}
 		</section>
-	{:else if pestana === 'gastos'}
+	{:else if pestana === 'gastos' && data.verDinero && data.costes && data.usoMes}
 		{@const c = data.costes}
 		{#if enUso}
 			{@const u = data.usoMes}
@@ -727,6 +757,50 @@
 				{/each}
 			</ul>
 		{/if}
+	{:else if pestana === 'libreta' && data.esDueno && data.resumenLibreta}
+		{@const r = data.resumenLibreta}
+		<section class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+			<div class="tarjeta p-4"><p class="etiqueta">Este mes</p><p class="cifra mt-1 text-3xl">{euros(r.mes, { redondo: true })}</p></div>
+			<div class="tarjeta p-4"><p class="etiqueta">En {data.hoy.slice(0, 4)}</p><p class="cifra mt-1 text-3xl">{euros(r.anio, { redondo: true })}</p></div>
+			<div class="tarjeta p-4"><p class="etiqueta">Por kilómetro</p><p class="cifra mt-1 text-3xl">{r.porKm != null ? `${(r.porKm / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : '—'}</p><p class="text-xs text-texto-3">{r.porKm != null ? 'Lo gastado este año ÷ km' : 'Apunta los km al repostar'}</p></div>
+			<div class="tarjeta p-4"><p class="etiqueta">Consumo</p><p class="cifra mt-1 text-3xl">{r.consumo != null ? `${r.consumo.toLocaleString('es-ES')} L` : '—'}</p><p class="text-xs text-texto-3">{r.consumo != null ? 'a los 100 km' : 'Pon litros y km al repostar'}</p></div>
+		</section>
+		<div class="mb-4 flex flex-wrap gap-2">
+			<button class="btn btn-acento h-10" onclick={() => abrirLibreta('combustible')}><Fuel size={16} /> Repostaje</button>
+			<button class="btn h-10" onclick={() => abrirLibreta('otros')}><Plus size={16} /> Otro gasto</button>
+		</div>
+		{#if r.porCategoria.length}
+			<section class="tarjeta mb-5 p-4">
+				<p class="etiqueta mb-3">En {data.hoy.slice(0, 4)}, por tipo</p>
+				<ul class="flex flex-col gap-2">
+					{#each r.porCategoria as c (c.categoria)}
+						<li class="text-sm">
+							<div class="flex justify-between gap-3"><span>{NOMBRE_GASTO_SIMPLE[c.categoria] ?? c.categoria}</span><span class="cifra">{euros(c.total, { redondo: true })}</span></div>
+							<div class="mt-1 h-1.5 overflow-hidden rounded-full bg-superficie-3"><div class="h-full rounded-full bg-acento" style="width: {(c.total / r.anio) * 100}%"></div></div>
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
+		{#each mesesLibreta as [ym, gs] (ym)}
+			<section class="mb-4">
+				<div class="mb-2 flex items-baseline justify-between"><p class="etiqueta first-letter:uppercase">{nombreMes(ym)}</p><span class="cifra text-sm text-texto-2">{euros(gs.reduce((t, g) => t + g.importeCent, 0))}</span></div>
+				<ul class="tarjeta lista-filas">
+					{#each gs as g (g.id)}
+						<li class="flex items-center gap-3 px-3 py-2.5">
+							<button class="min-w-0 flex-1 text-left" onclick={() => abrirLibreta(g.categoria, g)}>
+								<span class="block truncate text-sm font-medium">{g.concepto}</span>
+								<span class="block truncate text-xs text-texto-3">{fechaLarga(g.fecha)} · {NOMBRE_GASTO_SIMPLE[g.categoria]}{g.litros ? ` · ${g.litros.toLocaleString('es-ES')} L` : ''}{g.km ? ` · ${g.km.toLocaleString('es-ES')} km` : ''}</span>
+							</button>
+							<span class="cifra shrink-0">{euros(g.importeCent)}</span>
+							<button class="text-texto-3 hover:text-vencido" onclick={() => confirm('¿Borrar este gasto de tu libreta?') && accion('?/borrarGastoSimple', { id: g.id })} aria-label="Borrar"><Trash2 size={14} /></button>
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{:else}
+			<div class="vacio">Tu libreta está vacía. Apunta repostajes, seguro, ITV, revisiones… y verás cuánto te cuesta el coche al mes y por kilómetro.</div>
+		{/each}
 	{:else if pestana === 'fotos'}
 		<div class="mb-4 flex gap-2">
 			<SubirArchivos entidad="vehiculo" entidadId={v.id} vehiculoId={v.id} camara />
@@ -898,6 +972,29 @@
 			</div>
 		</div>
 	{/if}
+</Hoja>
+
+<Hoja bind:abierta={hLibreta} titulo={gastoLib ? 'Editar gasto' : catLibreta === 'combustible' ? 'Repostaje' : 'Nuevo gasto'}>
+	{#key `${gastoLib?.id ?? 'n'}-${hLibreta}`}
+		<form method="POST" action="?/gastoSimple" use:enhance={enviar({ alTerminar: () => (hLibreta = false) })} class="flex flex-col gap-4">
+			{#if gastoLib}<input type="hidden" name="id" value={gastoLib.id} />{/if}
+			<input type="hidden" name="categoria" value={catLibreta} />
+			<div class="flex flex-wrap gap-1.5">
+				{#each Object.entries(NOMBRE_GASTO_SIMPLE) as [k, n] (k)}
+					<button type="button" class="chip h-8 px-3 {catLibreta === k ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => (catLibreta = k)}>{n}</button>
+				{/each}
+			</div>
+			<label class="campo"><span>Qué es *</span><input name="concepto" class="input" required value={gastoLib?.concepto ?? (catLibreta === 'combustible' ? 'Repostaje' : '')} placeholder="Seguro, ITV, cambio de aceite…" /></label>
+			<div class="grid grid-cols-2 gap-3">
+				<label class="campo"><span>Importe (€) *</span><input name="importe" class="input" inputmode="decimal" required value={gastoLib ? eurosInput(gastoLib.importeCent) : ''} /></label>
+				<label class="campo"><span>Fecha</span><input type="date" name="fecha" class="input px-2" value={gastoLib?.fecha ?? data.hoy} /></label>
+				<label class="campo"><span>Km del coche</span><input name="km" class="input" inputmode="numeric" value={gastoLib?.km ?? ''} placeholder={data.km?.toLocaleString('es-ES') ?? ''} /></label>
+				{#if catLibreta === 'combustible'}<label class="campo"><span>Litros</span><input name="litros" class="input" inputmode="decimal" value={gastoLib?.litros?.toString().replace('.', ',') ?? ''} /></label>{/if}
+			</div>
+			<p class="-mt-2 text-xs text-texto-3">Con los km y los litros de cada repostaje la app calcula el consumo y lo que te cuesta cada kilómetro.</p>
+			<button class="btn btn-acento h-12">{gastoLib ? 'Guardar' : 'Apuntar'}</button>
+		</form>
+	{/key}
 </Hoja>
 
 <Hoja bind:abierta={hRepostaje} titulo="Repostaje · {v.alias}">

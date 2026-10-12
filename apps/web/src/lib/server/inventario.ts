@@ -86,7 +86,8 @@ export async function registrarStock(locals: Locals, fd: FormData, cantidadActua
 	// Compra: el gasto va a la categoría que toque según el tipo de artículo
 	let movimientoId: number | null = null;
 	const importe = f.euros('importe');
-	if (importe) {
+	// El gasto de la compra solo lo apunta quien tiene permiso de «Dinero» (el stock sube igual)
+	if (importe && locals.permisos.includes('dinero')) {
 		const cats = await locals.db.select().from(s.categorias).where(eq(s.categorias.tipo, 'gasto'));
 		const buscar = a.tipo === 'herramienta' ? /herramienta/i : a.tipo === 'recambio' ? /recambio/i : /consumible/i;
 		const cat = cats.find((c) => buscar.test(c.nombre));

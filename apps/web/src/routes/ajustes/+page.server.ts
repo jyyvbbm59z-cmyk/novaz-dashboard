@@ -55,7 +55,6 @@ export const actions = {
 		await guardar(locals.db, {
 			urgenteDias: Math.max(0, f.entero('urgenteDias') ?? 7),
 			zonaHoraria: zona,
-			telegramChatId: f.texto('telegramChatId'),
 			parteDiario: f.texto('modoAvisos') !== 'umbrales',
 			resumenSemanal: f.bool('resumenSemanal')
 		});
@@ -64,9 +63,9 @@ export const actions = {
 
 	probarTelegram: accion(async ({ locals, platform, url }) => {
 		const token = platform?.env.TELEGRAM_TOKEN;
-		const chat = locals.ajustes.telegramChatId;
+		const chat = locals.yo?.telegramChatId ?? locals.ajustes.telegramChatId;
 		if (!token) throw new ErrorFormulario('Falta el token del bot en Cloudflare: añade TELEGRAM_TOKEN como Secreto en novaz-dashboard');
-		if (!chat) throw new ErrorFormulario('Guarda primero el chat ID');
+		if (!chat) throw new ErrorFormulario('Pon primero tu chat de Telegram en Mi perfil');
 		const { ajustes, hoy, db } = locals;
 		let texto = `<b>${ajustes.nombreTaller}</b>\nLos avisos de Telegram están conectados.`;
 		if (ajustes.parteDiario) {
@@ -87,7 +86,6 @@ export const actions = {
 	conectarBot: accion(async ({ platform, url, locals }) => {
 		const env = platform?.env;
 		if (!env?.TELEGRAM_TOKEN) throw new ErrorFormulario('Falta el token del bot en Cloudflare: añade TELEGRAM_TOKEN como Secreto en novaz-dashboard');
-		if (!locals.ajustes.telegramChatId) throw new ErrorFormulario('Guarda primero el chat ID: el bot solo te hará caso a ti');
 		try {
 			await llamarTelegram(env, 'setWebhook', {
 				url: `${url.origin}/api/telegram`,

@@ -38,7 +38,7 @@
 {:else}
 	<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
 		{#each lista as r (r.id)}
-			{@const sobre = r.presupuestoCent ? r.gasto / r.presupuestoCent : null}
+			{@const sobre = r.presupuestoCent && r.gasto != null ? r.gasto / r.presupuestoCent : null}
 			<a href="/restauraciones/{r.id}" class="tarjeta group flex overflow-hidden transition hover:border-texto-3/40">
 				<div class="w-28 shrink-0 bg-superficie-2 sm:w-36">
 					{#if r.portada}<img src="/archivos/{r.portada}?mini" alt="" class="h-full w-full object-cover" />{:else}<div class="flex h-full items-center justify-center text-texto-3/40"><Wrench size={32} /></div>{/if}
@@ -55,7 +55,7 @@
 					</div>
 					<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-texto-2">
 						<span class="flex items-center gap-1"><Clock size={12} /> {r.horas.toLocaleString('es-ES')} h</span>
-						<span class={sobre != null && sobre > 1 ? 'nivel-vencido' : ''}>{euros(r.gasto, { redondo: true })}{r.presupuestoCent ? ` / ${euros(r.presupuestoCent, { redondo: true })}` : ''}</span>
+						{#if r.gasto != null}<span class={sobre != null && sobre > 1 ? 'nivel-vencido' : ''}>{euros(r.gasto, { redondo: true })}{r.presupuestoCent ? ` / ${euros(r.presupuestoCent, { redondo: true })}` : ''}</span>{/if}
 						{#if r.fechaInicio}<span>{r.estado === 'terminada' && r.fechaFin ? `${diasEntre(r.fechaInicio, r.fechaFin)} días` : `Desde ${fechaLarga(r.fechaInicio)}`}</span>{/if}
 					</div>
 				</div>

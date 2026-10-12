@@ -6,15 +6,16 @@
 	let { data } = $props();
 	const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 	const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-	const FILTROS = [
+	const TODOS_FILTROS = [
 		['todo', 'Todo'],
 		['papel', 'Papeles'],
 		['revision', 'Revisiones'],
 		['local', 'El local'],
 		['recurrente', 'Fijos']
 	] as const;
+	const FILTROS = $derived(TODOS_FILTROS.filter(([v]) => (v !== 'local' || data.permisos.includes('local')) && (v !== 'recurrente' || data.permisos.includes('dinero'))));
 	const ICONO = { papel: FileCheck, revision: Wrench, local: Warehouse, recurrente: Repeat };
-	let filtro = $state<(typeof FILTROS)[number][0]>('todo');
+	let filtro = $state<(typeof TODOS_FILTROS)[number][0]>('todo');
 
 	const visibles = $derived(data.eventos.filter((e) => filtro === 'todo' || e.tipo === filtro));
 	const atrasados = $derived(visibles.filter((e) => e.fecha < data.hoy));
@@ -54,9 +55,9 @@
 {/if}
 
 <!-- Resumen del año y filtros -->
-<p class="mb-3 text-sm text-texto-2">
+{#if data.permisos.includes('dinero')}<p class="mb-3 text-sm text-texto-2">
 	En los próximos 12 meses: salen <strong class="cifra text-base text-texto">{euros(-sale(futuros), { redondo: true })}</strong> en papeles y gastos fijos{#if entra(futuros)}{' · '}entran <strong class="cifra text-base text-texto">{euros(entra(futuros), { redondo: true })}</strong>{/if}.
-</p>
+</p>{/if}
 <div class="-mx-4 mb-5 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0" style="scrollbar-width:none">
 	{#each FILTROS as [v, t] (v)}
 		<button class="chip h-8 shrink-0 px-3 {filtro === v ? 'border-acento/60 bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => (filtro = v)}>{t}</button>

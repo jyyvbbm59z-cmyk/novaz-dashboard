@@ -17,7 +17,9 @@ import {
 	plantillasPara,
 	tienePlanesPropios,
 	ritmoKmDia,
-	tipoVencimientoAplica
+	tipoVencimientoAplica,
+	ordenPendientes,
+	resumenLibreta
 } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { error, redirect } from '@sveltejs/kit';
@@ -41,6 +43,7 @@ import { precioCombustibleHoy } from '$lib/server/combustible';
 import { borrarRepostaje, guardarRepostaje } from '$lib/server/repostajes';
 import { avanceRestauraciones, comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
+import { borrarGastoSimple, guardarGastoSimple } from '$lib/server/libreta';
 
 export const load = async ({ params, locals }) => {
 	const id = Number(params.id);
@@ -77,8 +80,8 @@ export const load = async ({ params, locals }) => {
 			.where(and(eq(s.pendientes.vehiculoId, id), eq(s.pendientes.estado, 'pendiente')))
 			.orderBy(asc(s.pendientes.fechaDetectado))
 	]);
-	const ORDEN_PRIORIDAD = { alta: 0, media: 1, baja: 2 };
-	porReparar.sort((a, b) => ORDEN_PRIORIDAD[a.prioridad] - ORDEN_PRIORIDAD[b.prioridad]);
+	// Lo que hay que arreglar va antes que las mejoras
+	porReparar.sort(ordenPendientes);
 
 	// Planes renovados por cada entrada
 	const enlaces = entradas.length
@@ -187,7 +190,7 @@ export const load = async ({ params, locals }) => {
 	});
 	const combustibleInfo = tipoComb ? { tipo: tipoComb, precio, fecha: precios?.fecha ?? null, municipio: precios?.municipio ?? null } : null;
 	const plantillasDelTipo = plantillasPara(tipoVeh?.nombre);
-	return {
+	const datos = {
 		vehiculo: v,
 		km,
 		ritmo,
@@ -245,11 +248,45 @@ export const load = async ({ params, locals }) => {
 			? await db.select().from(s.listaCompra).where(inArray(s.listaCompra.pendienteId, porReparar.map((p) => p.id))).orderBy(asc(s.listaCompra.id))
 			: []
 	};
+	// La libreta de gastos del dueño (solo la ve él)
+	const dueno = v.usuarioId != null && v.usuarioId === locals.yo?.id;
+	const libreta = dueno
+		? await db.select().from(s.gastosPersonales).where(and(eq(s.gastosPersonales.vehiculoId, id), eq(s.gastosPersonales.usuarioId, locals.yo!.id))).orderBy(desc(s.gastosPersonales.fecha), desc(s.gastosPersonales.id))
+		: [];
+	const extra = { esDueno: dueno, libreta, resumenLibreta: dueno ? resumenLibreta(libreta, lecturas, hoy) : null };
+	if (locals.permisos.includes('dinero')) return { ...datos, ...extra, verDinero: true as const };
+	// Sin permiso de «Dinero»: fuera gastos, costes, importes, presupuestos y facturas (no llegan al navegador)
+	return {
+		...datos,
+		...extra,
+		verDinero: false as const,
+		vehiculo: { ...datos.vehiculo, valorEstimadoCent: null },
+		costes: null,
+		usoMes: null,
+		movimientos: [],
+		adjuntosMov: {} as typeof datos.adjuntosMov,
+		facturas: [],
+		repostajes: [],
+		totales: { gasto: 0, gastoAnio: 0, ingreso: 0 },
+		vencimientos: datos.vencimientos.map((x) => ({ ...x, importeCent: null })),
+		porReparar: datos.porReparar.map((p) => ({ ...p, presupuestoCent: null })),
+		entradas: datos.entradas.map((e) => ({ ...e, importe: 0 })),
+		usos: datos.usos.map((u) => ({ ...u, valorCent: null })),
+		comprasPend: datos.comprasPend.map((c) => ({ ...c, precioEstimadoCent: null }))
+	};
 };
 
 const vid = (p: { id: string }) => Number(p.id);
 
 export const actions = {
+	gastoSimple: accion(async ({ request, locals, params }) => {
+		await guardarGastoSimple(locals, vid(params), await request.formData());
+		return { mensaje: 'Apuntado en tu libreta' };
+	}),
+	borrarGastoSimple: accion(async ({ request, locals }) => {
+		await borrarGastoSimple(locals, leer(await request.formData()).id('id'));
+		return { mensaje: 'Borrado de tu libreta' };
+	}),
 	km: accion(async ({ request, params, locals }) => {
 		const f = leer(await request.formData());
 		const km = f.entero('km');

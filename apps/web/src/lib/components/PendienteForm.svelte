@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	// Apuntar o editar una avería / trabajo pendiente, con fotos.
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -79,7 +80,7 @@
 		/></label
 	>
 	{#if tipo === 'mejora'}
-		<label class="campo"><span>Presupuesto (€)</span><input name="presupuesto" class="input" inputmode="decimal" value={pendiente?.presupuestoCent ? (pendiente.presupuestoCent / 100).toFixed(2).replace('.', ',') : ''} placeholder="Opcional" /></label>
+		{#if ((page.data.permisos as string[] | undefined) ?? []).includes('dinero')}<label class="campo"><span>Presupuesto (€)</span><input name="presupuesto" class="input" inputmode="decimal" value={pendiente?.presupuestoCent ? (pendiente.presupuestoCent / 100).toFixed(2).replace('.', ',') : ''} placeholder="Opcional" /></label>{/if}
 	{/if}
 	<fieldset class="grid grid-cols-3 gap-2">
 		{#each PRIORIDAD as [v, t, c] (v)}

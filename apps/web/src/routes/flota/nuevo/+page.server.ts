@@ -8,7 +8,9 @@ export const actions = {
 	default: accion(async ({ request, locals }) => {
 		const fd = await request.formData();
 		const datos = await datosVehiculo(locals.db, fd);
-		const [v] = await locals.db.insert(s.vehiculos).values(datos).returning({ id: s.vehiculos.id });
+		// Quien solo ve sus vehículos: lo que da de alta es suyo
+		const suyo = locals.yo && locals.yo.vehiculos != null && locals.yo.id ? { usuarioId: locals.yo.id, propietario: 'tercero' as const } : {};
+		const [v] = await locals.db.insert(s.vehiculos).values({ ...datos, ...suyo }).returning({ id: s.vehiculos.id });
 		await registrarKm(locals.db, v.id, datos.fechaAlta ?? locals.hoy, leer(fd).entero('km'));
 		redirect(303, `/flota/${v.id}`);
 	})

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { enhance } from '$app/forms';
 	import { enviar } from '$lib/enviar';
 	import { eurosInput, sumarMeses } from '@novaz/core';
@@ -57,7 +58,7 @@
 		<label class="campo"><span>Proveedor / estación</span><input name="proveedor" class="input" value={renovar || editando ? (vencimiento?.proveedor ?? '') : ''} /></label>
 		<label class="campo"><span>Nº póliza / referencia</span><input name="referencia" class="input font-mono" value={editando ? (vencimiento?.referencia ?? '') : renovar ? (vencimiento?.referencia ?? '') : ''} /></label>
 	</div>
-	<label class="campo"><span>Importe (€)</span><input name="importe" class="input" inputmode="decimal" value={editando ? eurosInput(vencimiento?.importeCent) : ''} placeholder="0,00" /></label>
+	{#if ((page.data.permisos as string[] | undefined) ?? []).includes('dinero')}<label class="campo"><span>Importe (€)</span><input name="importe" class="input" inputmode="decimal" value={editando ? eurosInput(vencimiento?.importeCent) : ''} placeholder="0,00" /></label>{/if}
 	{#if !editando}
 		<label class="flex items-center gap-3 text-sm text-texto-2">
 			<input type="checkbox" name="registrarGasto" checked class="h-5 w-5 accent-[var(--acento)]" /> Registrar el importe como gasto

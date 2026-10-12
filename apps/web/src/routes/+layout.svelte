@@ -2,7 +2,7 @@
 	import '../app.css';
 	import { afterNavigate, onNavigate } from '$app/navigation';
 	import { registrar } from '$lib/uso';
-	import { normalizarRuta } from '@novaz/core';
+	import { normalizarRuta, type Permiso } from '@novaz/core';
 	import { navigating, page } from '$app/state';
 	import Avisos from '$comp/Avisos.svelte';
 	import Buscador from '$comp/Buscador.svelte';
@@ -48,37 +48,44 @@
 		icono: typeof House;
 		/** Otras rutas que cuentan como esta página. */
 		tambien?: string[];
+		permiso: Permiso;
 	}
 	interface Area {
 		titulo: string;
 		icono: typeof House;
 		paginas: Pagina[];
 	}
-	const AREAS: Area[] = [
+	const TODAS: Area[] = [
 		{
 			titulo: 'Vehículos',
 			icono: CarFront,
 			paginas: [
-				{ href: '/flota', texto: 'Flota', icono: CarFront },
-				{ href: '/restauraciones', texto: 'Restauraciones', icono: Wrench },
-				{ href: '/contactos', texto: 'Contactos', icono: Users }
+				{ permiso: 'vehiculos', href: '/flota', texto: 'Flota', icono: CarFront },
+				{ permiso: 'vehiculos', href: '/restauraciones', texto: 'Restauraciones', icono: Wrench },
+				{ permiso: 'vehiculos', href: '/contactos', texto: 'Contactos', icono: Users }
 			]
 		},
 		{
 			titulo: 'Taller',
 			icono: Warehouse,
 			paginas: [
-				{ href: '/local', texto: 'El local', icono: Warehouse },
-				{ href: '/inventario', texto: 'Inventario', icono: Boxes },
-				{ href: '/compras', texto: 'Compras', icono: ShoppingCart }
+				{ permiso: 'local', href: '/local', texto: 'El local', icono: Warehouse },
+				{ permiso: 'inventario', href: '/inventario', texto: 'Inventario', icono: Boxes },
+				{ permiso: 'inventario', href: '/compras', texto: 'Compras', icono: ShoppingCart }
 			]
 		},
 		{
 			titulo: 'Dinero',
 			icono: BookOpenText,
-			paginas: [{ href: '/contabilidad', texto: 'Dinero', icono: BookOpenText, tambien: ['/facturas'] }]
+			paginas: [{ permiso: 'dinero', href: '/contabilidad', texto: 'Dinero', icono: BookOpenText, tambien: ['/facturas'] }]
 		}
 	];
+
+	// Cada uno ve solo sus áreas (el servidor, además, no deja entrar en las otras)
+	const puede = (p: Permiso) => data.permisos.includes(p);
+	const AREAS = $derived(TODAS.map((a) => ({ ...a, paginas: a.paginas.filter((p) => puede(p.permiso) && !(data.soloSuyos && p.href === '/contactos')) })).filter((a) => a.paginas.length));
+	const area = (titulo: string) => AREAS.find((a) => a.titulo === titulo);
+	const ajustesHref = $derived(puede('ajustes') ? '/ajustes' : '/perfil');
 
 	const ruta = $derived(page.url.pathname);
 	const dentro = (href: string) => ruta === href || ruta.startsWith(href + '/');
@@ -88,13 +95,15 @@
 	const selectorArea = $derived(
 		areaActiva && areaActiva.paginas.length > 1 && areaActiva.paginas.some((p) => ruta === p.href || (p.href === '/inventario' && dentro(p.href))) ? areaActiva : null
 	);
-	const barraMovil = $derived([
-		{ href: '/', texto: 'Inicio', icono: House, on: ruta === '/' || dentro('/agenda') },
-		{ href: '/flota', texto: 'Vehículos', icono: CarFront, on: areaActiva === AREAS[0] },
-		null,
-		{ href: '/local', texto: 'Taller', icono: Warehouse, on: areaActiva === AREAS[1] },
-		{ href: '/contabilidad', texto: 'Dinero', icono: BookOpenText, on: areaActiva === AREAS[2] }
-	]);
+	const barraMovil = $derived(
+		[
+			{ href: '/', texto: 'Inicio', icono: House, on: ruta === '/' || dentro('/agenda') },
+			area('Vehículos') ? { href: '/flota', texto: 'Vehículos', icono: CarFront, on: areaActiva?.titulo === 'Vehículos' } : undefined,
+			null,
+			area('Taller') ? { href: area('Taller')!.paginas[0].href, texto: 'Taller', icono: Warehouse, on: areaActiva?.titulo === 'Taller' } : undefined,
+			area('Dinero') ? { href: '/contabilidad', texto: 'Dinero', icono: BookOpenText, on: areaActiva?.titulo === 'Dinero' } : undefined
+		].filter((x) => x !== undefined)
+	);
 	const urgentes = $derived(data.alertas.filter((a) => a.nivel === 'vencido' || a.nivel === 'urgente').length);
 
 	function teclas(e: KeyboardEvent) {
@@ -140,8 +149,8 @@
 				</a>
 			{/snippet}
 			<div class="flex flex-col gap-0.5">
-				{@render enlace({ href: '/', texto: 'Inicio', icono: House }, ruta === '/')}
-				{@render enlace({ href: '/agenda', texto: 'Agenda', icono: CalendarDays }, dentro('/agenda'))}
+				{@render enlace({ permiso: 'vehiculos', href: '/', texto: 'Inicio', icono: House }, ruta === '/')}
+				{#if puede('vehiculos')}{@render enlace({ permiso: 'vehiculos', href: '/agenda', texto: 'Agenda', icono: CalendarDays }, dentro('/agenda'))}{/if}
 			</div>
 			{#each AREAS as a (a.titulo)}
 				<div class="flex flex-col gap-0.5">
@@ -152,8 +161,8 @@
 		</nav>
 
 		<div class="mt-auto flex gap-2">
-			<a href="/captura" class="btn btn-acento h-11 flex-1 shadow-[0_8px_24px_-10px_var(--acento)]"><Plus size={18} strokeWidth={2.4} /> Registrar</a>
-			<a href="/ajustes" class="btn btn-icono h-11 w-11 {dentro('/ajustes') ? 'border-acento/60 text-acento' : 'text-texto-3'}" aria-label="Ajustes" title="Ajustes"><Settings size={18} /></a>
+			<a href={puede('vehiculos') ? '/captura' : '/inventario/plano'} class="btn btn-acento h-11 flex-1 shadow-[0_8px_24px_-10px_var(--acento)]"><Plus size={18} strokeWidth={2.4} /> Registrar</a>
+			<a href={ajustesHref} class="btn btn-icono h-11 w-11 {dentro(ajustesHref) ? 'border-acento/60 text-acento' : 'text-texto-3'}" aria-label="Ajustes" title={data.yo ? `Ajustes · ${data.yo.nombre}` : 'Ajustes'}><Settings size={18} /></a>
 		</div>
 	</aside>
 
@@ -166,7 +175,7 @@
 		<a href="/" class="py-2.5"><Logo nombre={data.ajustes.nombreTaller} compacto marca={data.ajustes.logoApp} /></a>
 		<div class="-mr-2 flex items-center">
 			<button class="btn btn-fantasma btn-icono" onclick={() => (buscando = true)} aria-label="Buscar"><Search size={20} /></button>
-			<a href="/ajustes" class="btn btn-fantasma btn-icono {dentro('/ajustes') ? 'text-acento' : ''}" aria-label="Ajustes"><Settings size={20} /></a>
+			<a href={ajustesHref} class="btn btn-fantasma btn-icono {dentro(ajustesHref) ? 'text-acento' : ''}" aria-label="Ajustes"><Settings size={20} /></a>
 		</div>
 	</header>
 
@@ -186,8 +195,8 @@
 
 	<!-- Barra inferior (móvil) -->
 	<nav
-		class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-borde bg-fondo/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
-		style="view-transition-name: barra-inferior"
+		class="fixed inset-x-0 bottom-0 z-30 grid border-t border-borde bg-fondo/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
+		style="view-transition-name: barra-inferior; grid-template-columns: repeat({barraMovil.length}, minmax(0, 1fr))"
 	>
 		{#each barraMovil as n, i (i)}
 			{#if n}
@@ -202,7 +211,7 @@
 			{:else}
 				<div class="flex items-center justify-center">
 					<a
-						href="/captura"
+						href={puede('vehiculos') ? '/captura' : '/inventario/plano'}
 						aria-label="Registrar"
 						class="-mt-7 flex h-[3.6rem] w-[3.6rem] items-center justify-center rounded-2xl text-[#111] shadow-[0_10px_28px_-8px_var(--acento)] ring-4 ring-fondo transition active:scale-90"
 						style="background: var(--acento)"

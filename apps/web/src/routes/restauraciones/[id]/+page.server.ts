@@ -1,6 +1,7 @@
 import { diasEntre } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { error, redirect } from '@sveltejs/kit';
+import { veVehiculo } from '$lib/server/usuarios';
 import { and, asc, desc, eq, inArray, max, or } from 'drizzle-orm';
 import { borrarEntrada, borrarMovimiento, guardarEntrada, guardarMovimiento, marcarTarea } from '$lib/server/acciones';
 import { cargarInventario } from '$lib/server/inventario';
@@ -11,7 +12,7 @@ export const load = async ({ params, locals }) => {
 	const id = Number(params.id);
 	const { db, hoy } = locals;
 	const r = await db.select().from(s.restauraciones).where(eq(s.restauraciones.id, id)).get();
-	if (!r) error(404, 'Restauración no encontrada');
+	if (!r || !veVehiculo(locals.yo, r.vehiculoId)) error(404, 'Restauración no encontrada');
 
 	const [vehiculo, fases, entradas, movs] = await Promise.all([
 		db.select().from(s.vehiculos).where(eq(s.vehiculos.id, r.vehiculoId)),
@@ -62,16 +63,19 @@ export const load = async ({ params, locals }) => {
 	const gasto = movs.filter((x) => x.m.tipo === 'gasto').reduce((a, x) => a + x.m.importeCent, 0);
 	const fotos = adjuntos.filter((a) => a.mime.startsWith('image/'));
 
+	// Sin permiso de «Dinero»: ni gastos, ni presupuesto, ni lo invertido (no llegan al navegador)
+	const dinero = locals.permisos.includes('dinero');
 	return {
-		restauracion: r,
-		vehiculo: vehiculo[0],
+		verDinero: dinero,
+		restauracion: dinero ? r : { ...r, presupuestoCent: null },
+		vehiculo: dinero ? vehiculo[0] : { ...vehiculo[0], valorEstimadoCent: null },
 		fases: fases.map((f) => {
 			const ts = tareas.filter((t) => t.faseId === f.id);
 			return { ...f, tareas: ts, hechas: ts.filter((t) => t.hecha).length };
 		}),
 		entradas: entradas.map((x) => ({ ...x.e, fase: x.fase, adjuntos: adjuntos.filter((a) => a.entidad === 'entrada' && a.entidadId === x.e.id) })),
-		movimientos: movs.map((x) => ({ ...x.m, categoria: x.categoria })),
-		adjuntosMov: await adjuntosDe(db, 'movimiento', movs.map((x) => x.m.id)),
+		movimientos: dinero ? movs.map((x) => ({ ...x.m, categoria: x.categoria })) : [],
+		adjuntosMov: dinero ? await adjuntosDe(db, 'movimiento', movs.map((x) => x.m.id)) : {},
 		inventario: (await cargarInventario(db))
 			.filter((a) => a.tipo !== 'herramienta' && (!a.vehiculoIds.length || a.vehiculoIds.includes(r.vehiculoId)))
 			.map((a) => ({ id: a.id, nombre: a.nombre, unidad: a.unidad, cantidad: a.cantidad })),
@@ -85,9 +89,9 @@ export const load = async ({ params, locals }) => {
 			total,
 			hechas,
 			horas: entradas.reduce((a, x) => a + (x.e.horas ?? 0), 0),
-			gasto,
+			gasto: dinero ? gasto : 0,
 			dias: r.fechaInicio ? diasEntre(r.fechaInicio, r.fechaFin ?? hoy) : null,
-			compraVehiculo
+			compraVehiculo: dinero ? compraVehiculo : 0
 		}
 	};
 };

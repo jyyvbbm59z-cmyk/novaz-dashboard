@@ -5,6 +5,7 @@ import { CLASES_ENTRADA, FORMAS_PAGO, PRIORIDADES, TIPOS_MOVIMIENTO, type ClaseE
 import { and, eq, inArray } from 'drizzle-orm';
 import { borrarAdjuntosDe } from './adjuntos';
 import { registrarKm } from './datos';
+import { apuntarGastoSimple } from './libreta';
 import { cerrarCompras, sincronizarCompras } from './inventario';
 import { ErrorFormulario, leer } from './form';
 
@@ -23,6 +24,9 @@ async function datosContables(locals: Locals, categoriaId: number | null, f: Ret
 		pago: (FORMAS_PAGO.includes(pago as FormaPago) ? pago : locals.ajustes.pagoPorDefecto) as FormaPago
 	};
 }
+
+/** ¿Puede tocar dinero? (gastos, facturas, cobros) */
+export const puedeDinero = (locals: Locals) => locals.permisos.includes('dinero');
 
 export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: FormData, bucket?: R2Bucket) {
 	const { db, hoy } = locals;
@@ -139,6 +143,11 @@ export async function guardarEntrada(locals: Locals, vehiculoId: number, fd: For
 	const proveedor = f.texto('proveedor');
 	const pago = f.texto('pago');
 
+	// El dueño de un vehículo propio apunta lo que le costó en su libreta (aparte de la contabilidad)
+	const costeSimple = f.euros('costeSimple');
+	if (costeSimple && !id) await apuntarGastoSimple(locals, vehiculoId, { fecha, concepto: titulo, categoria: clase === 'reparacion' ? 'reparacion' : 'mantenimiento', importeCent: costeSimple, km, entradaId });
+	// Sin permiso de «Dinero» la entrada se guarda, pero sin tocar sus gastos
+	if (!puedeDinero(locals)) return { entradaId, nueva: !id };
 	if (id && f.bool('sincronizarGastos')) {
 		const existentes = await db
 			.select()
@@ -193,6 +202,7 @@ export async function borrarEntrada(locals: Locals, bucket: R2Bucket, id: number
 }
 
 export async function guardarMovimiento(locals: Locals, fd: FormData, fijo: { vehiculoId?: number | null; restauracionId?: number | null } = {}) {
+	if (!puedeDinero(locals)) throw new ErrorFormulario('Apuntar gastos e ingresos necesita el permiso de «Dinero»');
 	const f = leer(fd);
 	const { db } = locals;
 	const id = f.idOpcional('id');

@@ -142,3 +142,13 @@ export function planesCubiertos(texto: string, planes: { id: number; nombre: str
 	const comps = COMPONENTES.filter((c) => c.patron.test(texto));
 	return planes.filter((p) => comps.some((c) => c.patron.test(p.nombre))).map((p) => p.id);
 }
+
+/**
+ * Orden de lo pendiente de un vehículo: primero lo que hay que arreglar (por prioridad), luego lo que quedó por
+ * hacer tras una mejora y al final las mejoras planificadas (son deseos, no urgencias).
+ */
+export function ordenPendientes<P extends { tipo: string; prioridad: string; detalle: string | null; fechaDetectado: string }>(a: P, b: P) {
+	const grupo = (p: P) => (p.tipo === 'mejora' ? 2 : p.detalle?.startsWith('Después de la mejora') ? 1 : 0);
+	const PRIORIDAD: Record<string, number> = { alta: 0, media: 1, baja: 2 };
+	return grupo(a) - grupo(b) || (PRIORIDAD[a.prioridad] ?? 1) - (PRIORIDAD[b.prioridad] ?? 1) || a.fechaDetectado.localeCompare(b.fechaDetectado);
+}

@@ -19,7 +19,7 @@ export interface DatosInforme {
 	nuevas: Set<string>;
 	local: { titulo: string; zona: string | null; fechaLimite: string | null; prioridad: string }[];
 	compras: number;
-	listaCompra: { texto: string; para: string }[];
+	listaCompra: { texto: string; para: string; vehiculoId?: number | null }[];
 	fueraDeSitio: number;
 	finanzas: { tesoreria: number; gastoMes: number; gastoAnio: number; ingresosAnio: number; diasCuadre: number | null } | null;
 	flota: { alias: string; mensual: number; porKm: number | null; completo: boolean }[];
@@ -134,6 +134,26 @@ const CORTO: Record<string, string> = { 'impuesto de circulación': 'Impuesto' }
 const corto = (t: string) => CORTO[t.toLowerCase()] ?? t;
 const NIVEL: Record<string, string> = { vencido: 'VENCIDO', urgente: 'URGENTE', pronto: 'próximo' };
 
+/** El informe de una persona: solo lo de sus áreas (sin «Dinero», ni finanzas ni costes; sin «El local», sin sus tareas…). */
+export function recortarInforme(d: DatosInforme, permisos: readonly string[], vehiculos: { ids: number[]; alias: string[] } | null = null): DatosInforme {
+	const ve = (p: string) => permisos.includes(p);
+	// Quien solo ve sus vehículos: solo los avisos de los suyos
+	const suyo = (id: number) => !vehiculos || vehiculos.ids.includes(id);
+	const suyoAlias = (a: string) => !vehiculos || vehiculos.alias.includes(a);
+	return {
+		...d,
+		alertas: ve('vehiculos') ? d.alertas.filter((a) => suyo(a.vehiculoId)) : [],
+		kmSinActualizar: ve('vehiculos') ? d.kmSinActualizar.filter((k) => suyoAlias(k.alias)) : [],
+		obras: ve('vehiculos') && !vehiculos ? d.obras : undefined,
+		flota: ve('vehiculos') && ve('dinero') ? d.flota.filter((f) => suyoAlias(f.alias)) : [],
+		finanzas: ve('dinero') ? d.finanzas : null,
+		local: ve('local') ? d.local : [],
+		listaCompra: ve('inventario') ? d.listaCompra.filter((c) => c.vehiculoId == null || suyo(c.vehiculoId)) : [],
+		compras: ve('inventario') ? d.listaCompra.filter((c) => c.vehiculoId == null || suyo(c.vehiculoId)).length : 0,
+		fueraDeSitio: ve('inventario') ? d.fueraDeSitio : 0
+	};
+}
+
 export function mensajeInforme(d: DatosInforme): string {
 	const dia = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${d.hoy}T12:00:00Z`));
 	const fechaDe = (a: Alerta) => sumarDias(d.hoy, a.dias ?? 0);
@@ -144,7 +164,8 @@ export function mensajeInforme(d: DatosInforme): string {
 	const vencidos = vencs.filter((a) => a.dias! < 0);
 	const proximos = vencs.filter((a) => a.dias! >= 0);
 	const mant = d.alertas.filter((a) => a.tipo === 'mantenimiento' && a.nivel !== 'ok');
-	const averias = d.alertas.filter((a) => a.tipo === 'pendiente');
+	// Solo lo que hay que arreglar: las mejoras planificadas no son averías
+	const averias = d.alertas.filter((a) => a.tipo === 'pendiente' && a.detalle !== 'Mejora planificada');
 	const localVencidas = d.local.filter((t) => t.fechaLimite && t.fechaLimite < d.hoy).length;
 
 	// Resumen: lo esencial en cuatro líneas

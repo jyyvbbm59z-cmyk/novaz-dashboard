@@ -20,12 +20,13 @@
 	const res = $derived(data.resumen);
 	const v = $derived(data.vehiculo);
 
-	const PESTANAS = [
+	const TODAS_PESTANAS = [
 		['fases', 'Fases'],
 		['diario', 'Diario'],
 		['gastos', 'Gastos'],
 		['fotos', 'Fotos']
 	] as const;
+	const PESTANAS = $derived(TODAS_PESTANAS.filter(([id]) => id !== 'gastos' || data.verDinero));
 	const pestana = $derived(page.url.searchParams.get('pestana') ?? 'fases');
 
 	// Estado optimista de las casillas
@@ -110,7 +111,7 @@
 		<p class="cifra mt-1 text-3xl">{res.dias ?? '—'}</p>
 		<p class="text-xs text-texto-3">{fechaLarga(r.fechaInicio)}{r.fechaFin ? ` → ${fechaLarga(r.fechaFin)}` : ''}</p>
 	</div>
-	<div class="tarjeta col-span-2 p-4 lg:col-span-1">
+	{#if data.verDinero}<div class="tarjeta col-span-2 p-4 lg:col-span-1">
 		<p class="etiqueta">Gasto{r.presupuestoCent ? ' / presupuesto' : ''}</p>
 		<p class="cifra mt-1 text-3xl {gastoPct != null && gastoPct > 1 ? 'nivel-vencido' : ''}">
 			{euros(res.gasto, { redondo: true })}{#if r.presupuestoCent}<span class="text-lg text-texto-3"> / {euros(r.presupuestoCent, { redondo: true })}</span>{/if}
@@ -120,10 +121,10 @@
 				<div class="h-full rounded-full" style="width:{Math.min(gastoPct, 1) * 100}%; background: {gastoPct > 1 ? 'var(--vencido)' : gastoPct > 0.85 ? 'var(--urgente)' : 'var(--ok)'}"></div>
 			</div>
 		{/if}
-	</div>
+	</div>{/if}
 </section>
 
-{#if res.gasto || res.compraVehiculo || v.valorEstimadoCent}
+{#if data.verDinero && (res.gasto || res.compraVehiculo || v.valorEstimadoCent)}
 	{@const manoObra = Math.round(res.horas * data.ajustes.tarifaHoraCent)}
 	{@const invertido = res.compraVehiculo + res.gasto}
 	<section class="tarjeta mt-3 p-4">
@@ -361,7 +362,7 @@
 <Hoja bind:abierta={hTerminar} titulo="Terminar restauración">
 	<form method="POST" action="?/estado" use:enhance={enviar({ alTerminar: () => (hTerminar = false) })} class="flex flex-col gap-4">
 		<input type="hidden" name="estado" value="terminada" />
-		<p class="text-sm text-texto-2">{res.hechas}/{res.total} tareas hechas · {res.horas.toLocaleString('es-ES')} h · {euros(res.gasto)}</p>
+		<p class="text-sm text-texto-2">{res.hechas}/{res.total} tareas hechas · {res.horas.toLocaleString('es-ES')} h{data.verDinero ? ` · ${euros(res.gasto)}` : ''}</p>
 		<label class="campo"><span>Fecha de fin</span><input type="date" name="fechaFin" class="input" value={data.hoy} /></label>
 		<label class="campo">
 			<span>Nuevo estado del vehículo</span>

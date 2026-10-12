@@ -2,13 +2,14 @@ import { cargarAlertas, listaCompraAutomatica, separarPrecio } from '@novaz/core
 import * as s from '@novaz/core/schema';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { accion, leer } from '$lib/server/form';
+import { soloVisibles, veVehiculo } from '$lib/server/usuarios';
 import { guardarMovimiento } from '$lib/server/acciones';
 import { cargarInventario, registrarStock } from '$lib/server/inventario';
 
 export const load = async ({ locals }) => {
 	const articulos = await cargarInventario(locals.db);
 	const [alertas, planes, manual] = await Promise.all([
-		cargarAlertas(locals.db, { hoy: locals.hoy, urgenteDias: locals.ajustes.urgenteDias, incluirOk: true }),
+		cargarAlertas(locals.db, { hoy: locals.hoy, urgenteDias: locals.ajustes.urgenteDias, incluirOk: true }).then((a) => soloVisibles(locals.yo, a, (x) => x.vehiculoId)),
 		locals.db.select({ id: s.planesMantenimiento.id, codigo: s.planesMantenimiento.codigo, nombre: s.planesMantenimiento.nombre, tareas: s.planesMantenimiento.tareas }).from(s.planesMantenimiento),
 		locals.db.select().from(s.listaCompra).orderBy(asc(s.listaCompra.comprado), asc(s.listaCompra.id))
 	]);
@@ -32,7 +33,7 @@ export const load = async ({ locals }) => {
 	]);
 	// Cada grupo enlaza a su origen exacto (la tarjeta de la mejora, avería o tarea) para ver el contexto y editarlo
 	const origenes: { clave: string; titulo: string; detalle: string; href: string; presupuesto: number | null }[] = [
-		...pends.map((p) => ({ clave: `p${p.id}`, titulo: p.titulo, detalle: `${p.vehiculo} · ${p.tipo === 'mejora' ? 'mejora' : 'avería'}`, href: `/flota/${p.vehiculoId}?pestana=historial#pend-${p.id}`, presupuesto: p.presupuesto })),
+		...soloVisibles(locals.yo, pends, (p) => p.vehiculoId).map((p) => ({ clave: `p${p.id}`, titulo: p.titulo, detalle: `${p.vehiculo} · ${p.tipo === 'mejora' ? 'mejora' : 'avería'}`, href: `/flota/${p.vehiculoId}?pestana=historial#pend-${p.id}`, presupuesto: p.presupuesto })),
 		...tareas.map((t) => ({ clave: `t${t.id}`, titulo: t.titulo, detalle: 'El local', href: `/local#tarea-${t.id}`, presupuesto: null }))
 	];
 	// Lo automático: el precio de la última compra del artículo (por la cantidad que toca)
@@ -44,7 +45,10 @@ export const load = async ({ locals }) => {
 			href: i.motivo === 'revision' && i.vehiculoId ? `/flota/${i.vehiculoId}?pestana=mantenimiento` : '/inventario/reserva'
 		};
 	});
-	return { automaticos, manual, origenes };
+	// Quien solo ve sus vehículos: lo del taller y lo de los suyos, no lo de los demás
+	const deOtro = (m: (typeof manual)[number]) =>
+		(m.vehiculoId != null && !veVehiculo(locals.yo, m.vehiculoId)) || (m.pendienteId != null && !soloVisibles(locals.yo, pends, (p) => p.vehiculoId).some((p) => p.id === m.pendienteId));
+	return { automaticos, manual: manual.filter((m) => !deOtro(m)), origenes };
 };
 
 /** Marca algo como comprado: suma al inventario (creando el artículo si no existe) y apunta el gasto. */
@@ -68,7 +72,7 @@ async function comprar(locals: App.Locals, fd: FormData): Promise<number | null>
 		datos.set('motivo', 'compra');
 		if (!datos.get('cantidad')) datos.set('cantidad', '1');
 		return await registrarStock(locals, datos, async () => 0);
-	} else if (f.euros('importe')) {
+	} else if (f.euros('importe') && locals.permisos.includes('dinero')) {
 		// Va directo a su sitio (la moto de la avería, la tarea del local…) sin pasar por el inventario
 		const cats = await locals.db.select().from(s.categorias).where(eq(s.categorias.tipo, 'gasto'));
 		// Para una tarea del local: su categoría según sea mantenimiento o reforma (inversión)

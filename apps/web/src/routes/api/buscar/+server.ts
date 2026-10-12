@@ -1,6 +1,7 @@
 import * as s from '@novaz/core/schema';
 import { json } from '@sveltejs/kit';
 import { like, or } from 'drizzle-orm';
+import { veVehiculo } from '$lib/server/usuarios';
 
 export const GET = async ({ url, locals }) => {
 	const q = (url.searchParams.get('q') ?? '').trim();
@@ -27,11 +28,12 @@ export const GET = async ({ url, locals }) => {
 		db.select({ id: s.restauraciones.id, nombre: s.restauraciones.nombre }).from(s.restauraciones).where(like(s.restauraciones.nombre, p)).limit(5)
 	]);
 
+	const ve = (id: number) => veVehiculo(locals.yo, id);
 	return json([
-		...vehiculos.map((v) => ({ grupo: 'Vehículos', titulo: v.alias, sub: [v.marca, v.modelo].filter(Boolean).join(' '), matricula: v.matricula, href: `/flota/${v.id}` })),
-		...restauraciones.map((r) => ({ grupo: 'Restauraciones', titulo: r.nombre, sub: '', href: `/restauraciones/${r.id}` })),
-		...entradas.map((e) => ({ grupo: 'Historial', titulo: e.titulo, sub: e.fecha, href: `/flota/${e.vehiculoId}#entrada-${e.id}` })),
-		...vencimientos.map((v) => ({ grupo: 'Pólizas y papeles', titulo: v.referencia ?? v.proveedor ?? 'Vencimiento', sub: v.proveedor ?? '', href: `/flota/${v.vehiculoId}?pestana=vencimientos` })),
-		...contactos.map((c) => ({ grupo: 'Contactos', titulo: c.nombre, sub: '', href: `/contactos#c${c.id}` }))
+		...vehiculos.filter((v) => ve(v.id)).map((v) => ({ grupo: 'Vehículos', titulo: v.alias, sub: [v.marca, v.modelo].filter(Boolean).join(' '), matricula: v.matricula, href: `/flota/${v.id}` })),
+		...(locals.yo?.vehiculos ? [] : restauraciones).map((r) => ({ grupo: 'Restauraciones', titulo: r.nombre, sub: '', href: `/restauraciones/${r.id}` })),
+		...entradas.filter((e) => ve(e.vehiculoId)).map((e) => ({ grupo: 'Historial', titulo: e.titulo, sub: e.fecha, href: `/flota/${e.vehiculoId}#entrada-${e.id}` })),
+		...vencimientos.filter((v) => ve(v.vehiculoId)).map((v) => ({ grupo: 'Pólizas y papeles', titulo: v.referencia ?? v.proveedor ?? 'Vencimiento', sub: v.proveedor ?? '', href: `/flota/${v.vehiculoId}?pestana=vencimientos` })),
+		...(locals.yo?.vehiculos ? [] : contactos).map((c) => ({ grupo: 'Contactos', titulo: c.nombre, sub: '', href: `/contactos#c${c.id}` }))
 	]);
 };

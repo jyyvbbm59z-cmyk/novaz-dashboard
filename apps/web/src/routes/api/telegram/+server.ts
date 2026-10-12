@@ -6,7 +6,9 @@ import {
 	interpretarReglas,
 	NECESITA_VEHICULO,
 	notasTicket,
+	NOMBRE_PERMISO,
 	numeroES,
+	permisoIntencion,
 	buscarVehiculo,
 	TEXTO_AYUDA,
 	vehiculosActivos,
@@ -18,6 +20,7 @@ import { and, eq } from 'drizzle-orm';
 import { deshacer, ejecutarOrden, prepararOrden, responderConsulta, textoOrden, vehiculosBot, type EnvBot, type Orden } from '$lib/server/bot';
 import { interpretarConIa, leerTicket, transcribir } from '$lib/server/ia';
 import { descargarTelegram, llamarTelegram } from '$lib/server/telegram';
+import { soloVisibles, usuarioDeChat } from '$lib/server/usuarios';
 
 interface Mensaje {
 	message_id: number;
@@ -82,8 +85,11 @@ class Bot {
 
 	async atender(u: Update) {
 		const chat = u.message?.chat.id ?? u.callback_query?.message?.chat.id;
-		// Solo tu chat (el de Ajustes); a cualquier otro, silencio
-		if (chat == null || String(chat) !== this.locals.ajustes.telegramChatId) return;
+		// Solo usuarios dados de alta (por su chat); a cualquier otro, silencio. Cada uno con sus permisos.
+		const yo = chat == null ? null : await usuarioDeChat(this.locals.db, String(chat), this.locals.ajustes);
+		if (!yo) return;
+		this.locals.yo = yo;
+		this.locals.permisos = yo.permisos;
 		if (u.callback_query) return this.boton(u.callback_query);
 		const m = u.message!;
 		try {
@@ -110,9 +116,16 @@ class Bot {
 	}
 
 	private async texto(chat: number, texto: string, voz?: string) {
-		const vehiculos = await vehiculosBot(this.locals.db);
+		const vehiculos = await vehiculosBot(this.locals);
 		const i = await this.entender(texto, vehiculos);
 		const prefijo = voz ? `🎙 <i>«${voz.replace(/</g, '&lt;')}»</i>\n\n` : '';
+		// Quien solo ve sus vehículos y tiene uno, no hace falta que lo nombre
+		if ('vehiculoId' in i && !i.vehiculoId && this.locals.yo?.vehiculos?.length === 1 && i.tipo !== 'consulta') (i as { vehiculoId: number | null }).vehiculoId = this.locals.yo.vehiculos[0];
+		const hace = permisoIntencion(i);
+		// Sin «Dinero», los repostajes y gastos de tus propios vehículos van a tu libreta
+		const propios = !!this.locals.yo?.vehiculos?.length;
+		const libreta = hace === 'dinero' && !this.locals.permisos.includes('dinero') && propios && (i.tipo === 'repostaje' || i.tipo === 'gasto' || (i.tipo === 'consulta' && i.tema === 'gasto'));
+		if (hace && !libreta && !this.locals.permisos.includes(hace)) return this.enviar(chat, `${prefijo}Eso no lo tienes permitido: hace falta el permiso de «${NOMBRE_PERMISO[hace].nombre}».`);
 		if (i.tipo === 'ayuda') return this.enviar(chat, TEXTO_AYUDA);
 		if (i.tipo === 'consulta') return this.enviar(chat, prefijo + (await responderConsulta(this.locals, i, this.app)));
 		if (i.tipo === 'desconocido')
@@ -120,7 +133,7 @@ class Bot {
 				chat,
 				`${prefijo}No sé qué apuntar con eso. Prueba con algo como <i>«La Bandit tiene los espejos oxidados»</i>, <i>«Repostaje Ibiza 40 L 72 € 117.200 km»</i> o <i>«Comprar lija de 400»</i>.\n/ayuda para ver todo lo que entiendo.${this.falloIa ? `\n\n<i>(La IA no ha respondido: ${this.falloIa.replace(/</g, '&lt;').slice(0, 200)})</i>` : ''}`
 			);
-		return this.proponer(chat, { i, voz: voz ?? null }, vehiculos);
+		return this.proponer(chat, { i, voz: voz ?? null, libreta }, vehiculos);
 	}
 
 	private async voz(m: Mensaje) {
@@ -132,6 +145,8 @@ class Bot {
 	}
 
 	private async foto(m: Mensaje) {
+		const libreta = !this.locals.permisos.includes('dinero');
+		if (libreta && !this.locals.yo?.vehiculos?.length) return this.enviar(m.chat.id, 'Los tickets van a la contabilidad: hace falta el permiso de «Dinero».');
 		if (!this.ai) return this.enviar(m.chat.id, 'Leer tickets necesita Workers AI, que no está disponible aquí.');
 		const fileId = m.photo?.length ? m.photo[m.photo.length - 1].file_id : m.document!.file_id;
 		const { bytes, ruta } = await descargarTelegram(this.env, fileId);
@@ -140,7 +155,7 @@ class Bot {
 		if (!t.importeCent) return this.enviar(m.chat.id, 'No veo el total en la foto. ¿Se lee bien el ticket? Prueba con otra más cerca.');
 
 		const pie = m.caption ?? '';
-		const vehiculos = await vehiculosBot(this.locals.db);
+		const vehiculos = await vehiculosBot(this.locals);
 		const local = /\b(local|taller|nave)\b/i.test(pie);
 		const vehiculoId = local ? null : buscarVehiculo(pie, vehiculos);
 		const km = numeroES(pie.match(/(\d{1,3}(?:\.\d{3})+|\d{3,7})\s*km\b/i)?.[1]);
@@ -148,7 +163,9 @@ class Bot {
 			t.combustible && t.litros
 				? { tipo: 'repostaje', vehiculoId, litros: t.litros, importeCent: t.importeCent, km: km ? Math.round(km) : null, gasolinera: t.proveedor, lleno: !/\b(parcial|medio)\b/i.test(pie) }
 				: { tipo: 'gasto', vehiculoId, importeCent: t.importeCent, concepto: t.concepto ?? t.proveedor ?? 'Compra', proveedor: t.proveedor, categoria: pie.replace(/\d[\d.,]*\s*km/i, '').trim() || null, local };
-		return this.proponer(m.chat.id, { i, foto: fileId, fecha: t.fecha, notas: notasTicket(t) || null, ivaPct: t.ivaPct }, vehiculos);
+		if (libreta && 'vehiculoId' in i && !i.vehiculoId && this.locals.yo?.vehiculos?.length === 1) i.vehiculoId = this.locals.yo.vehiculos[0];
+		// Sin «Dinero», el ticket va a la libreta del dueño (sin foto: la libreta no guarda archivos)
+		return this.proponer(m.chat.id, libreta ? { i, fecha: t.fecha, notas: notasTicket(t) || null, libreta } : { i, foto: fileId, fecha: t.fecha, notas: notasTicket(t) || null, ivaPct: t.ivaPct }, vehiculos);
 	}
 
 	/** Enseña lo entendido y espera tu OK (o que elijas el vehículo). */
@@ -158,13 +175,13 @@ class Bot {
 		const falta = faltanDatos(o.i);
 		if (falta.length) return this.enviar(chat, `${texto}\n\nMe falta ${falta.join(' y ')}. Escríbemelo otra vez con todo.`);
 		const [a] = await this.locals.db.insert(s.botAcciones).values({ orden: o as unknown as Record<string, unknown> }).returning({ id: s.botAcciones.id });
-		if (NECESITA_VEHICULO.has(o.i.tipo) && !('vehiculoId' in o.i && o.i.vehiculoId))
+		if ((NECESITA_VEHICULO.has(o.i.tipo) || o.libreta) && !('vehiculoId' in o.i && o.i.vehiculoId))
 			return this.enviar(chat, `${texto}\n\n<b>¿De qué vehículo?</b>`, await this.tecladoVehiculos(a.id));
 		return this.enviar(chat, texto, confirmar(a.id));
 	}
 
 	private async tecladoVehiculos(accionId: number): Promise<Boton[][]> {
-		const activos = await vehiculosActivos(this.locals.db);
+		const activos = soloVisibles(this.locals.yo, await vehiculosActivos(this.locals.db), (v) => v.id);
 		const botones = activos.map((v) => ({ text: v.alias, callback_data: `v:${accionId}:${v.id}` }));
 		const filas: Boton[][] = [];
 		for (let k = 0; k < botones.length; k += 3) filas.push(botones.slice(k, k + 3));
@@ -180,7 +197,7 @@ class Bot {
 		const a = Number.isInteger(id) ? await db.select().from(s.botAcciones).where(eq(s.botAcciones.id, id)).get() : undefined;
 		if (!a || !m) return responder('Esto ya no existe');
 		let orden = a.orden as unknown as Orden;
-		const vehiculos = await vehiculosBot(db);
+		const vehiculos = await vehiculosBot(this.locals);
 		const cuerpo = () => textoOrden(orden, vehiculos);
 		const marcar = async (de: s.EstadoBot, a_: s.EstadoBot) =>
 			(await db.update(s.botAcciones).set({ estado: a_ }).where(and(eq(s.botAcciones.id, id), eq(s.botAcciones.estado, de))).returning({ id: s.botAcciones.id })).length > 0;

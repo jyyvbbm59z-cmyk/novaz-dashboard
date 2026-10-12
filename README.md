@@ -135,6 +135,21 @@ Todo lo que entiende lo enseña antes con **✓ Apuntar / ✗ Cancelar**, y lo a
 Cada mañana se avisa al cruzar cada umbral (por defecto 30, 7 y 1 días antes, y al vencer),
 sin repetir. Los lunes llega un resumen semanal.
 
+### Usuarios y permisos
+
+Cada persona entra con su email (Cloudflare Access le manda un código; no hay contraseñas en la app).
+El **primero que entra** queda como administrador con todo. Los demás se dan de alta en
+**Ajustes → Usuarios**, con:
+
+- **Permisos por áreas**: Vehículos · Inventario y compras · El local · Dinero · Ajustes y usuarios.
+  Se aplican en el servidor: sin «Dinero» no llega al navegador nada de gastos, costes, importes ni facturas.
+- **Vehículos**: todos, o solo los suyos (los que se le asignan). Quien tiene vehículos propios lleva
+  una **libreta de gastos** sencilla por vehículo (aparte de la contabilidad del taller).
+- **Su chat de Telegram**: el bot le hace caso según sus permisos y el parte diario le llega con solo lo suyo.
+
+Para que alguien nuevo pueda entrar hay que añadir también su email en la política «Allow» de la
+aplicación de Access.
+
 ### 6. Despliegue automático (Cloudflare conectado a GitHub)
 
 Cloudflare **Workers Builds** escucha el repositorio y despliega en cada push a `main`.

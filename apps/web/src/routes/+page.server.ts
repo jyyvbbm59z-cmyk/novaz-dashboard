@@ -1,8 +1,9 @@
 import * as s from '@novaz/core/schema';
 import { and, desc, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
 import { avanceRestauraciones } from '$lib/server/datos';
-import { cargarAlertas, diasEntre, estadoTaller, sesionesRecomendadas, textoDias, type Nivel } from '@novaz/core';
+import { cargarAlertas, diasEntre, estadoTaller, sesionesRecomendadas, textoDias, type Nivel, type Permiso } from '@novaz/core';
 import { libros } from '$lib/server/contabilidad';
+import { soloVisibles } from '$lib/server/usuarios';
 
 /** Una cosa que hacer, venga de donde venga (papeles, revisiones, averías, el local, la compra). */
 export interface Asunto {
@@ -23,21 +24,24 @@ const PESO: Record<Asunto['nivel'], number> = { vencido: 0, urgente: 1, pronto: 
 export const load = async ({ locals }) => {
 	const { db, hoy } = locals;
 	const anio = hoy.slice(0, 4);
+	// Cada uno ve lo suyo: sin «Dinero» no se calcula nada de dinero
+	const ver = (p: Permiso) => locals.permisos.includes(p);
 
-	const [alertas, restas, gastosAnio, { asientos }] = await Promise.all([
+	const [todasAlertas, restas, gastosAnio, { asientos }] = await Promise.all([
 		cargarAlertas(db, { hoy, urgenteDias: locals.ajustes.urgenteDias, incluirOk: true }),
-		db
+		!ver('vehiculos') ? [] : db
 			.select({ r: s.restauraciones, vehiculo: s.vehiculos.alias })
 			.from(s.restauraciones)
 			.innerJoin(s.vehiculos, eq(s.restauraciones.vehiculoId, s.vehiculos.id))
 			.where(inArray(s.restauraciones.estado, ['en_curso', 'pausada', 'planificada']))
 			.orderBy(desc(s.restauraciones.fechaInicio)),
-		db
+		!ver('dinero') ? [] : db
 			.select({ fecha: s.movimientos.fecha, importe: s.movimientos.importeCent })
 			.from(s.movimientos)
 			.where(and(eq(s.movimientos.tipo, 'gasto'), gte(s.movimientos.fecha, `${anio}-01-01`), lte(s.movimientos.fecha, hoy), isNull(s.movimientos.cuadreSaldoCent))),
-		libros(locals)
+		ver('dinero') ? libros(locals) : { asientos: [] as Awaited<ReturnType<typeof libros>>['asientos'] }
 	]);
+	const alertas = ver('vehiculos') ? soloVisibles(locals.yo, todasAlertas, (a) => a.vehiculoId) : [];
 	const [t, planes] = await Promise.all([estadoTaller(db, hoy, alertas), db.select().from(s.planesMantenimiento).where(eq(s.planesMantenimiento.activo, true))]);
 
 	// Todo lo pendiente en una sola lista, de lo más urgente a lo menos
@@ -55,7 +59,7 @@ export const load = async ({ locals }) => {
 			orden: a.dias ?? 999
 		});
 	}
-	for (const tarea of t.local) {
+	for (const tarea of ver('local') ? t.local : []) {
 		const dias = tarea.fechaLimite ? diasEntre(hoy, tarea.fechaLimite) : null;
 		const nivel: Asunto['nivel'] = dias != null && dias < 0 ? 'vencido' : tarea.prioridad === 'alta' ? 'urgente' : dias != null && dias <= 14 ? 'pronto' : 'normal';
 		asuntos.push({
@@ -80,7 +84,8 @@ export const load = async ({ locals }) => {
 			href: `/flota/${se.vehiculoId}?pestana=mantenimiento#sesion`,
 			orden: diasEntre(hoy, se.fecha)
 		});
-	if (t.listaCompra.length)
+	t.listaCompra = t.listaCompra.filter((c) => c.vehiculoId == null || !locals.yo?.vehiculos || locals.yo.vehiculos.includes(c.vehiculoId));
+	if (ver('inventario') && t.listaCompra.length)
 		asuntos.push({
 			clave: 'compras',
 			nivel: 'normal',
@@ -90,7 +95,7 @@ export const load = async ({ locals }) => {
 			href: '/compras',
 			orden: 1000
 		});
-	if (t.fueraDeSitio)
+	if (ver('inventario') && t.fueraDeSitio)
 		asuntos.push({
 			clave: 'herramientas',
 			nivel: 'pronto',
@@ -108,19 +113,20 @@ export const load = async ({ locals }) => {
 
 	// Dinero: lo que hay y lo que va de gasto
 	const saldo = (pref: string) => asientos.filter((a) => a.fecha <= hoy).reduce((tot, a) => tot + a.apuntes.filter((p) => p.cuenta.startsWith(pref)).reduce((x, p) => x + p.debe - p.haber, 0), 0);
-	const dinero = {
+	const dinero = !ver('dinero') ? null : {
 		disponible: saldo('57'),
 		diasCuadre: locals.ajustes.ultimoCuadre ? diasEntre(locals.ajustes.ultimoCuadre, hoy) : null,
 		gastoMes: gastosAnio.filter((g) => g.fecha.startsWith(hoy.slice(0, 7))).reduce((tot, g) => tot + g.importe, 0),
 		gastoAnio: gastosAnio.reduce((tot, g) => tot + g.importe, 0)
 	};
 
-	const avances = await avanceRestauraciones(db, restas.map((x) => x.r.id));
+	const obrasVisibles = soloVisibles(locals.yo, restas, (x) => x.r.vehiculoId);
+	const avances = await avanceRestauraciones(db, obrasVisibles.map((x) => x.r.id));
 	return {
 		asuntos,
 		proximoTramite,
 		dinero,
-		obras: restas.map((x) => {
+		obras: obrasVisibles.map((x) => {
 			const a = avances.get(x.r.id);
 			return { id: x.r.id, nombre: x.r.nombre, estado: x.r.estado, vehiculo: x.vehiculo, avance: a && a.total ? a.hechas / a.total : 0 };
 		})

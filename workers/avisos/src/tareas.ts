@@ -5,6 +5,9 @@ import {
 	descargarPrecios,
 	datosInforme,
 	mensajeInforme,
+	normalizarPermisos,
+	PERMISOS,
+	recortarInforme,
 	hoy as hoyEn,
 	leerAjustes,
 	materializarRecurrentes,
@@ -49,10 +52,32 @@ export async function avisosDelDia(env: Env, ahora = new Date()) {
 	} catch (e) {
 		console.warn('Precio del combustible no disponible:', (e as Error).message);
 	}
-	if (!env.TELEGRAM_TOKEN || !ajustes.telegramChatId) return;
+	if (!env.TELEGRAM_TOKEN) return;
+	const para = await destinatarios(db, ajustes);
+	if (!para.length) return;
 	const lunes = new Date(`${hoy}T12:00:00Z`).getUTCDay() === 1;
-	if (ajustes.parteDiario) await enviarInforme(db, env, ajustes.telegramChatId, hoy, { ...ajustes, precioCombustible: precios }, lunes && ajustes.resumenSemanal);
-	else await avisar(db, env, ajustes.telegramChatId, hoy, ajustes.urgenteDias, ajustes.nombreTaller, lunes && ajustes.resumenSemanal);
+	if (ajustes.parteDiario) await enviarInforme(db, env, para, hoy, { ...ajustes, precioCombustible: precios }, lunes && ajustes.resumenSemanal);
+	else await avisar(db, env, para.filter((d) => d.permisos.includes('vehiculos')), hoy, ajustes.urgenteDias, ajustes.nombreTaller, lunes && ajustes.resumenSemanal);
+}
+
+export interface Destinatario {
+	chatId: string;
+	permisos: string[];
+	/** Solo sus vehículos (null = todos). */
+	vehiculos: { ids: number[]; alias: string[] } | null;
+}
+
+/** A quién va el parte: cada usuario con su Telegram (con sus permisos). Sin usuarios aún, el chat de Ajustes con todo. */
+export async function destinatarios(db: DB, ajustes: Ajustes): Promise<Destinatario[]> {
+	const usuarios = await db.select().from(s.usuarios);
+	if (!usuarios.length) return ajustes.telegramChatId ? [{ chatId: ajustes.telegramChatId, permisos: [...PERMISOS], vehiculos: null }] : [];
+	const vehiculos = await db.select({ id: s.vehiculos.id, alias: s.vehiculos.alias, usuarioId: s.vehiculos.usuarioId }).from(s.vehiculos);
+	return usuarios
+		.filter((u) => u.activo && u.telegramChatId)
+		.map((u) => {
+			const suyos = vehiculos.filter((v) => v.usuarioId === u.id);
+			return { chatId: u.telegramChatId!, permisos: normalizarPermisos(u.permisos), vehiculos: u.alcance === 'suyos' ? { ids: suyos.map((v) => v.id), alias: suyos.map((v) => v.alias) } : null };
+		});
 }
 
 /** Umbral que "toca" avisar para una alerta (o null). */
@@ -80,25 +105,31 @@ async function umbralesNuevos(db: DB, alertas: Alerta[]) {
 }
 
 /** El informe de cada mañana: vencimientos, mantenimiento, taller, finanzas y coste de la flota. */
-async function enviarInforme(db: DB, env: Env, chatId: string, hoy: string, ajustes: Ajustes, conObras: boolean) {
+async function enviarInforme(db: DB, env: Env, para: Destinatario[], hoy: string, ajustes: Ajustes, conObras: boolean) {
 	const alertas = await cargarAlertas(db, { hoy, urgenteDias: ajustes.urgenteDias, incluirOk: true });
 	const nuevas = await umbralesNuevos(db, alertas);
 	const datos = await datosInforme(db, { hoy, ajustes, precios: ajustes.precioCombustible, nuevas: new Set(nuevas.map((n) => n.a.clave)), app: env.APP_URL, conObras, alertas });
-	await telegram(env, chatId, mensajeInforme(datos));
+	// Cada uno recibe solo lo de sus áreas; si a uno no le llega, a los demás sí
+	for (const d of para) await telegram(env, d.chatId, mensajeInforme(recortarInforme(datos, d.permisos, d.vehiculos))).catch((e) => console.error('Parte a', d.chatId, (e as Error).message));
 	if (nuevas.length) await db.insert(s.avisosEnviados).values(nuevas.map((n) => ({ clave: n.clave }))).onConflictDoNothing();
 }
 
-async function avisar(db: DB, env: Env, chatId: string, hoy: string, urgenteDias: number, taller: string, resumen: boolean) {
+async function avisar(db: DB, env: Env, para: Destinatario[], hoy: string, urgenteDias: number, taller: string, resumen: boolean) {
 	const alertas = await cargarAlertas(db, { hoy, urgenteDias });
 	const nuevas = await umbralesNuevos(db, alertas);
+	const enviar = (d: Destinatario, texto: string) => telegram(env, d.chatId, texto).catch((e) => console.error('Aviso a', d.chatId, (e as Error).message));
+	const suyas = <T extends { vehiculoId: number }>(d: Destinatario, xs: T[]) => (d.vehiculos ? xs.filter((x) => d.vehiculos!.ids.includes(x.vehiculoId)) : xs);
 
 	if (nuevas.length) {
-		await telegram(env, chatId, mensajeAvisos(nuevas.map((n) => n.a), taller, env.APP_URL));
+		for (const d of para) {
+			const lasSuyas = suyas(d, nuevas.map((n) => n.a));
+			if (lasSuyas.length) await enviar(d, mensajeAvisos(lasSuyas, taller, env.APP_URL));
+		}
 		await db.insert(s.avisosEnviados).values(nuevas.map((n) => ({ clave: n.clave }))).onConflictDoNothing();
 	}
 	if (resumen) {
 		const obras = await db.select().from(s.restauraciones).where(inArray(s.restauraciones.estado, ['en_curso', 'pausada']));
-		await telegram(env, chatId, mensajeResumen(alertas, obras.map((o) => o.nombre), taller, hoy, env.APP_URL));
+		for (const d of para) await enviar(d, mensajeResumen(suyas(d, alertas), d.vehiculos ? obras.filter((o) => d.vehiculos!.ids.includes(o.vehiculoId)).map((o) => o.nombre) : obras.map((o) => o.nombre), taller, hoy, env.APP_URL));
 	}
 }
 

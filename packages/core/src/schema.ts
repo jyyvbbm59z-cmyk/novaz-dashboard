@@ -139,6 +139,8 @@ export const vehiculos = sqliteTable(
 		notas: text('notas'),
 		campos: text('campos', { mode: 'json' }).$type<Record<string, unknown>>().notNull().default({}),
 		portadaId: integer('portada_id'),
+		/** Usuario de la app dueño del vehículo (p. ej. un amigo con sus coches): lo ve aunque solo vea «los suyos». */
+		usuarioId: integer('usuario_id'),
 		/** Lo que valdría hoy (para restauraciones: comparar inversión con valor de venta). */
 		valorEstimadoCent: integer('valor_estimado_cent'),
 		creado: creado(),
@@ -726,7 +728,7 @@ export type Repostaje = typeof repostajes.$inferSelect;
 
 /** Lo que el bot creó en la app, para poder deshacerlo. */
 export interface HechoBot {
-	t: 'repostaje' | 'movimiento' | 'entrada' | 'pendiente' | 'tarea_local' | 'compra' | 'km';
+	t: 'repostaje' | 'movimiento' | 'entrada' | 'pendiente' | 'tarea_local' | 'compra' | 'km' | 'gasto_personal';
 	id: number;
 }
 
@@ -742,3 +744,50 @@ export const botAcciones = sqliteTable('bot_acciones', {
 	estado: text('estado', { enum: ESTADOS_BOT }).notNull().default('esperando'),
 	creado: creado()
 });
+
+// ─── Usuarios ─────────────────────────────────────────────────────────────────
+
+/** Quién entra (por su email de Cloudflare Access) y qué puede ver. */
+export const usuarios = sqliteTable('usuarios', {
+	id: id(),
+	email: text('email').notNull().unique(),
+	nombre: text('nombre').notNull(),
+	/** Áreas que puede ver y tocar (vehiculos, inventario, local, dinero, ajustes). */
+	permisos: text('permisos', { mode: 'json' }).$type<string[]>().notNull().default([]),
+	/** Su chat de Telegram: el bot le hace caso y le manda su parte, con solo lo suyo. */
+	telegramChatId: text('telegram_chat_id'),
+	/** Qué vehículos ve: todos, o solo los suyos (los que tienen su usuario como dueño). */
+	alcance: text('alcance', { enum: ['todos', 'suyos'] }).notNull().default('todos'),
+	activo: bool('activo').notNull().default(true),
+	creado: creado()
+});
+export type Usuario = typeof usuarios.$inferSelect;
+
+export const CATEGORIAS_GASTO_SIMPLE = ['combustible', 'mantenimiento', 'reparacion', 'seguro', 'itv', 'impuestos', 'otros'] as const;
+export type CategoriaGastoSimple = (typeof CATEGORIAS_GASTO_SIMPLE)[number];
+
+/** La libreta de gastos de un usuario con sus propios vehículos: sencilla y aparte de la contabilidad del taller. */
+export const gastosPersonales = sqliteTable(
+	'gastos_personales',
+	{
+		id: id(),
+		vehiculoId: integer('vehiculo_id')
+			.notNull()
+			.references(() => vehiculos.id, { onDelete: 'cascade' }),
+		usuarioId: integer('usuario_id')
+			.notNull()
+			.references(() => usuarios.id, { onDelete: 'cascade' }),
+		fecha: text('fecha').notNull(),
+		concepto: text('concepto').notNull(),
+		categoria: text('categoria', { enum: CATEGORIAS_GASTO_SIMPLE }).notNull().default('otros'),
+		importeCent: integer('importe_cent').notNull(),
+		km: integer('km'),
+		litros: real('litros'),
+		/** Entrada del historial a la que corresponde (un mantenimiento, una reparación). */
+		entradaId: integer('entrada_id').references(() => entradas.id, { onDelete: 'set null' }),
+		notas: text('notas'),
+		creado: creado()
+	},
+	(t) => [index('gastos_personales_vehiculo_idx').on(t.vehiculoId, t.fecha)]
+);
+export type GastoPersonal = typeof gastosPersonales.$inferSelect;

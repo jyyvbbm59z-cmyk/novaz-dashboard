@@ -1,9 +1,10 @@
 import * as s from '@novaz/core/schema';
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { desc, eq, inArray, sql } from 'drizzle-orm';
 import { crearRestauracion } from '$lib/server/acciones';
 import { avanceRestauraciones } from '$lib/server/datos';
 import { accion, leer } from '$lib/server/form';
+import { soloVisibles, veVehiculo } from '$lib/server/usuarios';
 
 export const load = async ({ locals }) => {
 	const { db } = locals;
@@ -13,6 +14,9 @@ export const load = async ({ locals }) => {
 		.innerJoin(s.vehiculos, eq(s.restauraciones.vehiculoId, s.vehiculos.id))
 		.leftJoin(s.adjuntos, eq(s.vehiculos.portadaId, s.adjuntos.id))
 		.orderBy(desc(s.restauraciones.fechaInicio));
+	const visibles = soloVisibles(locals.yo, filas, (f) => f.r.vehiculoId);
+	filas.length = 0;
+	filas.push(...visibles);
 	const ids = filas.map((f) => f.r.id);
 	const avances = await avanceRestauraciones(db, ids);
 
@@ -39,7 +43,8 @@ export const load = async ({ locals }) => {
 				...resto,
 				avance: a && a.total ? a.hechas / a.total : 0,
 				horas: Number(horas.find((h) => h.id === r.id)?.total ?? 0),
-				gasto: Number(gastos.find((g) => g.id === r.id)?.total ?? 0)
+				gasto: locals.permisos.includes('dinero') ? Number(gastos.find((g) => g.id === r.id)?.total ?? 0) : null,
+				presupuestoCent: locals.permisos.includes('dinero') ? r.presupuestoCent : null
 			};
 		})
 	};
@@ -48,7 +53,9 @@ export const load = async ({ locals }) => {
 export const actions = {
 	default: accion(async ({ request, locals }) => {
 		const fd = await request.formData();
-		const id = await crearRestauracion(locals, leer(fd).id('vehiculoId'), fd);
+		const vehiculoId = leer(fd).id('vehiculoId');
+		if (!veVehiculo(locals.yo, vehiculoId)) error(403, 'Ese vehículo no es tuyo');
+		const id = await crearRestauracion(locals, vehiculoId, fd);
 		redirect(303, `/restauraciones/${id}`);
 	})
 };

@@ -28,6 +28,7 @@ function leerLineas(json: string | null): LineaFactura[] {
 }
 
 export async function crearFactura(locals: Locals, vehiculoId: number, fd: FormData) {
+	if (!locals.permisos.includes('dinero')) throw new ErrorFormulario('Las facturas necesitan el permiso de «Dinero»');
 	const { db, ajustes } = locals;
 	const f = leer(fd);
 	const tipo = f.texto('tipo') === 'informe' ? 'informe' : 'factura';
@@ -87,6 +88,7 @@ export async function crearFactura(locals: Locals, vehiculoId: number, fd: FormD
 
 /** Apunta el cobro de una factura como ingreso (705) con su IVA. */
 export async function registrarCobro(locals: Locals, facturaId: number, pago: string, fecha?: string) {
+	if (!locals.permisos.includes('dinero')) throw new ErrorFormulario('Las facturas necesitan el permiso de «Dinero»');
 	const fac = await locals.db.select().from(s.facturas).where(eq(s.facturas.id, facturaId)).get();
 	if (!fac || fac.movimientoId || fac.anulada) return;
 	const cats = await locals.db.select().from(s.categorias).where(eq(s.categorias.tipo, 'ingreso'));
@@ -107,6 +109,7 @@ export async function registrarCobro(locals: Locals, facturaId: number, pago: st
 
 /** Anula una factura (se conserva el número) y quita su cobro de la contabilidad. */
 export async function anularFactura(locals: Locals, facturaId: number, bucket: R2Bucket) {
+	if (!locals.permisos.includes('dinero')) throw new ErrorFormulario('Las facturas necesitan el permiso de «Dinero»');
 	const fac = await locals.db.select().from(s.facturas).where(eq(s.facturas.id, facturaId)).get();
 	if (!fac) return;
 	if (fac.movimientoId) await borrarMovimiento(locals, fac.movimientoId, bucket);

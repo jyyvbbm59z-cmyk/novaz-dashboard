@@ -1,5 +1,6 @@
 import { compararNivel, textoDias } from '@novaz/core';
 import { resumenVehiculos } from '$lib/server/datos';
+import { soloVisibles } from '$lib/server/usuarios';
 
 export const load = async ({ locals, parent }) => {
 	const { alertas } = await parent();
@@ -10,5 +11,5 @@ export const load = async ({ locals, parent }) => {
 		const cuando = a.tipo === 'vencimiento' && a.dias != null ? textoDias(a.dias) : a.tipo === 'pendiente' ? 'por reparar' : a.detalle;
 		aviso[a.vehiculoId] = { texto: `${a.titulo} · ${cuando}`, nivel: a.nivel };
 	}
-	return { vehiculos: await resumenVehiculos(locals.db, alertas), aviso };
+	return { vehiculos: soloVisibles(locals.yo, await resumenVehiculos(locals.db, alertas), (v) => v.id), aviso };
 };

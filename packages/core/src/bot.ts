@@ -71,6 +71,8 @@ export function interpretarReglas(texto: string, vehiculos: VehiculoBot[]): Inte
 	if (AYUDA.test(t)) return { tipo: 'ayuda' };
 	const donde = t.match(/^(?:\/donde\b|¿?\s*d[oó]nde\s+(?:est[aá]n?|tengo|guardo|guard[eé]|dej[eé]|va|van|hay)(?=[\s?]|$))\s*(.*?)\??$/i);
 	if (donde) return { tipo: 'consulta', vehiculoId: null, tema: 'donde', buscar: donde[1].replace(/^(el|la|los|las|un|una|mi|mis)\s+/i, '').trim() || null };
+	if (/^¿?\s*cu[aá]nto\s+(llevo\s+)?(he\s+)?gastad/i.test(t)) return { tipo: 'consulta', vehiculoId: veh, tema: 'gasto' };
+	if (/^¿?\s*qu[eé]\s+le\s+toca/i.test(t)) return { tipo: 'consulta', vehiculoId: veh, tema: 'vehiculo' };
 	if (/^\/(hoy|informe)\b/i.test(t)) return { tipo: 'consulta', vehiculoId: null, tema: 'general' };
 	if (/^\/agenda\b/i.test(t)) return { tipo: 'consulta', vehiculoId: null, tema: 'agenda' };
 	if (/^\/compras\b/i.test(t)) return { tipo: 'consulta', vehiculoId: null, tema: 'compras' };
@@ -363,4 +365,27 @@ export function resumenIntencion(i: Intencion, vehiculos: VehiculoBot[], extra: 
 	if (extra.fecha) lineas.push(`Fecha: ${extra.fecha.split('-').reverse().join('/')}`);
 	if (extra.notas) lineas.push(`<i>${esc(extra.notas.length > 400 ? `${extra.notas.slice(0, 400)}…` : extra.notas)}</i>`);
 	return lineas.filter(Boolean).join('\n');
+}
+
+/** El permiso que necesita una intención del bot (null = cualquiera). */
+export function permisoIntencion(i: Intencion): 'vehiculos' | 'inventario' | 'local' | 'dinero' | null {
+	switch (i.tipo) {
+		case 'repostaje':
+		case 'gasto':
+			return 'dinero';
+		case 'km':
+		case 'mantenimiento':
+		case 'reparacion':
+		case 'averia':
+		case 'mejora':
+			return 'vehiculos';
+		case 'tarea_local':
+			return 'local';
+		case 'compra':
+			return 'inventario';
+		case 'consulta':
+			return i.tema === 'gasto' ? 'dinero' : i.tema === 'compras' || i.tema === 'donde' ? 'inventario' : i.tema === 'vehiculo' || i.tema === 'agenda' ? 'vehiculos' : null;
+		default:
+			return null;
+	}
 }

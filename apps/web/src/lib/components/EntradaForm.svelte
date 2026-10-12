@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { avisar } from '$lib/avisos.svelte';
@@ -125,7 +126,8 @@
 		planesSel = planesSel.includes(id) ? planesSel.filter((x) => x !== id) : [...planesSel, id];
 	}
 
-	// ─── Gastos y materiales desglosados
+	// ─── Gastos y materiales desglosados (solo quien tiene permiso de «Dinero»)
+	const verDinero = $derived(((page.data.permisos as string[] | undefined) ?? []).includes('dinero'));
 	const categoriasGasto = $derived(categorias.filter((c) => c.tipo === 'gasto'));
 	const catDefecto = $derived((categoriasGasto.find((c) => /recambio/i.test(c.nombre)) ?? categoriasGasto[0])?.id ?? '');
 	let gastos = $state<{ id: number | null; concepto: string; importe: string; categoriaId: string }[]>(
@@ -339,6 +341,13 @@
 		</details>
 	{/if}
 
+	{#if !verDinero && page.data.esDueno && !entrada}
+		<label class="campo">
+			<span>¿Cuánto te costó? (€)</span>
+			<input name="costeSimple" class="input" inputmode="decimal" placeholder="Opcional: va a tu libreta de gastos" />
+		</label>
+	{/if}
+	{#if verDinero}
 	<details class="rounded-lg border border-borde" open={gastosAbierto}>
 		<summary
 			class="cursor-pointer px-3 py-2.5 text-sm font-medium text-texto-2 select-none"
@@ -380,6 +389,7 @@
 			{#if entrada && gastosExistentes.length}<p class="text-xs text-texto-3">Cambia o quita (✕) las líneas aquí: se actualiza el gasto en la contabilidad, sin duplicar.</p>{/if}
 		</div>
 	</details>
+	{/if}
 
 
 	<button class="btn btn-acento h-12">{entrada ? 'Guardar cambios' : 'Registrar'}</button>

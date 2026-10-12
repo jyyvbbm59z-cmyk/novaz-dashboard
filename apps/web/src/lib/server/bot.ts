@@ -7,6 +7,8 @@ import {
 	euros,
 	estadoTaller,
 	mensajeInforme,
+	recortarInforme,
+	resumenLibreta,
 	planAplica,
 	resumenIntencion,
 	separarPrecio,
@@ -22,6 +24,8 @@ import { precioCombustibleHoy } from './combustible';
 import { comprobarLectura } from './datos';
 import { borrarRepostaje, guardarRepostaje } from './repostajes';
 import { cargarPlano } from './ubicaciones';
+import { apuntarGastoSimple } from './libreta';
+import { soloVisibles, veVehiculo } from './usuarios';
 import { descargarTelegram } from './telegram';
 
 type Locals = App.Locals;
@@ -37,6 +41,8 @@ export interface Orden {
 	ivaPct?: number | null;
 	/** Lo que se ha dicho por voz, para enseñarlo. */
 	voz?: string | null;
+	/** Va a la libreta de gastos del dueño (no a la contabilidad del taller). */
+	libreta?: boolean;
 	/** Resuelto al preparar: categoría del gasto y revisiones que renueva. */
 	categoria?: { id: number; nombre: string } | null;
 	planes?: { id: number; nombre: string }[];
@@ -46,8 +52,10 @@ const VACIAS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'y', 'con', 'camb
 const norm = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-export async function vehiculosBot(db: Locals['db']): Promise<VehiculoBot[]> {
-	return db.select({ id: s.vehiculos.id, alias: s.vehiculos.alias, marca: s.vehiculos.marca, modelo: s.vehiculos.modelo, matricula: s.vehiculos.matricula }).from(s.vehiculos);
+/** Los vehículos que el bot conoce para esta persona (solo los suyos si solo ve los suyos). */
+export async function vehiculosBot(locals: Locals): Promise<VehiculoBot[]> {
+	const todos = await locals.db.select({ id: s.vehiculos.id, alias: s.vehiculos.alias, marca: s.vehiculos.marca, modelo: s.vehiculos.modelo, matricula: s.vehiculos.matricula }).from(s.vehiculos);
+	return soloVisibles(locals.yo, todos, (v) => v.id);
 }
 
 // ─── Preparar: categoría y revisiones, para enseñarlas antes de confirmar ────
@@ -119,6 +127,7 @@ export function textoOrden(o: Orden, vehiculos: VehiculoBot[]) {
 	else if (o.i.tipo === 'mantenimiento') t += '\n<i>No lo cuadro con ninguna revisión del plan: se apunta como entrada suelta.</i>';
 	if (o.categoria && (o.i.tipo === 'gasto' || o.i.tipo === 'mantenimiento' || o.i.tipo === 'reparacion')) t += `\nCategoría: ${esc(o.categoria.nombre)}`;
 	if (o.foto) t += '\n📎 Guardo la foto del ticket';
+	if (o.libreta) t += '\n📒 A tu libreta de gastos';
 	return o.voz ? `🎙 <i>«${esc(o.voz)}»</i>\n\n${t}` : t;
 }
 
@@ -143,6 +152,13 @@ export async function ejecutarOrden(locals: Locals, env: EnvBot, o: Orden): Prom
 	const fecha = o.fecha ?? hoy;
 	const veh = 'vehiculoId' in i ? i.vehiculoId : null;
 	const enFlota = (p: string) => `/flota/${veh}?pestana=${p}`;
+	if (o.libreta && veh && (i.tipo === 'repostaje' || i.tipo === 'gasto')) {
+		const id =
+			i.tipo === 'repostaje'
+				? await apuntarGastoSimple(locals, veh, { fecha, concepto: `Repostaje${i.litros ? ` ${i.litros.toLocaleString('es-ES')} L` : ''}${i.gasolinera ? ` · ${i.gasolinera}` : ''}`, categoria: 'combustible', importeCent: i.importeCent!, km: i.km, litros: i.litros, notas: o.notas })
+				: await apuntarGastoSimple(locals, veh, { fecha, concepto: i.concepto, categoria: null, importeCent: i.importeCent, notas: o.notas });
+		return { hecho: [{ t: 'gasto_personal', id }], href: enFlota('libreta') };
+	}
 	switch (i.tipo) {
 		case 'repostaje': {
 			const fd = new FormData();
@@ -238,6 +254,7 @@ export async function deshacer(locals: Locals, env: EnvBot, hecho: s.HechoBot[])
 		else if (h.t === 'tarea_local') await db.delete(s.tareasLocal).where(eq(s.tareasLocal.id, h.id));
 		else if (h.t === 'compra') await db.delete(s.listaCompra).where(eq(s.listaCompra.id, h.id));
 		else if (h.t === 'km') await db.delete(s.lecturasKm).where(eq(s.lecturasKm.id, h.id));
+		else if (h.t === 'gasto_personal') await db.delete(s.gastosPersonales).where(eq(s.gastosPersonales.id, h.id));
 	}
 }
 
@@ -279,6 +296,20 @@ export async function responderConsulta(locals: Locals, i: Extract<Intencion, { 
 			})
 			.join('\n\n');
 	}
+	if (i.tema === 'gasto' && !locals.permisos.includes('dinero')) {
+		// Sin «Dinero»: lo que llevas gastado en tus vehículos (tu libreta)
+		const mios = await vehiculosBot(locals);
+		const gastos = locals.yo?.id ? await db.select().from(s.gastosPersonales).where(eq(s.gastosPersonales.usuarioId, locals.yo.id)) : [];
+		if (!gastos.length) return 'Tu libreta de gastos está vacía. Escríbeme por ejemplo <i>«Repostaje 40 l 60 € 150.000 km»</i>.';
+		const lineas = ['<b>Tus gastos</b>'];
+		for (const v of mios) {
+			const suyos = gastos.filter((g) => g.vehiculoId === v.id);
+			if (!suyos.length) continue;
+			const r = resumenLibreta(suyos, [], hoy);
+			lineas.push('', `<b>${esc(v.alias)}</b>`, `Este mes: ${euros(r.mes)} · en ${hoy.slice(0, 4)}: ${euros(r.anio)}`, ...(r.porKm != null ? [`${(r.porKm / 100).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €/km`] : []), ...(r.consumo != null ? [`Consumo: ${r.consumo.toLocaleString('es-ES')} L/100 km`] : []));
+		}
+		return lineas.join('\n');
+	}
 	if (i.tema === 'gasto') {
 		const anio = hoy.slice(0, 4);
 		const movs = await db
@@ -305,6 +336,7 @@ export async function responderConsulta(locals: Locals, i: Extract<Intencion, { 
 			cargarAlertas(db, { hoy, urgenteDias: ajustes.urgenteDias, incluirOk: true })
 		]);
 		const t = await estadoTaller(db, hoy, alertas);
+		t.listaCompra = t.listaCompra.filter((c) => c.vehiculoId == null || veVehiculo(locals.yo, c.vehiculoId));
 		if (!t.listaCompra.length) return 'La lista de la compra está vacía.';
 		const estimado = manual.reduce((x, m) => x + (m.precio ?? 0), 0);
 		return [`<b>Lista de la compra</b> (${t.listaCompra.length})`, ...t.listaCompra.map((c) => `- ${esc(c.texto)} <i>(${esc(c.para)})</i>`), ...(estimado ? ['', `Estimado: ${euros(estimado, { redondo: true })}`] : [])].join('\n');
@@ -321,5 +353,6 @@ export async function responderConsulta(locals: Locals, i: Extract<Intencion, { 
 		return lineas.join('\n');
 	}
 	const precios = await precioCombustibleHoy(locals);
-	return mensajeInforme(await datosInforme(db, { hoy, ajustes, precios, nuevas: new Set(), app, conObras: true }));
+	const visibles = locals.yo?.vehiculos ? { ids: locals.yo.vehiculos, alias: (await vehiculosBot(locals)).map((v) => v.alias) } : null;
+	return mensajeInforme(recortarInforme(await datosInforme(db, { hoy, ajustes, precios, nuevas: new Set(), app, conObras: true }), locals.permisos, visibles));
 }

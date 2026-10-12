@@ -4,6 +4,8 @@
 	let { children } = $props();
 	const SECCIONES = [
 		['/ajustes', 'General'],
+		['/ajustes/usuarios', 'Usuarios'],
+		['/perfil', 'Mi perfil'],
 		['/ajustes/tipos', 'Tipos de vehículo'],
 		['/ajustes/vencimientos', 'Vencimientos'],
 		['/ajustes/mantenimiento', 'Mantenimiento'],
