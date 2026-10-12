@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buscarArticulos, caminoEnLocal, codigoUbicacion, describirUbicacion, huella, limpiarDisposicion, nivelesMueble, nombreNivel, PLANO_LOCAL, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES, type Pt } from '../src/ubicaciones';
+import { buscarArticulos, caminoEnLocal, codigoUbicacion, describirUbicacion, encajar, huecoLibre, huella, rejillaBalda, sePisan, limpiarDisposicion, nivelesMueble, nombreNivel, PLANO_LOCAL, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES, type Pt } from '../src/ubicaciones';
 
 const zonas = ZONAS_INICIALES.map((z, i) => ({ ...z, id: i + 1 }));
 
@@ -124,5 +124,26 @@ describe('muebles a medida', () => {
 		expect(limpiarDisposicion({ filas: [{ alto: 99, cajones: 0 }, { alto: 2, cajones: 3, hueco: 1 }], nivel: ' Cesta ' })).toEqual({ filas: [{ alto: 10, cajones: 1 }, { alto: 2, cajones: 3, hueco: true }], nivel: 'cesta' });
 		expect(limpiarDisposicion({ filas: [] })).toBeNull();
 		expect(limpiarDisposicion('x')).toBeNull();
+	});
+});
+
+describe('rejilla de la balda (3 tercios × 3 alturas)', () => {
+	const c = (id: number, letra: string, tipo: 'caja' | 'mochila' | 'cubo', pos: Partial<{ columna: number; ancho: number; piso: number; alto: number }> = {}) => ({ id, letra, tipo, ...pos });
+	it('sin nada colocado, como siempre', () => {
+		expect(rejillaBalda([c(1, 'A', 'caja'), c(2, 'B', 'caja')])).toBeNull();
+	});
+	it('una alta y una baja apiladas; dos tercios de cajas y una mochila', () => {
+		const r = rejillaBalda([c(1, 'A', 'caja', { columna: 1, alto: 2, piso: 0 }), c(2, 'B', 'caja', { columna: 1, alto: 1, piso: 2 }), c(3, 'C', 'caja'), c(4, 'D', 'mochila')])!;
+		expect(r.get(3)).toEqual({ columna: 2, ancho: 1, piso: 0, alto: 1 });
+		expect(r.get(4)).toEqual({ columna: 3, ancho: 1, piso: 0, alto: 3 });
+	});
+	it('huecos libres y solapes', () => {
+		const llenas = [{ columna: 1, ancho: 2, piso: 0, alto: 3 }];
+		expect(huecoLibre(llenas, { ancho: 1, alto: 3 })).toEqual({ columna: 3, piso: 0, ancho: 1, alto: 3 });
+		expect(huecoLibre(llenas, { ancho: 2, alto: 1 })).toBeNull();
+		// Aunque lo que se pide traiga ya una columna, se busca el hueco de verdad
+		expect(huecoLibre([{ columna: 1, ancho: 1, piso: 0, alto: 3 }], encajar({ ancho: 1, alto: 3 }))?.columna).toBe(2);
+		expect(sePisan({ columna: 1, ancho: 2, piso: 0, alto: 1 }, { columna: 2, ancho: 1, piso: 0, alto: 3 })).toBe(true);
+		expect(encajar({ columna: 3, ancho: 2, piso: 2, alto: 3 })).toEqual({ columna: 2, ancho: 2, piso: 0, alto: 3 });
 	});
 });

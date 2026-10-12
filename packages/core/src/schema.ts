@@ -497,7 +497,7 @@ export const muebles = sqliteTable('muebles', {
 	notas: text('notas'),
 	creado: creado()
 });
-export const TIPOS_CONTENEDOR = ['cubo', 'maletin', 'caja', 'bandeja', 'bolsa', 'otro'] as const;
+export const TIPOS_CONTENEDOR = ['cubo', 'maletin', 'caja', 'bandeja', 'bolsa', 'mochila', 'otro'] as const;
 export type TipoContenedor = (typeof TIPOS_CONTENEDOR)[number];
 
 /** Un cubo, maletín o caja dentro de una balda: un sitio más pequeño con su letra (A, B, C… de izquierda a derecha). */
@@ -512,6 +512,15 @@ export const contenedores = sqliteTable(
 		letra: text('letra').notNull(),
 		nombre: text('nombre').notNull(),
 		tipo: text('tipo', { enum: TIPOS_CONTENEDOR }).notNull().default('cubo'),
+		// Sitio en la balda: 3 tercios a lo ancho × 3 alturas de caja baja (null = sin colocar: se reparten a lo ancho)
+		/** Tercio desde la izquierda (1–3). */
+		columna: integer('columna'),
+		/** Cuántos tercios ocupa (1–3). */
+		ancho: integer('ancho'),
+		/** Alturas por debajo (0 = sobre la balda). */
+		piso: integer('piso'),
+		/** Alturas que ocupa: 1 caja baja, 2 alta, 3 toda la balda. */
+		alto: integer('alto'),
 		notas: text('notas'),
 		creado: creado()
 	},

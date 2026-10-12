@@ -264,7 +264,65 @@ export function codigoUbicacion(
 
 // ─── Contenedores (cubos, maletines, cajas dentro de una balda) ──────────────
 
-export const CONTENEDORES: Record<TipoContenedor, string> = { cubo: 'Cubo', maletin: 'Maletín', caja: 'Caja', bandeja: 'Bandeja', bolsa: 'Bolsa', otro: 'Contenedor' };
+export const CONTENEDORES: Record<TipoContenedor, string> = { cubo: 'Cubo', maletin: 'Maletín', caja: 'Caja', bandeja: 'Bandeja', bolsa: 'Bolsa', mochila: 'Mochila', otro: 'Contenedor' };
+
+// ─── Rejilla de una balda: 3 tercios a lo ancho × 3 alturas de caja baja ──────
+
+export const REJILLA = { columnas: 3, alturas: 3 } as const;
+/** Lo que suele ocupar de alto cada tipo (en alturas de caja baja). */
+export const ALTO_CONTENEDOR: Record<TipoContenedor, number> = { cubo: 2, maletin: 1, caja: 1, bandeja: 1, bolsa: 2, mochila: 3, otro: 1 };
+/** Muebles con baldas en los que los contenedores se colocan en la rejilla. */
+export const conRejilla = (tipo: TipoMueble) => tipo === 'estanteria' || tipo === 'armario';
+
+export interface Celda {
+	/** Tercio desde la izquierda (1–3). */
+	columna: number;
+	ancho: number;
+	/** Alturas por debajo (0 = sobre la balda). */
+	piso: number;
+	alto: number;
+}
+type ContRejilla = { id: number; letra: string; tipo: TipoContenedor; columna?: number | null; ancho?: number | null; piso?: number | null; alto?: number | null };
+
+const recortar = (v: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(v)));
+/** Una celda dentro de la rejilla (lo que se sale, se mete). */
+export function encajar(c: { [K in keyof Celda]?: number | null }): Celda {
+	const ancho = recortar(c.ancho ?? 1, 1, REJILLA.columnas);
+	const alto = recortar(c.alto ?? 1, 1, REJILLA.alturas);
+	return { ancho, alto, columna: recortar(c.columna ?? 1, 1, REJILLA.columnas - ancho + 1), piso: recortar(c.piso ?? 0, 0, REJILLA.alturas - alto) };
+}
+const casillas = (c: Celda) => {
+	const out: string[] = [];
+	for (let x = c.columna; x < c.columna + c.ancho; x++) for (let y = c.piso; y < c.piso + c.alto; y++) out.push(`${x}:${y}`);
+	return out;
+};
+/** ¿Se pisan dos celdas? */
+export const sePisan = (a: Celda, b: Celda) => casillas(a).some((k) => casillas(b).includes(k));
+
+/** El primer sitio libre (de izquierda a derecha y de abajo arriba) para algo de este tamaño; null si no cabe. */
+export function huecoLibre(ocupadas: Celda[], tam: { ancho: number; alto: number }): Celda | null {
+	for (let columna = 1; columna <= REJILLA.columnas - tam.ancho + 1; columna++)
+		for (let piso = 0; piso <= REJILLA.alturas - tam.alto; piso++) {
+			const c = { columna, piso, ancho: tam.ancho, alto: tam.alto };
+			if (!ocupadas.some((o) => sePisan(o, c))) return c;
+		}
+	return null;
+}
+
+/**
+ * Dónde va cada contenedor de una balda en la rejilla. Los colocados, donde digan; los que no, en el primer hueco
+ * (con el alto típico de su tipo). null si ninguno está colocado (y no se fuerza): entonces se reparten a lo ancho, como siempre.
+ */
+export function rejillaBalda(cs: ContRejilla[], forzar = false): Map<number, Celda> | null {
+	if (!forzar && !cs.some((c) => c.columna != null)) return null;
+	const out = new Map<number, Celda>();
+	for (const c of cs) if (c.columna != null) out.set(c.id, encajar(c));
+	for (const c of [...cs].filter((c) => c.columna == null).sort((a, b) => ordenLetra(a.letra, b.letra))) {
+		const tam = { ancho: recortar(c.ancho ?? 1, 1, 3), alto: recortar(c.alto ?? ALTO_CONTENEDOR[c.tipo], 1, 3) };
+		out.set(c.id, huecoLibre([...out.values()], tam) ?? huecoLibre([...out.values()], { ancho: 1, alto: 1 }) ?? encajar({}));
+	}
+	return out;
+}
 
 /** La siguiente letra libre en una balda (A, B… Z, luego AA, AB…). */
 export function siguienteLetra(usadas: string[]): string {

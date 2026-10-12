@@ -9,7 +9,7 @@
 	import MuebleForm from '$comp/MuebleForm.svelte';
 	import PlanoLocal from '$comp/PlanoLocal.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { buscarArticulos, codigoUbicacion, CONTENEDORES, MUEBLES, nombreDeNivel, nombreNivel as nombreDe, pluralNivel, siguienteLetra } from '@novaz/core';
+	import { ALTO_CONTENEDOR, buscarArticulos, codigoUbicacion, conRejilla, CONTENEDORES, encajar, huecoLibre, MUEBLES, rejillaBalda, REJILLA, sePisan, nombreDeNivel, nombreNivel as nombreDe, pluralNivel, siguienteLetra } from '@novaz/core';
 	import { TIPOS_CONTENEDOR, type Contenedor, type TipoContenedor } from '@novaz/core/schema';
 	import { ArrowLeft, Box, Camera, ChevronDown, Pencil, Plus, Printer, Search, Trash2, Wrench } from '@lucide/svelte';
 	import { tick } from 'svelte';
@@ -92,12 +92,32 @@
 	let contEditado = $state<Contenedor | null>(null);
 	let contNivel = $state<number | null>(null);
 	let contTipo = $state<TipoContenedor>('cubo');
+	// Su sitio en la balda: 3 tercios × 3 alturas (columna null = el primer hueco libre)
+	let contCol = $state<number | null>(null);
+	let contPiso = $state(0);
+	let contAncho = $state(1);
+	let contAlto = $state(1);
+	let altoTocado = $state(false);
 	function abrirContenedor(nivel: number | null, c: Contenedor | null = null) {
 		contEditado = c;
 		contNivel = c ? c.nivel : nivel;
-		contTipo = c?.tipo ?? 'cubo';
+		contTipo = c?.tipo ?? 'caja';
+		contCol = c?.columna ?? null;
+		contPiso = c?.piso ?? 0;
+		contAncho = c?.ancho ?? 1;
+		contAlto = c?.alto ?? ALTO_CONTENEDOR[contTipo];
+		altoTocado = !!c;
 		hCont = true;
 	}
+	const conRej = $derived(conRejilla(m.tipo) && contNivel != null);
+	const vecinos = $derived(contsDe(contNivel).filter((c) => c.id !== contEditado?.id));
+	const ocupadas = $derived(conRej ? (rejillaBalda(vecinos, true) ?? new Map()) : new Map());
+	const celdaNueva = $derived(
+		contCol != null ? encajar({ columna: contCol, piso: contPiso, ancho: contAncho, alto: contAlto }) : huecoLibre([...ocupadas.values()], { ancho: contAncho, alto: contAlto })
+	);
+	const pisada = $derived(celdaNueva ? vecinos.find((v) => ocupadas.get(v.id) && sePisan(ocupadas.get(v.id)!, celdaNueva)) : null);
+	/** Posición en la rejilla CSS (las filas de arriba a abajo). */
+	const area = (c: { columna: number; ancho: number; piso: number; alto: number }) => `grid-column: ${c.columna} / span ${c.ancho}; grid-row: ${REJILLA.alturas - c.piso - c.alto + 1} / span ${c.alto}`;
 	const letraSugerida = $derived(contEditado?.letra ?? siguienteLetra(contsDe(contNivel).map((c) => c.letra)));
 	async function quitarContenedor(c: Contenedor) {
 		if (!confirm(`¿Quitar ${nombreCont(c)}?${enCont(c.id).length ? ` Sus ${enCont(c.id).length} cosas se quedan sueltas en la balda.` : ''}`)) return;
@@ -302,14 +322,50 @@
 			<input type="hidden" name="tipo" value={contTipo} />
 			<div class="grid grid-cols-3 gap-1.5">
 				{#each TIPOS_CONTENEDOR as t (t)}
-					<button type="button" class="chip h-9 justify-center {contTipo === t ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => (contTipo = t)}>{CONTENEDORES[t]}</button>
+					<button type="button" class="chip h-9 justify-center {contTipo === t ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => ((contTipo = t), altoTocado || (contAlto = ALTO_CONTENEDOR[t]))}>{CONTENEDORES[t]}</button>
 				{/each}
 			</div>
 			<div class="grid grid-cols-[5rem_1fr] gap-3">
 				<label class="campo"><span>Letra</span><input name="letra" class="input font-mono uppercase" maxlength="2" value={contEditado?.letra ?? ''} placeholder={letraSugerida} /></label>
 				<label class="campo"><span>Qué hay dentro</span><input name="nombre" class="input" value={contEditado?.nombre ?? ''} placeholder="Electricidad, sujeción, frenos…" /></label>
 			</div>
-			<p class="-mt-2 text-xs text-texto-3">Letras de izquierda a derecha en la balda: A es el de la izquierda. El código queda {codigo(contNivel, { letra: contEditado?.letra ?? letraSugerida } as Contenedor)}.</p>
+			<p class="-mt-2 text-xs text-texto-3">El código queda {codigo(contNivel, { letra: contEditado?.letra ?? letraSugerida } as Contenedor)}.</p>
+			{#if conRej}
+				<!-- Dónde va en la balda -->
+				<input type="hidden" name="columna" value={contCol ?? ''} />
+				<input type="hidden" name="piso" value={contPiso} />
+				<input type="hidden" name="ancho" value={contAncho} />
+				<input type="hidden" name="alto" value={contAlto} />
+				<div class="flex flex-col gap-2">
+					<p class="text-sm font-medium">Dónde va en la balda</p>
+					<div class="flex flex-wrap gap-1.5">
+						{#each [[1, 'Baja'], [2, 'Alta'], [3, 'Toda la altura']] as [v, txt] (v)}
+							<button type="button" class="chip h-8 px-3 text-xs {contAlto === v ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => ((contAlto = v as number), (altoTocado = true))}>{txt}</button>
+						{/each}
+						<span class="mx-1 w-px bg-borde"></span>
+						{#each [[1, '⅓'], [2, '⅔'], [3, 'Todo el ancho']] as [v, txt] (v)}
+							<button type="button" class="chip h-8 px-3 text-xs {contAncho === v ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => (contAncho = v as number)}>{txt}</button>
+						{/each}
+					</div>
+					<div class="grid aspect-[3/1.6] w-full grid-cols-3 grid-rows-3 gap-1 rounded-lg border-b-4 border-texto-3 bg-superficie-2 p-1">
+						{#each Array.from({ length: 9 }, (_, i) => i) as i (i)}
+							{@const col = (i % 3) + 1}
+							{@const piso = REJILLA.alturas - 1 - Math.floor(i / 3)}
+							<button type="button" class="rounded border border-dashed border-borde transition hover:border-acento/60" style={area({ columna: col, ancho: 1, piso, alto: 1 })} onclick={() => ((contCol = col), (contPiso = piso))} aria-label="Tercio {col}, altura {piso + 1}"></button>
+						{/each}
+						{#each vecinos as v (v.id)}
+							{@const c = ocupadas.get(v.id)}
+							{#if c}<div class="pointer-events-none flex items-center justify-center rounded-md bg-superficie-3 font-mono text-sm font-bold text-texto-2 ring-1 ring-borde" style={area(c)}>{v.letra}</div>{/if}
+						{/each}
+						{#if celdaNueva}
+							<div class="pointer-events-none flex items-center justify-center rounded-md font-mono text-sm font-bold ring-2 {pisada ? 'bg-vencido/20 text-vencido ring-vencido' : 'bg-acento/25 text-texto ring-acento'}" style={area(celdaNueva)}>{contEditado?.letra ?? letraSugerida}</div>
+						{/if}
+					</div>
+					<p class="text-xs {pisada ? 'text-vencido' : 'text-texto-3'}">
+						{#if pisada}Pisa {CONTENEDORES[pisada.tipo].toLowerCase()} {pisada.letra}: elige otro sitio.{:else if !celdaNueva}No queda un hueco de ese tamaño en la balda.{:else if contCol == null}Va al primer hueco libre; toca la rejilla para elegir otro.{:else}Toca otra casilla para moverla.{/if}
+					</p>
+				</div>
+			{/if}
 			<button class="btn btn-acento h-12">{contEditado ? 'Guardar' : 'Añadir contenedor'}</button>
 		</form>
 		{#if contEditado}

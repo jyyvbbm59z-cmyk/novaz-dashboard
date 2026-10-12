@@ -1,8 +1,8 @@
 <script lang="ts">
 	// Un mueble visto de frente con sus baldas, cajones o filas, y lo que hay en cada una.
 	// Puede encender una balda (la de lo que buscas) y poner encima el nombre.
-	import { CONTENEDORES, nivelesMueble, nombreDeNivel, nombreNivel as nombreDe, ordenLetra } from '@novaz/core';
-	import type { Mueble } from '@novaz/core/schema';
+	import { conRejilla, CONTENEDORES, nivelesMueble, nombreDeNivel, nombreNivel as nombreDe, ordenLetra, rejillaBalda, REJILLA } from '@novaz/core';
+	import type { Mueble, TipoContenedor } from '@novaz/core/schema';
 
 	let {
 		mueble,
@@ -23,7 +23,7 @@
 		contenido?: Record<number, string[]>;
 		resaltar?: number | null;
 		/** Cubos, maletines o cajas de cada balda (se dibujan de izquierda a derecha por su letra). */
-		contenedores?: { id: number; nivel: number | null; letra: string; nombre: string; tipo: string }[];
+		contenedores?: { id: number; nivel: number | null; letra: string; nombre: string; tipo: TipoContenedor; columna?: number | null; ancho?: number | null; piso?: number | null; alto?: number | null }[];
 		cuentaContenedor?: Record<number, number>;
 		contenedorResaltado?: number | null;
 		alTocarContenedor?: (id: number) => void;
@@ -103,7 +103,32 @@
 		return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 	};
 	const nombreNivel = (k: number) => nombreDe(mueble, k);
+	/** Estanterías y armarios: cada balda en 3 tercios × 3 alturas para colocar cajas. */
+	const rejilla = $derived(conRejilla(mueble.tipo));
 </script>
+
+{#snippet caja(c: (typeof contenedores)[number], bx: number, y0: number, bw: number, hb: number, encendida: boolean)}
+	{@const fl = Math.min(bw * 0.5, hb * 0.38, 0.1)}
+	{@const asa = c.tipo === 'maletin' || c.tipo === 'mochila' ? Math.min(hb * 0.12, 0.03) : 0}
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+	<g class="contenedor {encendida ? 'cont-on' : ''} {alTocarContenedor ? 'cursor-pointer' : ''}" onclick={(e) => { if (alTocarContenedor) { e.stopPropagation(); alTocarContenedor(c.id); } }}>
+		<rect x={bx} y={y0 + asa} width={bw} height={hb - asa} rx={c.tipo === 'mochila' ? Math.min(bw, hb) * 0.28 : c.tipo === 'cubo' || c.tipo === 'bolsa' ? 0.025 : 0.01} class="caja" />
+		{#if asa}<rect x={bx + bw * 0.32} y={y0} width={bw * 0.36} height={asa * 1.4} rx={asa * 0.7} fill="none" class="asa" />{/if}
+		{#if c.tipo === 'mochila'}<rect x={bx + bw * 0.22} y={y0 + hb * 0.55} width={bw * 0.56} height={hb * 0.3} rx="0.012" fill="none" class="asa" />{/if}
+		<text x={bx + bw / 2} y={y0 + hb * 0.5 + fl * 0.35} text-anchor="middle" class="letra-caja" font-size={fl}>{c.letra}</text>
+		{#if bw > 0.18 && hb > 0.07 && c.nombre}
+			{@const fn = Math.min(fl * 0.42, 0.042)}
+			<text x={bx + bw / 2} y={y0 + hb * 0.88} text-anchor="middle" class="cuenta-caja" font-size={fn}>{recortar(`${c.nombre}${cuentaContenedor[c.id] ? ` · ${cuentaContenedor[c.id]}` : ''}`, bw - 0.03, fn)}</text>
+		{:else if bw > 0.07 && cuentaContenedor[c.id]}
+			<text x={bx + bw / 2} y={y0 + hb * 0.88} text-anchor="middle" class="cuenta-caja" font-size={Math.min(fl * 0.45, 0.04)}>{cuentaContenedor[c.id]}</text>
+		{/if}
+		{#if encendida}
+			<rect x={bx} y={y0} width={bw} height={hb} rx="0.02" class="aro" />
+			<rect x={bx} y={y0} width={bw} height={hb} rx="0.02" class="destello" />
+		{/if}
+		<title>{CONTENEDORES[c.tipo] ?? 'Contenedor'} {c.letra}{c.nombre ? ` · ${c.nombre}` : ''}{cuentaContenedor[c.id] ? ` (${cuentaContenedor[c.id]})` : ''}</title>
+	</g>
+{/snippet}
 
 <svg viewBox="-0.12 -0.12 {W + 0.24} {H + 0.24}" class="frente block {clase || 'h-auto w-full'}" role="img" aria-label="{mueble.nombre} {mueble.codigo} visto de frente">
 	<defs>
@@ -179,33 +204,29 @@
 				<text x={h.x + h.w / 2} y={yTexto + tam * 0.4} text-anchor="middle" class="cosas" font-size={tam * 0.8}>{recortar((cs.length ? `Suelto (${cosas.length}): ` : '') + cosas.slice(0, 2).join(' · ') + (cosas.length > 2 && !cs.length ? ` +${cosas.length - 2}` : ''), h.w - 0.1, tam * 0.8)}</text>
 			{/if}
 
-			<!-- Contenedores de la balda, de izquierda a derecha -->
+			<!-- Baldas en tercios: guías suaves para colocar cajas -->
+			{#if rejilla && !h.abierto}
+				{#each [1, 2] as k (k)}<line x1={h.x + 0.03 + ((h.w - 0.06) * k) / REJILLA.columnas} y1={h.y + h.h * 0.14} x2={h.x + 0.03 + ((h.w - 0.06) * k) / REJILLA.columnas} y2={h.y + h.h - 0.015} class="guia" />{/each}
+			{/if}
+			<!-- Contenedores de la balda: en su sitio de la rejilla o, si no lo tienen, de izquierda a derecha -->
 			{#if cs.length}
-				{@const gap = Math.min(0.02, h.w * 0.012)}
-				{@const y0 = h.y + h.h * 0.36}
-				{@const hb = h.h * 0.56}
-				{@const bw = (h.w - 0.06 - gap * (cs.length - 1)) / cs.length}
-				{#each cs as c, k (c.id)}
-					{@const bx = h.x + 0.03 + k * (bw + gap)}
-					{@const fl = Math.min(bw * 0.5, hb * 0.38)}
-					<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-					<g class="contenedor {contOn?.id === c.id ? 'cont-on' : ''} {alTocarContenedor ? 'cursor-pointer' : ''}" onclick={(e) => { if (alTocarContenedor) { e.stopPropagation(); alTocarContenedor(c.id); } }}>
-						<rect x={bx} y={y0 + (c.tipo === 'maletin' ? hb * 0.12 : 0)} width={bw} height={hb - (c.tipo === 'maletin' ? hb * 0.12 : 0)} rx={c.tipo === 'cubo' || c.tipo === 'bolsa' ? 0.025 : 0.01} class="caja" />
-						{#if c.tipo === 'maletin'}<rect x={bx + bw * 0.3} y={y0} width={bw * 0.4} height={hb * 0.12} rx="0.01" fill="none" class="asa" />{/if}
-						<text x={bx + bw / 2} y={y0 + hb * 0.56 + fl * 0.35} text-anchor="middle" class="letra-caja" font-size={fl}>{c.letra}</text>
-						{#if bw > 0.22 && c.nombre}
-							{@const fn = Math.min(fl * 0.42, 0.042)}
-							<text x={bx + bw / 2} y={y0 + hb * 0.9} text-anchor="middle" class="cuenta-caja" font-size={fn}>{recortar(`${c.nombre}${cuentaContenedor[c.id] ? ` · ${cuentaContenedor[c.id]}` : ''}`, bw - 0.03, fn)}</text>
-						{:else if bw > 0.07 && cuentaContenedor[c.id]}
-							<text x={bx + bw / 2} y={y0 + hb * 0.9} text-anchor="middle" class="cuenta-caja" font-size={Math.min(fl * 0.45, 0.04)}>{cuentaContenedor[c.id]}</text>
-						{/if}
-						{#if contOn?.id === c.id}
-							<rect x={bx} y={y0} width={bw} height={hb} rx="0.02" class="aro" />
-							<rect x={bx} y={y0} width={bw} height={hb} rx="0.02" class="destello" />
-						{/if}
-						<title>{CONTENEDORES[c.tipo as keyof typeof CONTENEDORES] ?? 'Contenedor'} {c.letra}{c.nombre ? ` · ${c.nombre}` : ''}{cuentaContenedor[c.id] ? ` (${cuentaContenedor[c.id]})` : ''}</title>
-					</g>
-				{/each}
+				{@const rej = rejilla ? rejillaBalda(cs) : null}
+				{#if rej}
+					{@const x0 = h.x + 0.03}
+					{@const cw = (h.w - 0.06) / REJILLA.columnas}
+					{@const ybot = h.y + h.h - 0.012}
+					{@const uh = (ybot - (h.y + h.h * 0.14)) / REJILLA.alturas}
+					{#each cs as c (c.id)}
+						{@const p = rej.get(c.id)!}
+						{@render caja(c, x0 + (p.columna - 1) * cw + 0.006, ybot - (p.piso + p.alto) * uh + 0.006, p.ancho * cw - 0.012, p.alto * uh - 0.012, contOn?.id === c.id)}
+					{/each}
+				{:else}
+					{@const gap = Math.min(0.02, h.w * 0.012)}
+					{@const y0 = h.y + h.h * 0.36}
+					{@const hb = h.h * 0.56}
+					{@const bw = (h.w - 0.06 - gap * (cs.length - 1)) / cs.length}
+					{#each cs as c, k (c.id)}{@render caja(c, h.x + 0.03 + k * (bw + gap), y0, bw, hb, contOn?.id === c.id)}{/each}
+				{/if}
 			{/if}
 			{#if on && !contOn}
 				<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class="aro" />
@@ -239,6 +260,11 @@
 	}
 	.balda-fondo {
 		fill: var(--superficie-2);
+	}
+	.guia {
+		stroke: var(--borde);
+		stroke-width: 0.006;
+		stroke-dasharray: 0.02 0.02;
 	}
 	.ranura {
 		fill: var(--superficie);
