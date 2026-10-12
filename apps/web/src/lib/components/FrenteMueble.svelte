@@ -40,7 +40,9 @@
 	const W = $derived(Math.max(mueble.ancho, 0.5));
 	// Un carro o cajonera a medida crece con sus filas (un cofre sobre un carro es más alto)
 	const unidades = $derived(mueble.disposicion?.filas.reduce((s, f) => s + f.alto, 0) ?? 0);
-	const H = $derived(Math.max(ALTO[mueble.tipo] ?? 1, ['carro', 'cajonera'].includes(mueble.tipo) ? unidades * 0.085 + 0.16 : 0));
+	/** Carro de cestas (tipo Råskog de Ikea): cestas hondas, tubos a los lados, bastidor y ruedas. */
+	const raskog = $derived(mueble.tipo === 'carro' && nombreDeNivel(mueble) === 'cesta');
+	const H = $derived(raskog ? 0.78 : Math.max(ALTO[mueble.tipo] ?? 1, ['carro', 'cajonera'].includes(mueble.tipo) ? unidades * 0.085 + 0.16 : 0));
 	const n = $derived(Math.max(mueble.niveles, 0));
 	const fs = $derived(Math.max(W, H) / 20);
 	const g = 0.04; // grosor de tableros
@@ -66,8 +68,15 @@
 			const w = (W - g * 2) / n;
 			return Array.from({ length: n }, (_, i) => ({ nivel: i + 1, x: g + i * w, y: 0.08, w, h: 0.22 }));
 		}
-		// Todo lo demás, de arriba a abajo (la 1 es la de arriba); a medida: filas de distinto alto, partidas, huecos
 		const niv = nivelesMueble(mueble);
+		if (raskog) {
+			// Cada cesta: 12 cm de honda, repartidas entre arriba y el bastidor
+			const hc = 0.12;
+			const ultima = H - 0.1 - hc - 0.02;
+			const paso = niv.length > 1 ? (ultima - 0.02) / (niv.length - 1) : 0;
+			return niv.map((x, i) => ({ nivel: x.numero, x: 0, y: 0.02 + i * paso, w: W, h: hc }));
+		}
+		// Todo lo demás, de arriba a abajo (la 1 es la de arriba); a medida: filas de distinto alto, partidas, huecos
 		const total = Math.max(...niv.map((x) => x.desde + x.alto), 1);
 		const filasAparte = [...new Set(niv.filter((x) => x.aparte).map((x) => x.fila))];
 		const u = (H - g * 2 - (t === 'carro' ? 0.12 : 0) - filasAparte.length * SEP) / total;
@@ -112,8 +121,24 @@
 		<rect x={W - 0.09} y="0.07" width="0.06" height={H - 0.07} class="pata" />
 		<rect x="0.03" y={H - 0.12} width={W - 0.06} height="0.04" class="pata" />
 	{:else if mueble.tipo === 'estanteria'}
-		<rect x="0" y="0" width={g} height={H} class="pata" />
-		<rect x={W - g} y="0" width={g} height={H} class="pata" />
+		<!-- Estantería metálica de ángulo ranurado (tipo Simonrack): montantes con agujeros y pies -->
+		{#each [0, W - g] as px (px)}
+			<rect x={px} y="0" width={g} height={H} class="pata" />
+			{#each Array.from({ length: Math.floor(H / 0.05) }, (_, i) => i) as i (i)}
+				<rect x={px + g * 0.3} y={0.02 + i * 0.05} width={g * 0.4} height="0.022" rx="0.005" class="ranura" />
+			{/each}
+			<rect x={px - 0.012} y={H - 0.012} width={g + 0.024} height="0.012" class="pata" />
+		{/each}
+	{:else if raskog}
+		<!-- Råskog: dos tubos a los lados, bastidor en U y cuatro ruedas -->
+		<rect x="0.035" y="0.04" width="0.022" height={H - 0.12} rx="0.011" class="tubo" />
+		<rect x={W - 0.057} y="0.04" width="0.022" height={H - 0.12} rx="0.011" class="tubo" />
+		<path d="M0.046 {H - 0.09} Q0.046 {H - 0.065} 0.075 {H - 0.065} L{W - 0.075} {H - 0.065} Q{W - 0.046} {H - 0.065} {W - 0.046} {H - 0.09}" fill="none" stroke-width="0.02" stroke-linecap="round" class="tubo-trazo" />
+		{#each [0.11, W - 0.11] as rx (rx)}<circle cx={rx} cy={H - 0.03} r="0.022" class="rueda-atras" />{/each}
+		{#each [0.05, W - 0.05] as rx (rx)}
+			<rect x={rx - 0.006} y={H - 0.068} width="0.012" height="0.02" class="pata" />
+			<circle cx={rx} cy={H - 0.028} r="0.026" class="rueda" /><circle cx={rx} cy={H - 0.028} r="0.008" class="pata" />
+		{/each}
 	{:else}
 		<rect x="0" y="0" width={W} height={H - (mueble.tipo === 'carro' ? 0.1 : 0)} rx="0.02" class="cuerpo" />
 		{#if mueble.tipo === 'carro'}
@@ -132,8 +157,14 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 		<g class="hueco {alTocarNivel ? 'cursor-pointer' : ''} {on ? 'encendido' : ''} {foco != null && Math.abs(foco - h.nivel) < 0.5 ? 'escaneando' : ''}" onclick={() => alTocarNivel?.(h.nivel)} style="--zona: {color}">
 			{#if h.aparte}<rect x={-0.01} y={h.y - SEP + 0.005} width={W + 0.02} height={SEP - 0.01} rx="0.01" class="tablero" />{/if}
+			{#if raskog}
+				<!-- La cesta: honda, con las esquinas de abajo redondeadas y un borde arriba -->
+				<path d="M{h.x} {h.y} L{h.x + h.w} {h.y} L{h.x + h.w} {h.y + h.h - 0.035} Q{h.x + h.w} {h.y + h.h} {h.x + h.w - 0.035} {h.y + h.h} L{h.x + 0.035} {h.y + h.h} Q{h.x} {h.y + h.h} {h.x} {h.y + h.h - 0.035} Z" class="cesta" />
+				<rect x={h.x - 0.004} y={h.y - 0.004} width={h.w + 0.008} height="0.014" rx="0.007" class="borde-cesta" />
+			{:else}
 			<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class={h.abierto ? 'abierto' : cajon ? 'cajon' : 'balda-fondo'} />
-			{#if !cajon && mueble.tipo !== 'panel'}<rect x={h.x - g} y={h.y + h.h - 0.005} width={h.w + g * 2} height={g} class="tablero" />{/if}
+			{/if}
+			{#if !cajon && !raskog && mueble.tipo !== 'panel'}<rect x={h.x - g} y={h.y + h.h - 0.005} width={h.w + g * 2} height={g} class="tablero" />{/if}
 			{#if cajon && !h.abierto && !cs.length}<rect x={h.x + h.w / 2 - Math.min(0.12, h.w / 4)} y={h.y + Math.min(0.05, h.h * 0.2)} width={Math.min(0.24, h.w / 2)} height="0.02" rx="0.01" class="tirador" />{/if}
 			<text x={h.x + 0.04} y={h.y + tam * 1.15 + (cajon && !cs.length ? Math.min(0.05, h.h * 0.2) : 0.01)} class="num" font-size={tam * 0.85}>{h.nivel}</text>
 			{#if on && destacado}
@@ -208,6 +239,39 @@
 	}
 	.balda-fondo {
 		fill: var(--superficie-2);
+	}
+	.ranura {
+		fill: var(--superficie);
+		opacity: 0.8;
+	}
+	.tubo {
+		fill: var(--texto-3);
+	}
+	.tubo-trazo {
+		stroke: var(--texto-3);
+	}
+	.rueda {
+		fill: var(--superficie-3);
+		stroke: var(--texto-3);
+		stroke-width: 0.008;
+	}
+	.rueda-atras {
+		fill: var(--superficie-3);
+		opacity: 0.6;
+	}
+	.cesta {
+		fill: var(--superficie-3);
+		stroke: var(--texto-3);
+		stroke-width: 0.008;
+	}
+	.borde-cesta {
+		fill: var(--texto-3);
+	}
+	.hueco:hover .cesta {
+		fill: color-mix(in oklab, var(--texto) 14%, var(--superficie-3));
+	}
+	.encendido .cesta {
+		fill: color-mix(in oklab, var(--acento) 30%, var(--superficie-3));
 	}
 	.abierto {
 		fill: var(--fondo);

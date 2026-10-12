@@ -337,6 +337,13 @@
       "when": 1791826900002,
       "tag": "0047_disposicion_muebles",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1791827529234,
+      "tag": "0048_estanterias_simonrack",
+      "breakpoints": true
     }
   ]
 }
