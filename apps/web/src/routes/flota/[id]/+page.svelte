@@ -21,7 +21,7 @@
 	import { diasEntre, euros, eurosInput, NOMBRE_GASTO_SIMPLE, fechaLarga, kmFactura, lineasDesdeEntradas, mostrarCampo, numeroFactura, textoDias, textoPeriodicidad, REVISION_PRE_ITV, lineaConPrecio, type RevisionMejora } from '@novaz/core';
 	import FacturaForm from '$comp/FacturaForm.svelte';
 	import type { Entrada, Movimiento, Pendiente, Vencimiento } from '@novaz/core/schema';
-	import { Check, CircleAlert, Download, FileText, Fuel, Gauge, Scale, ListChecks, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X } from '@lucide/svelte';
+	import { Check, CircleAlert, Download, FileText, Fuel, Gauge, Scale, ListChecks, NotebookPen, Pencil, Plus, ReceiptText, RefreshCw, Trash2, Wrench, X, BookOpen, ArrowRight } from '@lucide/svelte';
 	import { Paperclip } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -472,6 +472,16 @@
 			{/if}
 		</div>
 	{:else if pestana === 'mantenimiento'}
+		{#if data.ficha.datos.length || data.ficha.procedimientos.length}
+			<a href="?pestana=ficha" class="tarjeta mb-5 flex items-center gap-3 p-3.5 transition hover:border-acento/50">
+				<BookOpen size={20} class="shrink-0 text-acento" />
+				<span class="min-w-0 flex-1">
+					<span class="block text-sm font-semibold">Manual del vehículo</span>
+					<span class="block text-xs text-texto-3">{data.ficha.datos.length} datos técnicos · {data.ficha.procedimientos.length} procedimientos paso a paso</span>
+				</span>
+				<ArrowRight size={15} class="shrink-0 text-texto-3" />
+			</a>
+		{/if}
 		{#if data.sesion}
 			{@const se = data.sesion}
 			<section id="sesion" class="tarjeta mb-4 border-acento/40 p-4">
