@@ -36,7 +36,7 @@ export const load = async ({ parent, url }) => {
 					contenedores: plano.contenedores
 						.filter((c) => c.muebleId === m.id)
 						.sort((a, b) => (a.nivel ?? 0) - (b.nivel ?? 0) || ordenLetra(a.letra, b.letra))
-						.map((c) => ({ id: c.id, codigo: codigoUbicacion(zona, m, c.nivel, c)!, nombre: `${CONTENEDORES[c.tipo]} ${c.letra}${c.nombre ? ` · ${c.nombre}` : ''}`, qr: qr(`${href}?cont=${c.id}`) }))
+						.map((c) => ({ id: c.id, codigo: codigoUbicacion(zona, m, c.nivel, c)!, nombre: `${CONTENEDORES[c.tipo]} ${c.letra}${c.nombre ? ` · ${c.nombre}` : ''}`, qr: qr(`${url.origin}/inventario/contenedor/${c.id}`) }))
 				};
 			})
 			.sort((a, b) => a.codigo.localeCompare(b.codigo, 'es'))

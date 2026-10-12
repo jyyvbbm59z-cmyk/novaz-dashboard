@@ -104,7 +104,7 @@ class Bot {
 
 	private async entender(texto: string, vehiculos: VehiculoBot[]): Promise<Intencion> {
 		const reglas = interpretarReglas(texto, vehiculos);
-		if (texto.trim().startsWith('/') || !this.ai || (reglas.tipo === 'consulta' && reglas.tema === 'donde')) return reglas;
+		if (texto.trim().startsWith('/') || !this.ai || (reglas.tipo === 'consulta' && reglas.tema === 'donde') || reglas.tipo === 'mover') return reglas;
 		try {
 			const i = await interpretarConIa(this.ai, texto, vehiculos, this.locals.hoy);
 			if (i.tipo !== 'desconocido') return i;
@@ -174,10 +174,12 @@ class Bot {
 		const texto = textoOrden(o, vehiculos);
 		const falta = faltanDatos(o.i);
 		if (falta.length) return this.enviar(chat, `${texto}\n\nMe falta ${falta.join(' y ')}. Escríbemelo otra vez con todo.`);
+		// Mover algo que no encuentro o que no cabe: se dice y no hay nada que confirmar
+		if (o.mover?.error) return this.enviar(chat, texto);
 		const [a] = await this.locals.db.insert(s.botAcciones).values({ orden: o as unknown as Record<string, unknown> }).returning({ id: s.botAcciones.id });
 		if ((NECESITA_VEHICULO.has(o.i.tipo) || o.libreta) && !('vehiculoId' in o.i && o.i.vehiculoId))
 			return this.enviar(chat, `${texto}\n\n<b>¿De qué vehículo?</b>`, await this.tecladoVehiculos(a.id));
-		return this.enviar(chat, texto, confirmar(a.id));
+		return this.enviar(chat, texto, confirmar(a.id, o.i.tipo === 'mover' ? '✓ Moverlo' : undefined));
 	}
 
 	private async tecladoVehiculos(accionId: number): Promise<Boton[][]> {
@@ -228,8 +230,9 @@ class Bot {
 				await db.update(s.botAcciones).set({ hecho: r.hecho }).where(eq(s.botAcciones.id, id));
 				const teclado: Boton[] = [{ text: '↩︎ Deshacer', callback_data: `d:${id}` }];
 				if (this.app.startsWith('https://')) teclado.push({ text: 'Ver en la app', url: `${this.app}${r.href}` });
-				await this.editar(m, `${cuerpo()}\n\n✅ <b>Apuntado</b>`, [teclado]);
-				return responder('Apuntado');
+				const listo = orden.i.tipo === 'mover' ? 'Movido' : 'Apuntado';
+				await this.editar(m, `${cuerpo()}\n\n✅ <b>${listo}</b>`, [teclado]);
+				return responder(listo);
 			}
 			if (cmd === 'd') {
 				if (!(await marcar('hecha', 'deshecha'))) return responder('Ya estaba deshecho');
@@ -250,4 +253,4 @@ class Bot {
 	}
 }
 
-const confirmar = (id: number): Boton[][] => [[{ text: '✓ Apuntar', callback_data: `ok:${id}` }, { text: '✗ Cancelar', callback_data: `no:${id}` }]];
+const confirmar = (id: number, ok = '✓ Apuntar'): Boton[][] => [[{ text: ok, callback_data: `ok:${id}` }, { text: '✗ Cancelar', callback_data: `no:${id}` }]];

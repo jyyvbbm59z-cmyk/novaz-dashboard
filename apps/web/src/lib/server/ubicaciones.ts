@@ -1,5 +1,5 @@
 // El local por zonas: muebles en el plano y dónde está cada artículo.
-import { ALTO_CONTENEDOR, conRejilla, CONTENEDORES, encajar, huecoLibre, huella, limpiarDisposicion, MUEBLES, nivelesMueble, rejillaBalda, sePisan, type Celda, ordenLetra, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, type DisposicionMueble } from '@novaz/core';
+import { ALTO_CONTENEDOR, codigoUbicacion, conRejilla, CONTENEDORES, encajar, huecoLibre, huella, limpiarDisposicion, MUEBLES, nivelesMueble, rejillaBalda, sePisan, type Celda, ordenLetra, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, type DisposicionMueble } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { TIPOS_ARTICULO, TIPOS_CONTENEDOR, TIPOS_MUEBLE, type TipoArticulo, type TipoContenedor, type TipoMueble } from '@novaz/core/schema';
 import { and, asc, eq, gt, inArray, ne } from 'drizzle-orm';
@@ -19,10 +19,14 @@ export async function cargarPlano(db: Locals['db']) {
 export type Plano = Awaited<ReturnType<typeof cargarPlano>>;
 
 /** La zona de un mueble: la que contiene su centro. */
-async function zonaDelMueble(db: Locals['db'], m: { x: number; y: number; ancho: number; fondo: number; girado: boolean }) {
+/** La zona de un mueble por dónde cae su centro. Si sigue dentro de la que ya tenía (p. ej. justo en la raya entre dos), se queda en esa. */
+async function zonaDelMueble(db: Locals['db'], m: { x: number; y: number; ancho: number; fondo: number; girado: boolean }, actual: number | null = null) {
 	const h = huella(m);
 	const zonas = await db.select().from(s.zonas);
-	return zonaEnPunto(h.x + h.ancho / 2, h.y + h.alto / 2, zonas)?.id ?? null;
+	const [cx, cy] = [h.x + h.ancho / 2, h.y + h.alto / 2];
+	const suya = zonas.find((z) => z.id === actual);
+	if (suya && cx >= suya.x && cx <= suya.x + suya.ancho && cy >= suya.y && cy <= suya.y + suya.alto) return suya.id;
+	return zonaEnPunto(cx, cy, zonas)?.id ?? null;
 }
 
 const medida = (v: number | null, min: number, max: number, def: number) => (v == null || !Number.isFinite(v) ? def : Math.min(Math.max(v, min), max));
@@ -62,7 +66,8 @@ export async function guardarMueble(locals: Locals, fd: FormData) {
 		}
 		if (d) ((valores.disposicion = d), (valores.niveles = nivelesMueble({ tipo, disposicion: d }).length));
 	}
-	const zonaId = await zonaDelMueble(db, valores);
+	const antes = id ? await db.select({ zonaId: s.muebles.zonaId }).from(s.muebles).where(eq(s.muebles.id, id)).get() : null;
+	const zonaId = await zonaDelMueble(db, valores, antes?.zonaId ?? null);
 	if (id) {
 		await db.update(s.muebles).set({ ...valores, zonaId }).where(eq(s.muebles.id, id));
 		// Lo que estaba en una balda que ya no existe se queda en el mueble, sin balda
@@ -78,7 +83,7 @@ export async function guardarMueble(locals: Locals, fd: FormData) {
 export async function moverMueble(locals: Locals, id: number, x: number, y: number) {
 	const m = await locals.db.select().from(s.muebles).where(eq(s.muebles.id, id)).get();
 	if (!m) throw new ErrorFormulario('Ese mueble ya no existe');
-	const zonaId = await zonaDelMueble(locals.db, { ...m, x, y });
+	const zonaId = await zonaDelMueble(locals.db, { ...m, x, y }, m.zonaId);
 	await locals.db.update(s.muebles).set({ x, y, zonaId }).where(eq(s.muebles.id, id));
 	await locals.db.update(s.articulos).set({ zonaId }).where(eq(s.articulos.muebleId, id));
 }
@@ -145,6 +150,91 @@ export async function sitioDeFormulario(db: Locals['db'], fd: FormData) {
 }
 
 // ─── Contenedores ────────────────────────────────────────────────────────────
+
+export interface DestinoContenedor {
+	muebleId: number;
+	nivel: number | null;
+	/** Tercio (1–3) y altura (0 = sobre la balda) si se eligen; si no, el primer hueco libre. */
+	columna?: number | null;
+	piso?: number | null;
+}
+type SitioContenedor = Pick<s.Contenedor, 'muebleId' | 'nivel' | 'letra' | 'columna' | 'ancho' | 'piso' | 'alto'>;
+
+/**
+ * Cómo quedaría un contenedor en otro sitio (sin guardar nada): su letra (la misma si está libre), su hueco en la
+ * rejilla de la balda y los códigos de antes y de después. Si no cabe, `error` lo explica.
+ */
+export async function planearMovimiento(db: Locals['db'], id: number, destino: DestinoContenedor) {
+	const c = await db.select().from(s.contenedores).where(eq(s.contenedores.id, id)).get();
+	if (!c) throw new ErrorFormulario('Ese contenedor ya no existe');
+	const plano = await cargarPlano(db);
+	const m = plano.muebles.find((x) => x.id === destino.muebleId);
+	if (!m) throw new ErrorFormulario('Ese mueble ya no existe');
+	const nivel = destino.nivel != null && destino.nivel >= 1 && destino.nivel <= m.niveles ? destino.nivel : null;
+	const hermanos = plano.contenedores.filter((h) => h.muebleId === m.id && h.nivel === nivel && h.id !== id);
+	const letra = hermanos.some((h) => h.letra === c.letra) ? siguienteLetra(hermanos.map((h) => h.letra)) : c.letra;
+	let celda: Celda | null = null;
+	let error: string | null = null;
+	if (nivel && conRejilla(m.tipo)) {
+		const ocupadas = [...(rejillaBalda(hermanos, true) ?? new Map<number, Celda>()).values()];
+		const tam = { ancho: c.ancho ?? 1, alto: c.alto ?? ALTO_CONTENEDOR[c.tipo] };
+		if (destino.columna) {
+			const pisos = destino.piso != null ? [destino.piso] : Array.from({ length: 3 }, (_, k) => k);
+			celda = pisos.map((piso) => encajar({ ...tam, columna: destino.columna, piso })).find((x) => !ocupadas.some((o) => sePisan(o, x))) ?? null;
+			if (!celda) error = 'No cabe en ese tercio de la balda';
+		} else {
+			celda = huecoLibre(ocupadas, encajar(tam));
+			if (!celda) error = 'No queda un hueco de su tamaño en esa balda';
+		}
+	}
+	const zonaDe = (muebleId: number) => plano.zonas.find((z) => z.id === plano.muebles.find((x) => x.id === muebleId)?.zonaId);
+	const muebleAntes = plano.muebles.find((x) => x.id === c.muebleId);
+	return {
+		c,
+		mueble: m,
+		despues: { muebleId: m.id, nivel, letra, ...(celda ?? { columna: null, ancho: c.ancho, piso: null, alto: c.alto }) } satisfies SitioContenedor,
+		codigoAntes: codigoUbicacion(zonaDe(c.muebleId), muebleAntes, c.nivel, c) ?? '',
+		codigoDespues: codigoUbicacion(zonaDe(m.id), m, nivel, { letra }) ?? '',
+		letraCambiada: letra !== c.letra,
+		hermanos,
+		error
+	};
+}
+
+/** Lleva un contenedor (y todo lo de dentro) a otro mueble, balda y hueco. Devuelve dónde estaba, para poder deshacerlo. */
+export async function moverContenedor(locals: Locals, id: number, destino: DestinoContenedor) {
+	const { db } = locals;
+	const p = await planearMovimiento(db, id, destino);
+	if (p.error) throw new ErrorFormulario(p.error);
+	// Los de la balda de destino que aún no tenían sitio se quedan donde se ven
+	if (p.despues.nivel && conRejilla(p.mueble.tipo)) {
+		const auto = rejillaBalda(p.hermanos, true);
+		for (const h of p.hermanos) if (h.columna == null && auto?.get(h.id)) await db.update(s.contenedores).set(auto.get(h.id)!).where(eq(s.contenedores.id, h.id));
+	}
+	const antes: SitioContenedor = { muebleId: p.c.muebleId, nivel: p.c.nivel, letra: p.c.letra, columna: p.c.columna, ancho: p.c.ancho, piso: p.c.piso, alto: p.c.alto };
+	await aplicarSitioContenedor(db, id, p.despues);
+	return { antes, codigoAntes: p.codigoAntes, codigoDespues: p.codigoDespues, letraCambiada: p.letraCambiada, muebleId: p.mueble.id };
+}
+
+/** Pone un contenedor en un sitio (y lo de dentro con él). También sirve para deshacer un movimiento. */
+export async function aplicarSitioContenedor(db: Locals['db'], id: number, sitio: SitioContenedor) {
+	const m = await db.select({ zonaId: s.muebles.zonaId }).from(s.muebles).where(eq(s.muebles.id, sitio.muebleId)).get();
+	if (!m) throw new ErrorFormulario('Ese mueble ya no existe');
+	// Si al deshacer su letra ya está cogida en la balda de antes, la siguiente libre
+	const otros = await db.select({ letra: s.contenedores.letra, nivel: s.contenedores.nivel }).from(s.contenedores).where(and(eq(s.contenedores.muebleId, sitio.muebleId), ne(s.contenedores.id, id)));
+	const usadas = otros.filter((o) => o.nivel === sitio.nivel).map((o) => o.letra);
+	const letra = usadas.includes(sitio.letra) ? siguienteLetra(usadas) : sitio.letra;
+	await db.update(s.contenedores).set({ ...sitio, letra }).where(eq(s.contenedores.id, id));
+	await db.update(s.articulos).set({ muebleId: sitio.muebleId, nivel: sitio.nivel, zonaId: m.zonaId }).where(eq(s.articulos.contenedorId, id));
+}
+
+/** Lleva un artículo suelto a otro sitio. Devuelve dónde estaba, para poder deshacerlo. */
+export async function moverArticulo(locals: Locals, id: number, sitio: Sitio) {
+	const a = await locals.db.select({ muebleId: s.articulos.muebleId, nivel: s.articulos.nivel, zonaId: s.articulos.zonaId, contenedorId: s.articulos.contenedorId }).from(s.articulos).where(eq(s.articulos.id, id)).get();
+	if (!a) throw new ErrorFormulario('Eso ya no está en el inventario');
+	await ubicarArticulos(locals, [id], sitio);
+	return a;
+}
 
 export async function guardarContenedor(locals: Locals, fd: FormData) {
 	const { db } = locals;

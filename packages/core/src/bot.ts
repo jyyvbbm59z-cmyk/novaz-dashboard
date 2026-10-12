@@ -20,6 +20,8 @@ export type Intencion =
 	| { tipo: 'tarea_local'; titulo: string; zona: string | null; reforma: boolean }
 	| { tipo: 'compra'; items: string[]; vehiculoId: number | null }
 	| { tipo: 'consulta'; vehiculoId: number | null; tema: TemaConsulta; buscar?: string | null }
+	/** Cambiar algo de sitio en el taller: una caja, una mochila o una herramienta suelta («mueve la caja de aceites a la E3, balda 2»). */
+	| { tipo: 'mover'; que: string; destino: string }
 	| { tipo: 'ayuda' }
 	| { tipo: 'desconocido'; texto: string };
 
@@ -113,8 +115,15 @@ export function interpretarReglas(texto: string, vehiculos: VehiculoBot[]): Inte
 		const e = numeroES(euros[1])!;
 		return { tipo: 'gasto', vehiculoId: veh, importeCent: Math.round(e * 100), concepto: mayus(resto(/^\/gasto\b/i).replace(euros[0], '').trim()) || 'Gasto', proveedor: null, categoria: null, local: /\blocal\b/i.test(t) };
 	}
+	const mover = t.match(MOVER);
+	if (mover && DESTINO_MUEBLE.test(mover[2])) return { tipo: 'mover', que: mover[1].replace(/^(el|la|los|las|mi|mis)\s+/i, '').trim(), destino: mover[2].replace(/[.!]+$/, '').trim() };
 	return frasesNaturales(t, veh, vehiculos);
 }
+
+// «Mueve la caja de aceites a la E3, balda 2» · «He llevado la mochila al armario» · «Pon la dinamométrica en el carro C1, cajón 3»
+const MOVER = /^\/?(?:mueve|muevo|mover|he\s+movido|cambia|pasa|lleva|llevo|he\s+llevado|guarda|pon|he\s+puesto|deja|he\s+dejado)\s+(.+?)\s+(?:a|al|a\s+la|en|en\s+el|en\s+la|dentro\s+de)\s+(.+)$/i;
+/** El destino tiene que nombrar un mueble del plano (un código como E3 o «estantería», «armario»…): así no se confunde con «he puesto aceite al Ibiza». */
+const DESTINO_MUEBLE = /\b([a-z]{1,2}\d{1,2}|estanter[ií]a|armario|carro|cajonera|banco|panel|balda|caj[oó]n|cesta)\b/i;
 
 // Frases habituales sin comando: «La Bandit tiene los espejos oxidados», «Comprar lija de 400», «Hay que pintar la pared»
 const ORDEN_AVERIA = /^(?:apunta(?:r|me)?|anota(?:r|me)?|nueva|hay\s+una|otra)?\s*(?:la\s+|una\s+)?aver[ií]a\s*(?:de(?:l|\s+la)?\s+)?[:,-]?\s*/i;
@@ -177,6 +186,7 @@ Acciones posibles (campo "accion"):
 - tarea_local: algo que hacer en el local/taller (pintar, arreglar, ordenar…). Campos: titulo, zona, reforma (true si es una obra que mejora el local).
 - compra: hay que comprar cosas. Campos: items (lista; si dice precio ponlo al final: "Lija de 400 · 6 €"), vehiculo si es para uno.
 - consulta: pregunta algo. Campos: tema (general = cómo va todo / qué hay pendiente; vehiculo = qué le toca a un vehículo; gasto = cuánto ha gastado; compras = qué hay que comprar; agenda = qué viene; donde = dónde está guardada una herramienta o cosa del taller; ficha = un dato técnico de un vehículo: aceite, presiones, pares de apriete, referencias de recambios), vehiculo si pregunta por uno, buscar (con tema donde: la cosa que busca, p. ej. "llave dinamométrica"; con tema ficha: el dato que pregunta, p. ej. "aceite").
+- mover: ha cambiado algo de sitio en el taller (una caja, una mochila, un maletín o una herramienta). Campos: que (lo que se mueve, p. ej. "caja de aceites"), destino (adónde, tal cual lo dice: "E3 balda 2", "armario A1 abajo", "carro C1 cajón 3").
 - ayuda: pregunta qué puedes hacer.
 - desconocido: no encaja en nada.
 
@@ -186,7 +196,9 @@ Reglas: "vehiculo" es el alias de la lista (si no menciona ninguno, déjalo vac�
 export const ESQUEMA_INTENCION = {
 	type: 'object',
 	properties: {
-		accion: { type: 'string', enum: ['repostaje', 'km', 'gasto', 'mantenimiento', 'reparacion', 'averia', 'mejora', 'tarea_local', 'compra', 'consulta', 'ayuda', 'desconocido'] },
+		accion: { type: 'string', enum: ['repostaje', 'km', 'gasto', 'mantenimiento', 'reparacion', 'averia', 'mejora', 'tarea_local', 'compra', 'consulta', 'mover', 'ayuda', 'desconocido'] },
+		que: { type: 'string' },
+		destino: { type: 'string' },
 		vehiculo: { type: 'string' },
 		litros: { type: 'number' },
 		importe: { type: 'number' },
@@ -241,6 +253,9 @@ const ACCIONES: Record<string, string> = {
 	gasto: 'gasto',
 	consulta: 'consulta',
 	pregunta: 'consulta',
+	mover: 'mover',
+	mueve: 'mover',
+	cambiar_de_sitio: 'mover',
 	ayuda: 'ayuda'
 };
 
@@ -296,6 +311,11 @@ export function normalizarIntencion(raw: unknown, vehiculos: VehiculoBot[], text
 			if (tema === 'ficha') return { tipo: 'consulta', vehiculoId, tema, buscar: str(o.buscar, 80) ?? texto };
 			return { tipo: 'consulta', vehiculoId, tema };
 		}
+		case 'mover': {
+			const que = str(o.que, 80);
+			const destino = str(o.destino, 80);
+			return que && destino ? { tipo: 'mover', que, destino } : { tipo: 'desconocido', texto };
+		}
 		case 'ayuda':
 			return { tipo: 'ayuda' };
 		default:
@@ -312,6 +332,7 @@ export const TEXTO_AYUDA = `<b>Escríbeme como hablarías:</b>
 • <i>Comprar lija de 400, 6 €</i>
 • <i>¿Qué le toca a la Bandit?</i> · <i>¿Cuánto llevo gastado este mes?</i>
 • <i>¿Dónde está la dinamométrica?</i> · <i>¿Qué aceite lleva la Bandit?</i>
+• <i>Mueve la caja de aceites a la E3, balda 2</i>
 
 También fotos de tickets (los leo y apunto el gasto) y notas de voz.
 
@@ -386,6 +407,7 @@ export function permisoIntencion(i: Intencion): 'vehiculos' | 'inventario' | 'lo
 		case 'tarea_local':
 			return 'local';
 		case 'compra':
+		case 'mover':
 			return 'inventario';
 		case 'consulta':
 			return i.tema === 'gasto' ? 'dinero' : i.tema === 'compras' || i.tema === 'donde' ? 'inventario' : i.tema === 'vehiculo' || i.tema === 'agenda' || i.tema === 'ficha' ? 'vehiculos' : null;

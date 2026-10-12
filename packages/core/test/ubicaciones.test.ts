@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buscarArticulos, caminoEnLocal, codigoUbicacion, describirUbicacion, encajar, huecoLibre, huella, rejillaBalda, sePisan, limpiarDisposicion, nivelesMueble, nombreNivel, PLANO_LOCAL, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES, type Pt } from '../src/ubicaciones';
+import { interpretarReglas } from '../src/bot';
+import { buscarArticulos, caminoEnLocal, leerDestino, leerQueMover, codigoUbicacion, describirUbicacion, encajar, huecoLibre, huella, rejillaBalda, sePisan, limpiarDisposicion, nivelesMueble, nombreNivel, PLANO_LOCAL, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES, type Pt } from '../src/ubicaciones';
 
 const zonas = ZONAS_INICIALES.map((z, i) => ({ ...z, id: i + 1 }));
 
@@ -145,5 +146,40 @@ describe('rejilla de la balda (3 tercios × 3 alturas)', () => {
 		expect(huecoLibre([{ columna: 1, ancho: 1, piso: 0, alto: 3 }], encajar({ ancho: 1, alto: 3 }))?.columna).toBe(2);
 		expect(sePisan({ columna: 1, ancho: 2, piso: 0, alto: 1 }, { columna: 2, ancho: 1, piso: 0, alto: 3 })).toBe(true);
 		expect(encajar({ columna: 3, ancho: 2, piso: 2, alto: 3 })).toEqual({ columna: 2, ancho: 2, piso: 0, alto: 3 });
+	});
+});
+
+describe('mover: destino y qué', () => {
+	const muebles = [
+		{ id: 1, codigo: 'E3', nombre: 'Estantería metálica Simonrack', tipo: 'estanteria' as const, niveles: 5 },
+		{ id: 2, codigo: 'A1', nombre: 'Armario de diagnosis y motor', tipo: 'armario' as const, niveles: 5 },
+		{ id: 3, codigo: 'C1', nombre: 'Carro de herramientas Jomafa', tipo: 'carro' as const, niveles: 6, disposicion: { filas: [1, 1, 1, 1, 2, 2].map((alto) => ({ alto, cajones: 1 })), nivel: 'cajón' } }
+	];
+	it('lee el destino', () => {
+		expect(leerDestino('la E3, balda 2', muebles)).toEqual({ muebleId: 1, nivel: 2, columna: null });
+		expect(leerDestino('E3·4 a la derecha', muebles)).toEqual({ muebleId: 1, nivel: 4, columna: 3 });
+		expect(leerDestino('el armario, abajo del todo', muebles)).toEqual({ muebleId: 2, nivel: 5, columna: null });
+		expect(leerDestino('carro C1 cajón 3', muebles)).toEqual({ muebleId: 3, nivel: 3, columna: null });
+		expect(leerDestino('E3 balda 9', muebles)?.nivel).toBeNull();
+		expect(leerDestino('el Ibiza', muebles)).toBeNull();
+	});
+	it('sabe qué se mueve', () => {
+		const conts = [
+			{ id: 10, letra: 'C', nombre: 'Aceites', tipo: 'caja' as const },
+			{ id: 11, letra: 'A', nombre: 'Spray color', tipo: 'caja' as const },
+			{ id: 12, letra: 'D', nombre: 'Mochila de herramienta', tipo: 'mochila' as const }
+		];
+		const arts = [{ id: 5, nombre: 'Llave dinamométrica 1/2"', marca: null, categoria: null, referencia: null }];
+		expect(leerQueMover('la caja de aceites', conts, arts)).toEqual({ contenedor: conts[0] });
+		expect(leerQueMover('la mochila', conts, arts)).toEqual({ contenedor: conts[2] });
+		expect(leerQueMover('la dinamométrica', conts, arts)).toEqual({ articulo: arts[0] });
+		expect(leerQueMover('el gato hidráulico', conts, arts)).toBeNull();
+	});
+});
+describe('el bot entiende mover', () => {
+	it('frases de mover y lo que no lo es', () => {
+		expect(interpretarReglas('Mueve la caja de aceites a la E3, balda 2', [])).toEqual({ tipo: 'mover', que: 'caja de aceites', destino: 'la E3, balda 2' });
+		expect(interpretarReglas('He llevado la mochila al armario', [])).toMatchObject({ tipo: 'mover', que: 'mochila' });
+		expect(interpretarReglas('He puesto aceite al Ibiza', [{ id: 1, alias: 'Ibiza', marca: 'SEAT', modelo: 'Ibiza', matricula: null }]).tipo).not.toBe('mover');
 	});
 });

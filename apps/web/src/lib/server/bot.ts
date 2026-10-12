@@ -2,6 +2,11 @@
 import {
 	buscarArticulos,
 	buscarEnFicha,
+	CONTENEDORES,
+	leerDestino,
+	leerQueMover,
+	nivelesMueble,
+	nombreDeNivel,
 	cargarAlertas,
 	datosInforme,
 	describirUbicacion,
@@ -24,7 +29,7 @@ import { cargarAgenda } from './agenda';
 import { precioCombustibleHoy } from './combustible';
 import { comprobarLectura } from './datos';
 import { borrarRepostaje, guardarRepostaje } from './repostajes';
-import { cargarPlano } from './ubicaciones';
+import { aplicarSitioContenedor, cargarPlano, moverArticulo, moverContenedor, planearMovimiento } from './ubicaciones';
 import { apuntarGastoSimple } from './libreta';
 import { soloVisibles, veVehiculo } from './usuarios';
 import { descargarTelegram } from './telegram';
@@ -47,6 +52,8 @@ export interface Orden {
 	/** Resuelto al preparar: categoría del gasto y revisiones que renueva. */
 	categoria?: { id: number; nombre: string } | null;
 	planes?: { id: number; nombre: string }[];
+	/** Mover algo de sitio: qué es, adónde va y cómo se dice (o por qué no se puede). */
+	mover?: { contenedorId?: number; articuloId?: number; destino?: { muebleId: number; nivel: number | null; columna: number | null }; texto: string; error?: string };
 }
 
 const VACIAS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'y', 'con', 'cambio', 'cambiar', 'cambiado', 'nuevo', 'nueva']);
@@ -110,8 +117,39 @@ async function planesQueRenueva(db: Locals['db'], vehiculoId: number, claves: st
 	return suyos.filter((p) => elegidos.has(p.id)).map((p) => ({ id: p.id, nombre: p.codigo ? `${p.codigo} · ${p.nombre}` : p.nombre }));
 }
 
+/** Qué se mueve y adónde, resuelto contra el plano (con los códigos de antes y de después). */
+async function prepararMover(locals: Locals, i: Extract<Intencion, { tipo: 'mover' }>): Promise<NonNullable<Orden['mover']>> {
+	const { db } = locals;
+	const plano = await cargarPlano(db);
+	const articulos = await db.select().from(s.articulos).where(ne(s.articulos.estado, 'baja'));
+	const que = leerQueMover(i.que, plano.contenedores, articulos);
+	const destino = leerDestino(i.destino, plano.muebles);
+	const cab = '<b>📦 Cambiar de sitio</b>';
+	if (!que) return { texto: `${cab}
+No encuentro «${esc(i.que)}» en el inventario ni entre las cajas.`, error: 'no encontrado' };
+	if (!destino) return { texto: `${cab}
+No sé qué mueble es «${esc(i.destino)}». Dímelo con su código (E3, A1, C2…).`, error: 'sin destino' };
+	const mueble = plano.muebles.find((m) => m.id === destino.muebleId)!;
+	if (!destino.nivel && nivelesMueble(mueble).length > 1)
+		return { texto: `${cab}
+¿En qué ${nombreDeNivel(mueble)} de ${esc(mueble.codigo)}? Dímelo así: <i>«${esc(i.que)} a ${esc(mueble.codigo)}, ${nombreDeNivel(mueble)} 2»</i>.`, error: 'sin nivel' };
+	if ('contenedor' in que) {
+		const c = que.contenedor;
+		const p = await planearMovimiento(db, c.id, destino);
+		const n = articulos.filter((a) => a.contenedorId === c.id).length;
+		const lineas = [cab, `${esc(CONTENEDORES[c.tipo])} ${esc(c.letra)} «${esc(c.nombre)}»${n ? ` con sus ${n} cosas` : ''}`, `${p.codigoAntes} → <b>${p.codigoDespues}</b>${p.letraCambiada ? ` (la ${c.letra} ya está cogida allí)` : ''}`];
+		if (p.error) return { texto: `${lineas.join('\n')}\n\n⚠️ ${p.error}. Elige otra ${nombreDeNivel(mueble)} o hazle hueco.`, error: p.error };
+		return { contenedorId: c.id, destino, texto: `${lineas.join('\n')}\n<i>Luego reimprime su etiqueta (el QR sigue valiendo).</i>` };
+	}
+	const a = que.articulo;
+	const antes = describirUbicacion(a, plano.zonas, plano.muebles, plano.contenedores);
+	const despues = describirUbicacion({ zonaId: mueble.zonaId, muebleId: mueble.id, nivel: destino.nivel }, plano.zonas, plano.muebles, plano.contenedores);
+	return { articuloId: a.id, destino, texto: [cab, esc(a.nombre), `${antes.codigo ?? 'sin sitio'} → <b>${despues.codigo}</b>`, `<i>${esc(despues.texto ?? '')}</i>`].join('\n') };
+}
+
 export async function prepararOrden(locals: Locals, o: Orden): Promise<Orden> {
 	const i = o.i;
+	if (i.tipo === 'mover') return { ...o, mover: await prepararMover(locals, i) };
 	if (i.tipo === 'gasto') return { ...o, categoria: await categoriaGasto(locals.db, `${i.categoria ?? ''} ${i.concepto}`, i.local, /reforma|obra/i.test(i.categoria ?? '')) };
 	if ((i.tipo === 'mantenimiento' || i.tipo === 'reparacion') && i.vehiculoId) {
 		const planes = i.tipo === 'mantenimiento' ? await planesQueRenueva(locals.db, i.vehiculoId, i.revisiones, i.titulo) : [];
@@ -123,7 +161,7 @@ export async function prepararOrden(locals: Locals, o: Orden): Promise<Orden> {
 
 /** El texto de confirmación: lo entendido + lo resuelto (categoría, revisiones). */
 export function textoOrden(o: Orden, vehiculos: VehiculoBot[]) {
-	let t = resumenIntencion(o.i, vehiculos, { fecha: o.fecha, notas: o.notas });
+	let t = o.i.tipo === 'mover' ? (o.mover?.texto ?? '') : resumenIntencion(o.i, vehiculos, { fecha: o.fecha, notas: o.notas });
 	if (o.planes?.length) t += `\nRenueva: ${o.planes.map((p) => esc(p.nombre)).join(', ')}`;
 	else if (o.i.tipo === 'mantenimiento') t += '\n<i>No lo cuadro con ninguna revisión del plan: se apunta como entrada suelta.</i>';
 	if (o.categoria && (o.i.tipo === 'gasto' || o.i.tipo === 'mantenimiento' || o.i.tipo === 'reparacion')) t += `\nCategoría: ${esc(o.categoria.nombre)}`;
@@ -237,6 +275,16 @@ export async function ejecutarOrden(locals: Locals, env: EnvBot, o: Orden): Prom
 				.returning({ id: s.listaCompra.id });
 			return { hecho: filas.map((f) => ({ t: 'compra' as const, id: f.id })), href: '/compras' };
 		}
+		case 'mover': {
+			const mv = o.mover;
+			if (!mv?.destino || mv.error) throw new Error('No sé qué mover ni adónde');
+			if (mv.contenedorId) {
+				const r = await moverContenedor(locals, mv.contenedorId, mv.destino);
+				return { hecho: [{ t: 'mover_contenedor', id: mv.contenedorId, antes: r.antes }], href: `/inventario/mueble/${r.muebleId}?cont=${mv.contenedorId}` };
+			}
+			const antes = await moverArticulo(locals, mv.articuloId!, { muebleId: mv.destino.muebleId, nivel: mv.destino.nivel, contenedorId: null });
+			return { hecho: [{ t: 'mover_articulo', id: mv.articuloId!, antes }], href: `/inventario/mueble/${mv.destino.muebleId}?articulo=${mv.articuloId}` };
+		}
 		default:
 			throw new Error('Esto no se puede apuntar');
 	}
@@ -256,6 +304,8 @@ export async function deshacer(locals: Locals, env: EnvBot, hecho: s.HechoBot[])
 		else if (h.t === 'compra') await db.delete(s.listaCompra).where(eq(s.listaCompra.id, h.id));
 		else if (h.t === 'km') await db.delete(s.lecturasKm).where(eq(s.lecturasKm.id, h.id));
 		else if (h.t === 'gasto_personal') await db.delete(s.gastosPersonales).where(eq(s.gastosPersonales.id, h.id));
+		else if (h.t === 'mover_contenedor' && h.antes) await aplicarSitioContenedor(db, h.id, h.antes as Parameters<typeof aplicarSitioContenedor>[2]);
+		else if (h.t === 'mover_articulo' && h.antes) await db.update(s.articulos).set(h.antes as { muebleId: number | null; nivel: number | null; zonaId: number | null; contenedorId: number | null }).where(eq(s.articulos.id, h.id));
 	}
 }
 

@@ -197,6 +197,70 @@ export function zonaEnPunto<Z extends Rect & { id: number }>(x: number, y: numbe
 	return dentro.sort((a, b) => a.ancho * a.alto - b.ancho * b.alto)[0] ?? null;
 }
 
+// ─── Mover cosas: entender «la E3, balda 2» y «la caja de aceites» ───────────
+
+const plano = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+export interface DestinoTexto {
+	muebleId: number;
+	nivel: number | null;
+	/** Tercio pedido (1 izquierda, 2 centro, 3 derecha), si lo dice. */
+	columna: number | null;
+}
+
+/**
+ * Adónde va algo, dicho a mano: «E3 balda 2», «el armario A1, abajo», «carro C1 cajón 3», «la estantería del fondo, tercio derecho».
+ * Primero por código; si no, por el nombre del mueble (solo si hay uno que encaje). null si no se sabe qué mueble es.
+ */
+export function leerDestino(texto: string, muebles: { id: number; codigo: string; nombre: string; tipo: TipoMueble; niveles: number; disposicion?: DisposicionMueble | null }[]): DestinoTexto | null {
+	const t = plano(texto);
+	const codigos = [...t.matchAll(/\b([a-z]{1,2}\d{1,2})\b/g)].map((x) => x[1].toUpperCase());
+	let m = muebles.find((x) => codigos.includes(x.codigo.toUpperCase()));
+	if (!m) {
+		const palabras = t.split(/[^a-z0-9]+/).filter((w) => w.length > 3);
+		const candidatos = muebles.filter((x) => palabras.some((w) => plano(`${x.nombre} ${MUEBLES[x.tipo].nombre}`).includes(w)));
+		if (candidatos.length === 1) m = candidatos[0];
+	}
+	if (!m) return null;
+	const niveles = nivelesMueble(m);
+	const num = t.match(/\b(?:balda|cajon|cesta|bandeja|fila|nivel|hueco|estante)\s*(?:n(?:umero|º|o)?\.?\s*)?(\d{1,2})\b/) ?? t.match(/\b[a-z]{1,2}\d{1,2}\s*[·.,-]?\s*(\d{1,2})\b/);
+	let nivel: number | null = num ? Number(num[1]) : null;
+	if (nivel == null && niveles.length) {
+		if (/\b(arriba del todo|la de arriba|el de arriba|arriba)\b/.test(t)) nivel = 1;
+		else if (/\b(abajo del todo|la de abajo|el de abajo|abajo|el suelo|al fondo)\b/.test(t)) nivel = niveles.length;
+	}
+	if (nivel != null && (nivel < 1 || nivel > niveles.length)) nivel = null;
+	const columna = /\bizquierd/.test(t) ? 1 : /\b(centr|medio)/.test(t) ? 2 : /\bderech/.test(t) ? 3 : null;
+	return { muebleId: m.id, nivel, columna };
+}
+
+/** Qué se mueve: un contenedor (por su nombre, su tipo o su letra) o, si no, un artículo. */
+export function leerQueMover<C extends { id: number; letra: string; nombre: string; tipo: TipoContenedor }, A extends { id: number; nombre: string; marca: string | null; categoria: string | null; referencia: string | null }>(
+	texto: string,
+	contenedores: C[],
+	articulos: A[]
+): { contenedor: C } | { articulo: A } | null {
+	const t = plano(texto);
+	const tipoDicho = (Object.keys(CONTENEDORES) as TipoContenedor[]).find((k) => t.includes(plano(CONTENEDORES[k])));
+	const resto = t
+		.replace(/\b(el|la|los|las|de|del|con|mi)\b/g, ' ')
+		.replace(new RegExp(`\\b(${Object.values(CONTENEDORES).map(plano).join('|')})s?\\b`, 'g'), ' ')
+		.split(/[^a-z0-9]+/)
+		.filter((w) => w.length > 1)
+		.map((w) => w.replace(/(es|s)$/, ''));
+	const porNombre = contenedores.filter((c) => resto.length && resto.every((w) => plano(c.nombre).includes(w)));
+	const conTipo = tipoDicho ? porNombre.filter((c) => c.tipo === tipoDicho) : porNombre;
+	if (conTipo.length === 1) return { contenedor: conTipo[0] };
+	if (porNombre.length === 1) return { contenedor: porNombre[0] };
+	// «La mochila» a secas, si solo hay una
+	if (!resto.length && tipoDicho) {
+		const delTipo = contenedores.filter((c) => c.tipo === tipoDicho);
+		if (delTipo.length === 1) return { contenedor: delTipo[0] };
+	}
+	const art = buscarArticulos(texto, articulos, 1)[0];
+	return art ? { articulo: art } : null;
+}
+
 // ─── El camino desde la persiana ─────────────────────────────────────────────
 
 export interface Pt {

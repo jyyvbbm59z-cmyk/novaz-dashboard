@@ -740,8 +740,10 @@ export type Repostaje = typeof repostajes.$inferSelect;
 
 /** Lo que el bot creó en la app, para poder deshacerlo. */
 export interface HechoBot {
-	t: 'repostaje' | 'movimiento' | 'entrada' | 'pendiente' | 'tarea_local' | 'compra' | 'km' | 'gasto_personal';
+	t: 'repostaje' | 'movimiento' | 'entrada' | 'pendiente' | 'tarea_local' | 'compra' | 'km' | 'gasto_personal' | 'mover_contenedor' | 'mover_articulo';
 	id: number;
+	/** Al mover algo: dónde estaba (para deshacerlo). */
+	antes?: Record<string, unknown>;
 }
 
 export const ESTADOS_BOT = ['esperando', 'hecha', 'deshecha', 'cancelada'] as const;

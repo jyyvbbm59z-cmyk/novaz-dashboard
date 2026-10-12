@@ -1,5 +1,5 @@
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
-import { altaEnSitio, borrarContenedor, borrarMueble, guardarContenedor, guardarMueble, guardarZona, moverMueble, ubicarArticulos } from '$lib/server/ubicaciones';
+import { altaEnSitio, borrarContenedor, borrarMueble, guardarContenedor, guardarMueble, guardarZona, moverContenedor, moverMueble, ubicarArticulos } from '$lib/server/ubicaciones';
 
 export const actions = {
 	mueble: accion(async ({ request, locals }) => {
@@ -57,6 +57,13 @@ export const actions = {
 		const nuevo = !leer(fd).idOpcional('id');
 		const contenedorId = await guardarContenedor(locals, fd);
 		return { mensaje: nuevo ? 'Contenedor añadido' : 'Contenedor guardado', contenedorId };
+	}),
+	/** Lleva un contenedor con todo lo de dentro a otro mueble, balda y hueco. */
+	moverContenedor: accion(async ({ request, locals }) => {
+		const f = leer(await request.formData());
+		const nivel = f.entero('nivel');
+		const r = await moverContenedor(locals, f.id('id'), { muebleId: f.id('muebleId'), nivel: nivel && nivel > 0 ? nivel : null, columna: f.entero('columna'), piso: f.entero('piso') });
+		return { mensaje: `Ahora es ${r.codigoDespues}${r.letraCambiada ? ' (la letra estaba cogida)' : ''}. Reimprime su etiqueta`, muebleId: r.muebleId, codigo: r.codigoDespues };
 	}),
 	borrarContenedor: accion(async ({ request, locals }) => {
 		await borrarContenedor(locals, leer(await request.formData()).id('id'));

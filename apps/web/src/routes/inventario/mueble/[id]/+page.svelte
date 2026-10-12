@@ -8,11 +8,13 @@
 	import FrenteMueble from '$comp/FrenteMueble.svelte';
 	import MuebleForm from '$comp/MuebleForm.svelte';
 	import PlanoLocal from '$comp/PlanoLocal.svelte';
+	import RejillaSitio from '$comp/RejillaSitio.svelte';
+	import { goto } from '$app/navigation';
 	import { accion, enviar } from '$lib/enviar';
-	import { ALTO_CONTENEDOR, buscarArticulos, codigoUbicacion, conRejilla, CONTENEDORES, encajar, huecoLibre, MUEBLES, rejillaBalda, REJILLA, sePisan, nombreDeNivel, nombreNivel as nombreDe, pluralNivel, siguienteLetra } from '@novaz/core';
+	import { ALTO_CONTENEDOR, buscarArticulos, codigoUbicacion, conRejilla, CONTENEDORES, MUEBLES, nivelesMueble, nombreDeNivel, nombreNivel as nombreDe, pluralNivel, siguienteLetra } from '@novaz/core';
 	import { TIPOS_CONTENEDOR, type Contenedor, type TipoContenedor } from '@novaz/core/schema';
-	import { ArrowLeft, Box, Camera, ChevronDown, Pencil, Plus, Printer, Search, Trash2, Wrench } from '@lucide/svelte';
-	import { tick } from 'svelte';
+	import { ArrowLeft, ArrowRightLeft, Box, Camera, ChevronDown, Pencil, Plus, Printer, Search, Trash2, Wrench } from '@lucide/svelte';
+	import { tick, untrack } from 'svelte';
 
 	let { data } = $props();
 	const m = $derived(data.mueble);
@@ -111,14 +113,26 @@
 	}
 	const conRej = $derived(conRejilla(m.tipo) && contNivel != null);
 	const vecinos = $derived(contsDe(contNivel).filter((c) => c.id !== contEditado?.id));
-	const ocupadas = $derived(conRej ? (rejillaBalda(vecinos, true) ?? new Map()) : new Map());
-	const celdaNueva = $derived(
-		contCol != null ? encajar({ columna: contCol, piso: contPiso, ancho: contAncho, alto: contAlto }) : huecoLibre([...ocupadas.values()], { ancho: contAncho, alto: contAlto })
-	);
-	const pisada = $derived(celdaNueva ? vecinos.find((v) => ocupadas.get(v.id) && sePisan(ocupadas.get(v.id)!, celdaNueva)) : null);
-	/** Posición en la rejilla CSS (las filas de arriba a abajo). */
-	const area = (c: { columna: number; ancho: number; piso: number; alto: number }) => `grid-column: ${c.columna} / span ${c.ancho}; grid-row: ${REJILLA.alturas - c.piso - c.alto + 1} / span ${c.alto}`;
+
 	const letraSugerida = $derived(contEditado?.letra ?? siguienteLetra(contsDe(contNivel).map((c) => c.letra)));
+	// Mover un contenedor (con todo lo de dentro) a otro mueble, balda y hueco
+	let hMover = $state(false);
+	let destMueble = $state(0);
+	let destNivel = $state<number | null>(null);
+	let destCol = $state<number | null>(null);
+	let destPiso = $state(0);
+	function abrirMover(c: Contenedor) {
+		destMueble = c.muebleId;
+		destNivel = c.nivel;
+		destCol = null;
+		hCont = false;
+		hMover = true;
+	}
+	const mDest = $derived(data.plano.muebles.find((x) => x.id === destMueble) ?? m);
+	const nivelesDest = $derived(nivelesMueble(mDest));
+	const vecinosDest = $derived(data.plano.contenedores.filter((x) => x.muebleId === mDest.id && x.nivel === destNivel && x.id !== contEditado?.id));
+	const letraDest = $derived(contEditado && vecinosDest.some((x) => x.letra === contEditado!.letra) ? siguienteLetra(vecinosDest.map((x) => x.letra)) : (contEditado?.letra ?? 'A'));
+	const zonaDest = $derived(data.plano.zonas.find((z) => z.id === mDest.zonaId));
 	async function quitarContenedor(c: Contenedor) {
 		if (!confirm(`¿Quitar ${nombreCont(c)}?${enCont(c.id).length ? ` Sus ${enCont(c.id).length} cosas se quedan sueltas en la balda.` : ''}`)) return;
 		await accion('/inventario/plano?/borrarContenedor', { id: c.id });
@@ -134,7 +148,10 @@
 		// Lo que se viene a buscar (QR del contenedor o enlace a un artículo) sale abierto
 		const a = data.articulos.find((x) => x.id === articuloMarcado);
 		const claves = [contMarcado ? `c${contMarcado}` : null, a?.contenedorId ? `c${a.contenedorId}` : null, a && !a.contenedorId ? `n${a.nivel}` : null].filter((x): x is string => Boolean(x));
-		if (claves.length) abiertos = [...new Set([...abiertos, ...claves])];
+		// Sin leer «abiertos» como dependencia: si no, se reescribe a sí mismo sin parar
+		const ya = untrack(() => abiertos);
+		const faltan = claves.filter((k) => !ya.includes(k));
+		if (faltan.length) abiertos = [...ya, ...faltan];
 	});
 
 	let hEditar = $state(false);
@@ -332,47 +349,56 @@
 			<p class="-mt-2 text-xs text-texto-3">El código queda {codigo(contNivel, { letra: contEditado?.letra ?? letraSugerida } as Contenedor)}.</p>
 			{#if conRej}
 				<!-- Dónde va en la balda -->
-				<input type="hidden" name="columna" value={contCol ?? ''} />
-				<input type="hidden" name="piso" value={contPiso} />
-				<input type="hidden" name="ancho" value={contAncho} />
-				<input type="hidden" name="alto" value={contAlto} />
 				<div class="flex flex-col gap-2">
 					<p class="text-sm font-medium">Dónde va en la balda</p>
-					<div class="flex flex-wrap gap-1.5">
-						{#each [[1, 'Baja'], [2, 'Alta'], [3, 'Toda la altura']] as [v, txt] (v)}
-							<button type="button" class="chip h-8 px-3 text-xs {contAlto === v ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => ((contAlto = v as number), (altoTocado = true))}>{txt}</button>
-						{/each}
-						<span class="mx-1 w-px bg-borde"></span>
-						{#each [[1, '⅓'], [2, '⅔'], [3, 'Todo el ancho']] as [v, txt] (v)}
-							<button type="button" class="chip h-8 px-3 text-xs {contAncho === v ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => (contAncho = v as number)}>{txt}</button>
-						{/each}
-					</div>
-					<div class="grid aspect-[3/1.6] w-full grid-cols-3 grid-rows-3 gap-1 rounded-lg border-b-4 border-texto-3 bg-superficie-2 p-1">
-						{#each Array.from({ length: 9 }, (_, i) => i) as i (i)}
-							{@const col = (i % 3) + 1}
-							{@const piso = REJILLA.alturas - 1 - Math.floor(i / 3)}
-							<button type="button" class="rounded border border-dashed border-borde transition hover:border-acento/60" style={area({ columna: col, ancho: 1, piso, alto: 1 })} onclick={() => ((contCol = col), (contPiso = piso))} aria-label="Tercio {col}, altura {piso + 1}"></button>
-						{/each}
-						{#each vecinos as v (v.id)}
-							{@const c = ocupadas.get(v.id)}
-							{#if c}<div class="pointer-events-none flex items-center justify-center rounded-md bg-superficie-3 font-mono text-sm font-bold text-texto-2 ring-1 ring-borde" style={area(c)}>{v.letra}</div>{/if}
-						{/each}
-						{#if celdaNueva}
-							<div class="pointer-events-none flex items-center justify-center rounded-md font-mono text-sm font-bold ring-2 {pisada ? 'bg-vencido/20 text-vencido ring-vencido' : 'bg-acento/25 text-texto ring-acento'}" style={area(celdaNueva)}>{contEditado?.letra ?? letraSugerida}</div>
-						{/if}
-					</div>
-					<p class="text-xs {pisada ? 'text-vencido' : 'text-texto-3'}">
-						{#if pisada}Pisa {CONTENEDORES[pisada.tipo].toLowerCase()} {pisada.letra}: elige otro sitio.{:else if !celdaNueva}No queda un hueco de ese tamaño en la balda.{:else if contCol == null}Va al primer hueco libre; toca la rejilla para elegir otro.{:else}Toca otra casilla para moverla.{/if}
-					</p>
+					<RejillaSitio vecinos={vecinos} letra={contEditado?.letra ?? letraSugerida} bind:columna={contCol} bind:piso={contPiso} bind:ancho={contAncho} bind:alto={contAlto} alCambiarAlto={() => (altoTocado = true)} />
 				</div>
 			{/if}
 			<button class="btn btn-acento h-12">{contEditado ? 'Guardar' : 'Añadir contenedor'}</button>
 		</form>
 		{#if contEditado}
 			{@const c = contEditado}
-			<button class="btn mt-3 w-full text-vencido" onclick={() => quitarContenedor(c)}><Trash2 size={16} /> Quitar contenedor</button>
+			<button class="btn mt-3 w-full" onclick={() => abrirMover(c)}><ArrowRightLeft size={16} /> Mover a otro sitio</button>
+			<button class="btn mt-2 w-full text-vencido" onclick={() => quitarContenedor(c)}><Trash2 size={16} /> Quitar contenedor</button>
 		{/if}
 	{/key}
+</Hoja>
+
+<Hoja bind:abierta={hMover} titulo={contEditado ? `Mover ${nombreCont(contEditado)}` : 'Mover'}>
+	{#if contEditado}
+		{@const c = contEditado}
+		{@const dentro = enCont(c.id).length}
+		<form method="POST" action="/inventario/plano?/moverContenedor" use:enhance={enviar({ alTerminar: (d) => { hMover = false; goto(`/inventario/mueble/${d.muebleId}?cont=${c.id}`); } })} class="flex flex-col gap-4">
+			<input type="hidden" name="id" value={c.id} />
+			<input type="hidden" name="muebleId" value={mDest.id} />
+			<input type="hidden" name="nivel" value={destNivel ?? ''} />
+			<p class="text-sm text-texto-2">Ahora en <span class="font-mono font-bold text-texto">{codigo(c.nivel, c)}</span>{dentro ? ` · sus ${dentro} cosas van con él` : ''}.</p>
+			<label class="campo">
+				<span>Adónde</span>
+				<select class="input" bind:value={destMueble} onchange={() => ((destNivel = nivelesMueble(mDest).length ? 1 : null), (destCol = null))}>
+					{#each data.plano.zonas as z (z.id)}
+						{@const ms = data.plano.muebles.filter((x) => x.zonaId === z.id)}
+						{#if ms.length}<optgroup label="{z.codigo} · {z.nombre}">{#each ms as x (x.id)}<option value={x.id}>{z.codigo}·{x.codigo} · {x.nombre}</option>{/each}</optgroup>{/if}
+					{/each}
+				</select>
+			</label>
+			{#if nivelesDest.length}
+				<div class="flex flex-wrap items-center gap-1.5">
+					<span class="text-xs text-texto-3 first-letter:uppercase">{nombreDeNivel(mDest)}:</span>
+					{#each nivelesDest as n (n.numero)}
+						<button type="button" title={n.nombre} class="chip h-8 min-w-8 justify-center px-2 font-mono {destNivel === n.numero ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => ((destNivel = n.numero), (destCol = null))}>{n.numero}</button>
+					{/each}
+				</div>
+			{/if}
+			{#if conRejilla(mDest.tipo) && destNivel}
+				{#key `${mDest.id}-${destNivel}`}
+					<RejillaSitio vecinos={vecinosDest} letra={letraDest} bind:columna={destCol} bind:piso={destPiso} ancho={c.ancho ?? 1} alto={c.alto ?? ALTO_CONTENEDOR[c.tipo]} tamano={false} />
+				{/key}
+			{/if}
+			<p class="text-sm">Quedará como <span class="font-mono font-bold">{codigoUbicacion(zonaDest, mDest, destNivel, { letra: letraDest } as Contenedor) ?? mDest.codigo}</span>{letraDest !== c.letra ? ` (la ${c.letra} ya está cogida allí)` : ''}. Luego reimprime su etiqueta: el QR sigue valiendo, pero el código impreso cambia.</p>
+			<button class="btn btn-acento h-12" disabled={mDest.id === c.muebleId && destNivel === c.nivel && destCol == null}>Moverlo aquí</button>
+		</form>
+	{/if}
 </Hoja>
 
 <Hoja bind:abierta={hEditar} titulo="{m.codigo} · {m.nombre}">
