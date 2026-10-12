@@ -15,7 +15,7 @@ describe('ubicaciones', () => {
 		expect(zonaEnPunto(1, 2, zonas)?.codigo).toBe('EN');
 		expect(zonaEnPunto(6, 6, zonas)?.codigo).toBe('Z2');
 		expect(zonaEnPunto(1, 13, zonas)?.codigo).toBe('EL');
-		expect(zonaEnPunto(5, 15.8, zonas)?.codigo).toBe('CT');
+		expect(zonaEnPunto(5, 15.8, zonas)?.codigo).toBe('BA');
 		expect(zonaEnPunto(20, 20, zonas)).toBeNull();
 	});
 	it('describe dónde está un artículo', () => {
@@ -61,7 +61,9 @@ describe('camino desde la persiana', () => {
 		{ x: 0.6, y: 14.26, ancho: 2.6, fondo: 0.7, girado: false, zona: 'EL' },
 		{ x: 3.92, y: 14.51, ancho: 0.85, fondo: 0.45, girado: false, zona: 'LI' },
 		{ x: 6.53, y: 12.45, ancho: 2.3, fondo: 0.7, girado: true, zona: 'LI' },
-		{ x: 3.6, y: 9.55, ancho: 0.8, fondo: 0.45, girado: true, zona: 'Z1' },
+		{ x: 3.6, y: 9.55, ancho: 0.8, fondo: 0.45, girado: true, zona: 'Z2' },
+		{ x: 3.59, y: 6.75, ancho: 0.8, fondo: 0.46, girado: true, zona: 'Z1' },
+		{ x: 1.2, y: 12.2, ancho: 1, fondo: 0.45, girado: false, zona: 'EL' },
 		{ x: 4.05, y: 0.3, ancho: 1.85, fondo: 0.7, girado: false, zona: 'PM' },
 		{ x: 0.45, y: 10.9, ancho: 2, fondo: 0.7, girado: false, zona: 'Z1' }
 	];
@@ -76,11 +78,18 @@ describe('camino desde la persiana', () => {
 			expect(Math.min(Math.abs(fin.x - h.x), Math.abs(fin.x - h.x - h.ancho), Math.abs(fin.y - h.y), Math.abs(fin.y - h.y - h.alto))).toBeLessThan(0.5);
 		}
 	});
-	it('a electrónica entra por su puerta; al cuarto trasero, por la puerta del fondo', () => {
+	it('a electrónica entra por su puerta; al baño, por la corredera del fondo', () => {
 		const r = caminoEnLocal(huella(muebles[0]), { mueble: true, zona: zona('EL') });
 		const pe = P.puertaElectronica;
-		expect(r.some((p) => p.x > pe.desde && p.x < pe.hasta)).toBe(true);
-		const ct = caminoEnLocal(zona('CT'), { mueble: false });
+		// Cruza el tabique con limpieza justo por la puerta
+		const cruza = r.slice(1).some((p, i) => {
+			const a = r[i];
+			if ((a.x - pe.x) * (p.x - pe.x) >= 0) return false;
+			const y = a.y + ((p.y - a.y) * (pe.x - a.x)) / (p.x - a.x);
+			return y > pe.desde && y < pe.hasta;
+		});
+		expect(cruza).toBe(true);
+		const ct = caminoEnLocal(zona('BA'), { mueble: false });
 		expect(ct.at(-1)!.x).toBeGreaterThan(P.puertaFondo.desde);
 		expect(ct.at(-1)!.x).toBeLessThan(P.puertaFondo.hasta);
 	});

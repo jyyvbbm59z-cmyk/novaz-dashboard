@@ -15,6 +15,7 @@
 		zonaSeleccionada = null,
 		editable = false,
 		compacto = false,
+		horizontal = false,
 		clase = '',
 		enfoque = null,
 		ruta = null,
@@ -36,6 +37,8 @@
 		zonaSeleccionada?: number | null;
 		editable?: boolean;
 		compacto?: boolean;
+		/** Girado 90° (la entrada a la izquierda): para pantallas anchas. */
+		horizontal?: boolean;
 		clase?: string;
 		/** Zona o mueble al que acercarse (con zoom animado); null = el local entero. */
 		enfoque?: Rect | null;
@@ -56,17 +59,11 @@
 	} = $props();
 
 	const yF = (x: number) => P.fachada.izq.y + ((P.fachada.der.y - P.fachada.izq.y) * x) / P.ancho;
-	/** Altura de la etiqueta de una zona: arriba a la izquierda, pero sin tapar ningún mueble. */
-	function etiquetaZona(z: Rect & { nombre: string }, lx: number) {
-		const arriba = Math.max(z.y, yF(z.x + 0.3)) + 0.78;
-		const derecha = lx + (compacto ? 0.3 : 0.45 + z.nombre.length * 0.15);
-		let ly = arriba;
-		for (const h of muebles.map(huella).sort((a, b) => a.y - b.y))
-			if (derecha > h.x && lx - 0.3 < h.x + h.ancho && ly + 0.3 > h.y && ly - 0.3 < h.y + h.alto) ly = h.y + h.alto + 0.45;
-		// Si no cabe sin tapar nada, arriba como siempre
-		return ly > z.y + z.alto - 0.35 ? arriba : ly;
+	/** Etiqueta de una zona, centrada en ella: el círculo con el código y, debajo, el nombre. */
+	function etiquetaZona(z: Rect) {
+		return { cx: z.x + z.ancho / 2, cy: z.y + z.alto / 2 };
 	}
-		const C = P.cuarto;
+	const C = P.cuarto;
 	const PE = P.puertaElectronica;
 	const interior = `M0 ${yF(0)} L${P.ancho} ${yF(P.ancho)} L${P.ancho} ${P.fondo} L0 ${P.fondo} Z M${C.x} ${C.y} h${C.ancho} v${C.alto} h${-C.ancho} Z`;
 	const muros = [
@@ -85,9 +82,11 @@
 
 	// Arrastre (solo en edición): posición provisional mientras se mueve
 	let svg: SVGSVGElement;
+	let dibujo: SVGGElement;
 	let arrastre = $state<{ id: number; dx: number; dy: number; x: number; y: number; movido: boolean } | null>(null);
 	function punto(e: PointerEvent | MouseEvent) {
-		const m = svg.getScreenCTM();
+		// En coordenadas del plano (con el giro, si lo hay)
+		const m = dibujo.getScreenCTM();
 		if (!m) return { x: 0, y: 0 };
 		const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
 		return { x: p.x, y: p.y };
@@ -120,13 +119,31 @@
 			alTocarVacio?.(redondear(p.x), redondear(p.y));
 		} else if (zonaId) alTocarZona?.(zonaId);
 	}
+	// En horizontal se gira el dibujo 90° a la izquierda: (x, y) del plano → (y, ancho − x) en pantalla
+	const giro = $derived(horizontal ? `translate(0 ${P.ancho}) rotate(-90)` : undefined);
+	const caja = (c: { x: number; y: number; w: number; h: number }) => (horizontal ? `${c.y} ${P.ancho - c.x - c.w} ${c.h} ${c.w}` : `${c.x} ${c.y} ${c.w} ${c.h}`);
+	/** Los textos se quedan derechos aunque el plano esté girado (vertical: el giro que lleven en vertical). */
+	const recto = (x: number, y: number, enVertical = 0) => {
+		const a = horizontal ? 90 : enVertical;
+		return a ? `rotate(${a} ${x} ${y})` : undefined;
+	};
+	/** El código de un mueble estrecho (un panel) va a lo largo; el resto, derecho. */
+	function codigoGirado(h: Rect) {
+		const cx = h.x + h.ancho / 2;
+		const cy = h.y + h.alto / 2;
+		const estrecho = Math.min(h.ancho, h.alto) < 0.5 && Math.max(h.ancho, h.alto) > 1;
+		if (!estrecho) return recto(cx, cy);
+		const largoEnY = h.alto > h.ancho;
+		const a = horizontal ? (largoEnY ? 90 : 0) : largoEnY ? -90 : 0;
+		return a ? `rotate(${a} ${cx} ${cy})` : undefined;
+	}
 	const pos = (m: Mueble) => (arrastre?.id === m.id ? { ...m, x: arrastre.x, y: arrastre.y } : m);
 	const m2 = (x: number) => x.toLocaleString('es-ES', { minimumFractionDigits: 2 });
 </script>
 
 <svg
 	bind:this={svg}
-	viewBox={camara ? `${camara.x} ${camara.y} ${camara.w} ${camara.h}` : `${vista.current.x} ${vista.current.y} ${vista.current.w} ${vista.current.h}`}
+	viewBox={caja(camara ?? vista.current)}
 	class="plano block h-auto w-full touch-none select-none {editable ? 'editando' : ''} {clase}"
 	role="img"
 	aria-label="Plano del local"
@@ -149,6 +166,7 @@
 		<pattern id="rejilla" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M1 0 L0 0 0 1" fill="none" stroke="var(--trama-plano)" stroke-width="0.012" /></pattern>
 	</defs>
 
+	<g bind:this={dibujo} transform={giro}>
 	<!-- Suelo con rejilla de 1 m -->
 	<path d={interior} fill="var(--superficie-2)" />
 	<path d={interior} fill="url(#rejilla)" />
@@ -174,12 +192,12 @@
 		{/each}
 	</g>
 	{#each zonas as z (z.id)}
-		{@const lx = z.x + 0.62}
-		{@const ly = etiquetaZona(z, lx)}
-		<g class="pointer-events-none">
-			<circle cx={lx} cy={ly} r="0.26" fill={z.color} />
-			<text x={lx} y={ly + 0.11} text-anchor="middle" class="letra-zona">{z.codigo}</text>
-			{#if !compacto}<text x={lx + 0.38} y={ly + 0.09} class="nombre-zona" fill={z.color}>{z.nombre}</text>{/if}
+		{@const { cx, cy } = etiquetaZona(z)}
+		{@const cc = compacto ? cy : cy - 0.18}
+		<g class="pointer-events-none" transform={recto(cx, cy)}>
+			<circle cx={cx} cy={cc} r="0.26" fill={z.color} />
+			<text x={cx} y={cc + (z.codigo.length > 1 ? 0.08 : 0.11)} text-anchor="middle" class="letra-zona" font-size={z.codigo.length > 1 ? 0.22 : 0.3}>{z.codigo}</text>
+			{#if !compacto}<text x={cx} y={cy + 0.42} text-anchor="middle" class="nombre-zona" fill={z.color}>{z.nombre}</text>{/if}
 		</g>
 	{/each}
 
@@ -190,12 +208,15 @@
 		{#each [...P.pilares, ...P.pilastras] as p, i (i)}<rect x={p.x} y={p.y} width={p.ancho} height={p.alto} fill="var(--texto-2)" />{/each}
 		<!-- Tabiques del cuarto de electrónica y su puerta -->
 		{#each P.tabiques as w, i (i)}<line x1={w.x1} y1={w.y1} x2={w.x2} y2={w.y2} stroke="var(--texto-2)" stroke-width="0.1" stroke-linecap="square" />{/each}
-		<path d="M{PE.hasta} {PE.y} A{PE.hasta - PE.desde} {PE.hasta - PE.desde} 0 0 1 {PE.desde} {PE.y + (PE.hasta - PE.desde)}" fill="none" stroke="var(--texto-3)" stroke-width="0.025" />
-		<path d="M{P.puertaFondo.desde} {P.fondo} A{P.puertaFondo.hasta - P.puertaFondo.desde} {P.puertaFondo.hasta - P.puertaFondo.desde} 0 0 0 {P.puertaFondo.hasta} {P.fondo - (P.puertaFondo.hasta - P.puertaFondo.desde)}" fill="none" stroke="var(--texto-3)" stroke-width="0.025" />
+		<!-- Puerta de electrónica: abre hacia dentro a izquierdas (bisagra abajo) -->
+		<path d="M{PE.x} {PE.desde} A{PE.hasta - PE.desde} {PE.hasta - PE.desde} 0 0 0 {PE.x - (PE.hasta - PE.desde)} {PE.hasta} L{PE.x} {PE.hasta}" fill="none" stroke="var(--texto-3)" stroke-width="0.025" />
+		<!-- Puerta corredera del baño: la hoja va por delante del muro -->
+		<line x1={P.puertaFondo.desde - 0.05} y1={P.fondo - 0.16} x2={P.puertaFondo.hasta + 0.05} y2={P.fondo - 0.16} stroke="var(--texto-3)" stroke-width="0.05" />
+		<line x1={P.puertaFondo.hasta + 0.05} y1={P.fondo - 0.16} x2={P.puertaFondo.hasta + 0.6} y2={P.fondo - 0.16} stroke="var(--texto-3)" stroke-width="0.02" stroke-dasharray="0.06 0.05" />
 		{#if !compacto}
 			<text x={(P.entrada.desde + P.entrada.hasta) / 2} y={yF(2) - 0.32} text-anchor="middle" class="cota">ENTRADA · 3,00 m</text>
-			<text x={P.ancho + 0.3} y={P.fondo / 2} text-anchor="middle" class="cota" transform="rotate(90 {P.ancho + 0.3} {P.fondo / 2})">{m2(P.fondo)} m</text>
-			<text x={-0.27} y={P.fondo / 2} text-anchor="middle" class="cota" transform="rotate(-90 -0.27 {P.fondo / 2})">{m2(P.fondo - yF(0))} m</text>
+			<text x={P.ancho + 0.3} y={P.fondo / 2} text-anchor="middle" class="cota" transform={recto(P.ancho + 0.3, P.fondo / 2, 90)}>{m2(P.fondo)} m</text>
+			<text x={-0.27} y={P.fondo / 2} text-anchor="middle" class="cota" transform={recto(-0.27, P.fondo / 2, -90)}>{m2(P.fondo - yF(0))} m</text>
 			<text x={C.x / 2} y={P.fondo + 0.42} text-anchor="middle" class="cota">← {m2(P.ancho)} m →</text>
 		{/if}
 	</g>
@@ -245,13 +266,13 @@
 					<circle cx={h.x + h.ancho / 2} cy={h.y + h.alto / 2} r={Math.max(h.ancho, h.alto) * 0.6} fill="none" stroke="var(--acento)" stroke-width="0.025" class="radar" style="animation-delay: {retraso}s" />
 				{/each}
 			{/if}
-			<text x={h.x + h.ancho / 2} y={h.y + h.alto / 2 + 0.1} text-anchor="middle" class="codigo-mueble" font-size={Math.min(0.3, Math.max(0.16, Math.min(h.ancho, h.alto) * 0.9))}>{m.codigo}</text>
+			<text x={h.x + h.ancho / 2} y={h.y + h.alto / 2 + 0.1} transform={codigoGirado(h)} text-anchor="middle" class="codigo-mueble" font-size={Math.min(0.3, Math.max(0.16, Math.min(h.ancho, h.alto) * 0.9))}>{m.codigo}</text>
 			{#if !compacto && cuentas[m.id] && Math.min(h.ancho, h.alto) >= 0.4}
-				<text x={h.x + h.ancho - 0.05} y={h.y + 0.16} text-anchor="end" class="cuenta-mueble">{cuentas[m.id]}</text>
+				<text x={h.x + h.ancho - 0.05} y={h.y + 0.16} transform={recto(h.x + h.ancho - 0.1, h.y + 0.1)} text-anchor="end" class="cuenta-mueble">{cuentas[m.id]}</text>
 			{/if}
 		</g>
 	{/each}
-
+	</g>
 </svg>
 
 <style>
@@ -260,7 +281,6 @@
 		font-family: var(--font-sans);
 	}
 	.letra-zona {
-		font-size: 0.3px;
 		font-weight: 800;
 		fill: #fff;
 	}

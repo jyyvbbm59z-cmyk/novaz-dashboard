@@ -39,17 +39,18 @@ export const PLANO_LOCAL = {
 		{ x: 0, y: 14.81, ancho: 0.15, alto: 0.15 },
 		{ x: 6.95, y: 14.81, ancho: 0.28, alto: 0.15 }
 	] as Rect[],
-	/** Puerta del fondo al cuarto trasero (en X). */
+	/** Puerta corredera del fondo, al baño (en X). */
 	puertaFondo: { desde: 4.83, hasta: 5.52 },
-	/** Cuarto trasero: 3,40 × 1,25 m. */
+	/** Baño: 3,40 × 1,25 m. */
 	cuarto: { x: 3.83, y: 15.18, ancho: 3.4, alto: 1.25 } as Rect,
-	/** Tabiques del cuarto de electrónica (al fondo a la izquierda), con su puerta hacia Z1. */
+	/** Tabiques del cuarto de electrónica (al fondo a la izquierda); su puerta da a limpieza. */
 	tabiques: [
-		{ x1: 0.15, y1: 11.7, x2: 2.6, y2: 11.7 },
-		{ x1: 3.45, y1: 11.7, x2: 3.62, y2: 11.7 },
-		{ x1: 3.82, y1: 11.9, x2: 3.82, y2: 14.96 }
+		{ x1: 0.15, y1: 11.7, x2: 3.62, y2: 11.7 },
+		{ x1: 3.82, y1: 11.9, x2: 3.82, y2: 13.3 },
+		{ x1: 3.82, y1: 14.1, x2: 3.82, y2: 14.96 }
 	],
-	puertaElectronica: { desde: 2.6, hasta: 3.45, y: 11.7 },
+	/** En el tabique con limpieza, abajo (en Y); abre hacia dentro a izquierdas: bisagra en el extremo de abajo. */
+	puertaElectronica: { x: 3.82, desde: 13.3, hasta: 14.1 },
 	muro: 0.2
 } as const;
 
@@ -82,7 +83,7 @@ export const ZONAS_INICIALES: (Rect & { codigo: string; nombre: string; color: s
 	{ codigo: 'Z2', nombre: 'Z2', color: '#c45d5d', x: 3.82, y: 4.59, ancho: 3.41, alto: 7.11, notas: '' },
 	{ codigo: 'EL', nombre: 'Electrónica', color: '#8a6fbf', x: 0, y: 11.7, ancho: 3.82, alto: 3.26, notas: 'Cuarto con tabiques' },
 	{ codigo: 'LI', nombre: 'Limpieza', color: '#3fa6a6', x: 3.82, y: 11.7, ancho: 3.41, alto: 3.26, notas: '' },
-	{ codigo: 'CT', nombre: 'Cuarto trasero', color: '#9a8f6a', x: 3.83, y: 15.18, ancho: 3.4, alto: 1.25, notas: 'Consumibles y químicos' }
+	{ codigo: 'BA', nombre: 'Baño', color: '#9a8f6a', x: 3.83, y: 15.18, ancho: 3.4, alto: 1.25, notas: 'Puerta corredera' }
 ];
 
 // ─── Muebles ─────────────────────────────────────────────────────────────────
@@ -91,7 +92,7 @@ export const MUEBLES: Record<TipoMueble, { nombre: string; prefijo: string; nive
 	estanteria: { nombre: 'Estantería', prefijo: 'E', nivel: 'balda', ancho: 1.0, fondo: 0.45, niveles: 5, ayudaNivel: 'La balda 1 es la de arriba' },
 	armario: { nombre: 'Armario', prefijo: 'A', nivel: 'balda', ancho: 1.0, fondo: 0.5, niveles: 4, ayudaNivel: 'La balda 1 es la de arriba' },
 	cajonera: { nombre: 'Cajonera', prefijo: 'C', nivel: 'cajón', ancho: 0.7, fondo: 0.46, niveles: 7, ayudaNivel: 'El cajón 1 es el de arriba' },
-	panel: { nombre: 'Panel de pared', prefijo: 'P', nivel: 'fila', ancho: 2.0, fondo: 0.12, niveles: 4, ayudaNivel: 'La fila 1 es la de arriba' },
+	panel: { nombre: 'Panel de pared', prefijo: 'P', nivel: 'fila', ancho: 2.0, fondo: 0.25, niveles: 4, ayudaNivel: 'La fila 1 es la de arriba' },
 	banco: { nombre: 'Banco de trabajo', prefijo: 'B', nivel: 'cajón', ancho: 2.0, fondo: 0.75, niveles: 3, ayudaNivel: 'El cajón 1 es el de la izquierda' },
 	carro: { nombre: 'Carro', prefijo: 'K', nivel: 'bandeja', ancho: 0.8, fondo: 0.45, niveles: 3, ayudaNivel: 'La bandeja 1 es la de arriba' },
 	equipo: { nombre: 'Equipo', prefijo: 'M', nivel: 'nivel', ancho: 0.8, fondo: 0.8, niveles: 0, ayudaNivel: 'Compresor, elevador, soldador…' },
@@ -144,8 +145,8 @@ export function frenteMueble(m: Rect, zona: Rect | null): Pt {
 
 /**
  * Por dónde se llega desde la persiana, en tramos rectos por los pasillos y sin atravesar tabiques:
- * por la izquierda (bajando desde la entrada), por la derecha (cruzando por delante y bajando hasta la puerta del fondo)
- * o hasta electrónica (por su puerta).
+ * por la izquierda (bajando desde la entrada), por la derecha (cruzando por delante y bajando hasta la puerta del baño)
+ * o hasta electrónica (por limpieza y su puerta).
  */
 export function caminoEnLocal(destino: Rect, opts: { mueble: boolean; zona?: Rect | null }): Pt[] {
 	const P = PLANO_LOCAL;
@@ -160,7 +161,8 @@ export function caminoEnLocal(destino: Rect, opts: { mueble: boolean; zona?: Rec
 		const t = opts.mueble ? frenteMueble(destino, opts.zona ?? null) : c;
 		const pe = P.puertaElectronica;
 		const puerta = (pe.desde + pe.hasta) / 2;
-		if (t.x < P.pilares[0].x && t.y > pe.y) pts = [inicio, { x: ex, y: pe.y - 1.25 }, { x: puerta, y: pe.y - 1.25 }, { x: puerta, y: t.y }, t];
+		// Electrónica: se entra desde limpieza
+		if (t.x < pe.x && t.y > P.tabiques[0].y1) pts = [inicio, { x: ex, y: cruce }, { x: derecha, y: cruce }, { x: derecha, y: puerta }, { x: t.x, y: puerta }, t];
 		else if (t.x < P.pilares[0].x || t.y < cruce + 0.6) pts = [inicio, { x: ex, y: t.y }, t];
 		else pts = [inicio, { x: ex, y: cruce }, { x: derecha, y: cruce }, { x: derecha, y: t.y }, t];
 	}

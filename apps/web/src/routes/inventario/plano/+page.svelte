@@ -7,11 +7,14 @@
 	import PlanoLocal from '$comp/PlanoLocal.svelte';
 	import { page } from '$app/state';
 	import { tick } from 'svelte';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { accion, enviar } from '$lib/enviar';
 	import { buscarArticulos, MUEBLES } from '@novaz/core';
 	import type { Mueble } from '@novaz/core/schema';
 	import { ArrowRight, Check, MapPin, Pencil, Printer, RotateCw, Search, Trash2 } from '@lucide/svelte';
 
+	const ancha = new MediaQuery('min-width: 1024px');
+	const horizontal = $derived(ancha.current);
 	let { data } = $props();
 	let editando = $state(false);
 	// ?q= viene de fuera (las herramientas de un procedimiento): busca directamente
@@ -95,10 +98,11 @@
 	<a href="/inventario/etiquetas" class="btn btn-icono h-10 w-10 sm:w-auto sm:px-4" aria-label="Etiquetas"><Printer size={16} /> <span class="hidden sm:inline">Etiquetas</span></a>
 </div>
 
-<div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+<!-- En pantallas anchas el plano va en horizontal (la entrada a la izquierda) y lo demás debajo -->
+<div class="grid grid-cols-1 items-start gap-4">
 	<section bind:this={escenario} class="tarjeta overflow-hidden p-2 {editando ? 'border-acento/50' : ''} scroll-mt-20 lg:scroll-mt-4">
 		{#if localizado && !editando}
-			<Localizador articulo={localizado} zonas={data.plano.zonas} muebles={data.plano.muebles} {contenido} contenedores={contenedoresDe} {cuentaContenedor} alCerrar={() => (verId = null)} />
+			<Localizador {horizontal} articulo={localizado} zonas={data.plano.zonas} muebles={data.plano.muebles} {contenido} contenedores={contenedoresDe} {cuentaContenedor} alCerrar={() => (verId = null)} />
 		{:else}
 			{#if editando}<p class="px-2 pt-1 pb-2 text-xs text-texto-2">Toca un hueco para poner un mueble ahí · arrástralos para moverlos · tócalos para editarlos</p>{/if}
 			<PlanoLocal
@@ -112,12 +116,13 @@
 				alTocarZona={(id) => (zonaSel = zonaSel === id ? null : id)}
 				alTocarVacio={tocarVacio}
 				alMover={mover}
+				{horizontal}
 				clase="max-h-[80dvh]"
 			/>
 		{/if}
 	</section>
 
-	<div class="flex min-w-0 flex-col gap-4 {busqueda.trim().length > 1 ? 'max-lg:order-first' : ''}">
+	<div class="flex w-full min-w-0 flex-col gap-4 lg:max-w-3xl {busqueda.trim().length > 1 ? 'order-first' : ''}">
 		{#if busqueda.trim().length > 1}
 			<section>
 				<p class="etiqueta mb-2">{resultados.length ? `${resultados.length} ${resultados.length === 1 ? 'resultado' : 'resultados'}` : 'Nada con ese nombre'}</p>

@@ -19,6 +19,7 @@
 		contenido,
 		contenedores = [],
 		cuentaContenedor = {},
+		horizontal = false,
 		alCerrar
 	}: {
 		articulo: { id: number; nombre: string; muebleId: number | null; nivel: number | null; zonaId: number | null; contenedorId: number | null; ubicacion: string | null };
@@ -30,6 +31,8 @@
 		/** Lo que hay en cada nivel del mueble (para dibujarlo). */
 		contenido: Record<number, string[]>;
 		alCerrar?: () => void;
+		/** Plano girado (pantallas anchas). */
+		horizontal?: boolean;
 	} = $props();
 
 	type Pt = { x: number; y: number };
@@ -236,6 +239,7 @@
 			ping={mueble && fase !== 'balda' && fase !== 'dentro' ? mueble.id : null}
 			zonaSeleccionada={zona?.id ?? null}
 			resaltados={mueble ? [mueble.id] : []}
+			{horizontal}
 			clase="max-h-[70dvh]"
 		/>
 		{#if dentro && mueble}
