@@ -14,7 +14,8 @@
 
 	let { data } = $props();
 	let editando = $state(false);
-	let busqueda = $state('');
+	// ?q= viene de fuera (las herramientas de un procedimiento): busca directamente
+	let busqueda = $state((() => page.url.searchParams.get('q') ?? '')());
 	let zonaSel = $state<number | null>(null);
 
 	// Localizar algo con la animación (desde el buscador o desde el enlace «ver» del bot: ?ver=ID)

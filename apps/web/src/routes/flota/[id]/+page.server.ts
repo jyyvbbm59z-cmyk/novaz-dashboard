@@ -44,6 +44,7 @@ import { borrarRepostaje, guardarRepostaje } from '$lib/server/repostajes';
 import { avanceRestauraciones, comprobarLectura, registrarKm } from '$lib/server/datos';
 import { accion, ErrorFormulario, leer } from '$lib/server/form';
 import { borrarGastoSimple, guardarGastoSimple } from '$lib/server/libreta';
+import { borradorConIa, cargarFicha, fijarDato, guardarDato, guardarProcedimiento, importarFicha } from '$lib/server/ficha';
 
 export const load = async ({ params, locals }) => {
 	const id = Number(params.id);
@@ -191,6 +192,7 @@ export const load = async ({ params, locals }) => {
 	const combustibleInfo = tipoComb ? { tipo: tipoComb, precio, fecha: precios?.fecha ?? null, municipio: precios?.municipio ?? null } : null;
 	const plantillasDelTipo = plantillasPara(tipoVeh?.nombre);
 	const datos = {
+		ficha: await cargarFicha(db, id, tipoVeh?.nombre ?? null),
 		vehiculo: v,
 		km,
 		ritmo,
@@ -279,6 +281,38 @@ export const load = async ({ params, locals }) => {
 const vid = (p: { id: string }) => Number(p.id);
 
 export const actions = {
+	dato: accion(async ({ request, locals, params }) => {
+		await guardarDato(locals, vid(params), await request.formData());
+		return { mensaje: 'Ficha actualizada' };
+	}),
+	verificarDato: accion(async ({ request, locals, params }) => {
+		const id = leer(await request.formData()).id('id');
+		await locals.db.update(s.datosTecnicos).set({ verificado: true }).where(and(eq(s.datosTecnicos.id, id), eq(s.datosTecnicos.vehiculoId, vid(params))));
+		return { mensaje: 'Marcado como verificado' };
+	}),
+	sugerencia: accion(async ({ request, locals, params }) => {
+		const f = leer(await request.formData());
+		await fijarDato(locals.db, vid(params), { seccion: f.texto('seccion') ?? 'otros', clave: f.obligatorio('clave', 'clave'), nombre: f.obligatorio('nombre', 'nombre'), valor: f.obligatorio('valor', 'valor'), unidad: f.texto('unidad'), fuente: f.texto('fuente'), verificado: true });
+		return { mensaje: 'Guardado en la ficha' };
+	}),
+	importarFicha: accion(async ({ request, locals, params }) => {
+		const r = await importarFicha(locals, vid(params), leer(await request.formData()).obligatorio('json', 'el archivo'));
+		return { mensaje: `Importado: ${r.nuevos} datos${r.procedimientos ? ` y ${r.procedimientos} procedimientos` : ''}${r.respetados ? ` (${r.respetados} verificados que ya tenías se han respetado)` : ''}` };
+	}),
+	borradorIA: accion(async ({ locals, params, platform }) => {
+		const ai = platform?.env.AI;
+		if (!ai) throw new ErrorFormulario('La IA no está disponible en este entorno');
+		const n = await borradorConIa(locals, ai, vid(params));
+		return { mensaje: n ? `${n} datos propuestos por la IA: compruébalos antes de fiarte` : 'La IA no ha sabido nada con seguridad para los huecos vacíos' };
+	}),
+	procedimiento: accion(async ({ request, locals, params }) => {
+		await guardarProcedimiento(locals, vid(params), await request.formData());
+		return { mensaje: 'Procedimiento guardado' };
+	}),
+	borrarProcedimiento: accion(async ({ request, locals, params }) => {
+		await locals.db.delete(s.procedimientos).where(and(eq(s.procedimientos.id, leer(await request.formData()).id('id')), eq(s.procedimientos.vehiculoId, vid(params))));
+		return { mensaje: 'Procedimiento borrado' };
+	}),
 	gastoSimple: accion(async ({ request, locals, params }) => {
 		await guardarGastoSimple(locals, vid(params), await request.formData());
 		return { mensaje: 'Apuntado en tu libreta' };

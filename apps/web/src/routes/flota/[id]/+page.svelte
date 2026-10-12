@@ -6,6 +6,7 @@
 	import Galeria from '$comp/Galeria.svelte';
 	import GraficoKm from '$comp/GraficoKm.svelte';
 	import Hoja from '$comp/Hoja.svelte';
+	import FichaTecnica from '$comp/FichaTecnica.svelte';
 	import Icono from '$comp/Icono.svelte';
 	import MovimientoForm from '$comp/MovimientoForm.svelte';
 	import Nivel from '$comp/Nivel.svelte';
@@ -44,6 +45,7 @@
 		['historial', 'Historial'],
 		['papeles', 'Papeles'],
 		['mantenimiento', 'Mantenimiento'],
+		['ficha', 'Ficha técnica'],
 		['gastos', 'Gastos'],
 		['libreta', 'Mis gastos'],
 		['fotos', 'Fotos'],
@@ -757,6 +759,8 @@
 				{/each}
 			</ul>
 		{/if}
+	{:else if pestana === 'ficha'}
+		<FichaTecnica ficha={data.ficha} entradas={data.entradas} verDinero={data.verDinero} base="/flota/{v.id}" />
 	{:else if pestana === 'libreta' && data.esDueno && data.resumenLibreta}
 		{@const r = data.resumenLibreta}
 		<section class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">

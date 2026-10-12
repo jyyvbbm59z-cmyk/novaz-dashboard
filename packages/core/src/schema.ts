@@ -791,3 +791,50 @@ export const gastosPersonales = sqliteTable(
 	(t) => [index('gastos_personales_vehiculo_idx').on(t.vehiculoId, t.fecha)]
 );
 export type GastoPersonal = typeof gastosPersonales.$inferSelect;
+
+// ─── Ficha técnica y procedimientos (nuestro manual) ──────────────────────────
+
+/** Un dato técnico de un vehículo (aceite, presiones, pares…), verificado o pendiente de comprobar. */
+export const datosTecnicos = sqliteTable(
+	'datos_tecnicos',
+	{
+		id: id(),
+		vehiculoId: integer('vehiculo_id')
+			.notNull()
+			.references(() => vehiculos.id, { onDelete: 'cascade' }),
+		seccion: text('seccion').notNull().default('otros'),
+		clave: text('clave').notNull(),
+		nombre: text('nombre').notNull(),
+		valor: text('valor').notNull(),
+		unidad: text('unidad'),
+		detalle: text('detalle'),
+		/** De dónde sale: «Manual, pág. 34», «Pegatina del vano», «IA (sin verificar)»… */
+		fuente: text('fuente'),
+		verificado: bool('verificado').notNull().default(false),
+		actualizado: text('actualizado').notNull().default(sql`(datetime('now'))`),
+		creado: creado()
+	},
+	(t) => [uniqueIndex('datos_tecnicos_clave_idx').on(t.vehiculoId, t.clave)]
+);
+export type DatoTecnico = typeof datosTecnicos.$inferSelect;
+
+/** Un procedimiento propio paso a paso (cambio de aceite, purgar frenos…), con sus herramientas y pares. */
+export const procedimientos = sqliteTable(
+	'procedimientos',
+	{
+		id: id(),
+		vehiculoId: integer('vehiculo_id')
+			.notNull()
+			.references(() => vehiculos.id, { onDelete: 'cascade' }),
+		titulo: text('titulo').notNull(),
+		tiempoMin: integer('tiempo_min'),
+		herramientas: text('herramientas', { mode: 'json' }).$type<string[]>().notNull().default([]),
+		pasos: text('pasos', { mode: 'json' }).$type<{ texto: string; par?: string | null; foto?: string | null }[]>().notNull().default([]),
+		/** Entrada del diario de la que salió (con sus fotos). */
+		entradaId: integer('entrada_id').references(() => entradas.id, { onDelete: 'set null' }),
+		notas: text('notas'),
+		creado: creado()
+	},
+	(t) => [index('procedimientos_vehiculo_idx').on(t.vehiculoId)]
+);
+export type Procedimiento = typeof procedimientos.$inferSelect;

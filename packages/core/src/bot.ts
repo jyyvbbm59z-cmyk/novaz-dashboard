@@ -9,7 +9,7 @@ export interface VehiculoBot {
 	matricula: string | null;
 }
 
-export type TemaConsulta = 'general' | 'vehiculo' | 'gasto' | 'compras' | 'agenda' | 'donde';
+export type TemaConsulta = 'general' | 'vehiculo' | 'gasto' | 'compras' | 'agenda' | 'donde' | 'ficha';
 
 export type Intencion =
 	| { tipo: 'repostaje'; vehiculoId: number | null; litros: number | null; importeCent: number | null; km: number | null; gasolinera: string | null; lleno: boolean }
@@ -71,6 +71,9 @@ export function interpretarReglas(texto: string, vehiculos: VehiculoBot[]): Inte
 	if (AYUDA.test(t)) return { tipo: 'ayuda' };
 	const donde = t.match(/^(?:\/donde\b|¿?\s*d[oó]nde\s+(?:est[aá]n?|tengo|guardo|guard[eé]|dej[eé]|va|van|hay)(?=[\s?]|$))\s*(.*?)\??$/i);
 	if (donde) return { tipo: 'consulta', vehiculoId: null, tema: 'donde', buscar: donde[1].replace(/^(el|la|los|las|un|una|mi|mis)\s+/i, '').trim() || null };
+	// Datos técnicos: «¿qué aceite lleva la Bandit?», «¿a cuánto inflo las ruedas?», «par de apriete de…»
+	if (/^\/ficha\b/i.test(t) || /^¿?\s*(qu[eé]\s+(aceite|l[ií]quido|refrigerante|bater[ií]a|buj[ií]a|filtro|neum[aá]tico|presi[oó]n|bombilla|pastillas?)|a\s+cu[aá]nto\s+(inflo|hincho|van|aprieto)|cu[aá]nto\s+aceite|(el\s+)?par\s+de(\s+apriete)?|presi[oó]n\s+de)/i.test(t))
+		return { tipo: 'consulta', vehiculoId: veh, tema: 'ficha', buscar: resto(/^\/ficha\b/i) || t };
 	if (/^¿?\s*cu[aá]nto\s+(llevo\s+)?(he\s+)?gastad/i.test(t)) return { tipo: 'consulta', vehiculoId: veh, tema: 'gasto' };
 	if (/^¿?\s*qu[eé]\s+le\s+toca/i.test(t)) return { tipo: 'consulta', vehiculoId: veh, tema: 'vehiculo' };
 	if (/^\/(hoy|informe)\b/i.test(t)) return { tipo: 'consulta', vehiculoId: null, tema: 'general' };
@@ -173,7 +176,7 @@ Acciones posibles (campo "accion"):
 - mejora: quiere hacerle una mejora (algo nuevo, no una avería). Campos: vehiculo, titulo.
 - tarea_local: algo que hacer en el local/taller (pintar, arreglar, ordenar…). Campos: titulo, zona, reforma (true si es una obra que mejora el local).
 - compra: hay que comprar cosas. Campos: items (lista; si dice precio ponlo al final: "Lija de 400 · 6 €"), vehiculo si es para uno.
-- consulta: pregunta algo. Campos: tema (general = cómo va todo / qué hay pendiente; vehiculo = qué le toca a un vehículo; gasto = cuánto ha gastado; compras = qué hay que comprar; agenda = qué viene; donde = dónde está guardada una herramienta o cosa del taller), vehiculo si pregunta por uno, buscar (solo con tema donde: la cosa que busca, p. ej. "llave dinamométrica").
+- consulta: pregunta algo. Campos: tema (general = cómo va todo / qué hay pendiente; vehiculo = qué le toca a un vehículo; gasto = cuánto ha gastado; compras = qué hay que comprar; agenda = qué viene; donde = dónde está guardada una herramienta o cosa del taller; ficha = un dato técnico de un vehículo: aceite, presiones, pares de apriete, referencias de recambios), vehiculo si pregunta por uno, buscar (con tema donde: la cosa que busca, p. ej. "llave dinamométrica"; con tema ficha: el dato que pregunta, p. ej. "aceite").
 - ayuda: pregunta qué puedes hacer.
 - desconocido: no encaja en nada.
 
@@ -200,7 +203,7 @@ export const ESQUEMA_INTENCION = {
 		zona: { type: 'string' },
 		reforma: { type: 'boolean' },
 		items: { type: 'array', items: { type: 'string' } },
-		tema: { type: 'string', enum: ['general', 'vehiculo', 'gasto', 'compras', 'agenda', 'donde'] },
+		tema: { type: 'string', enum: ['general', 'vehiculo', 'gasto', 'compras', 'agenda', 'donde', 'ficha'] },
 		buscar: { type: 'string' }
 	},
 	required: ['accion']
@@ -287,9 +290,10 @@ export function normalizarIntencion(raw: unknown, vehiculos: VehiculoBot[], text
 			return items.length ? { tipo: 'compra', items, vehiculoId } : { tipo: 'desconocido', texto };
 		}
 		case 'consulta': {
-			const temas: TemaConsulta[] = ['general', 'vehiculo', 'gasto', 'compras', 'agenda', 'donde'];
+			const temas: TemaConsulta[] = ['general', 'vehiculo', 'gasto', 'compras', 'agenda', 'donde', 'ficha'];
 			const tema = temas.includes(o.tema as TemaConsulta) ? (o.tema as TemaConsulta) : vehiculoId ? 'vehiculo' : 'general';
 			if (tema === 'donde') return { tipo: 'consulta', vehiculoId: null, tema, buscar: str(o.buscar, 80) };
+			if (tema === 'ficha') return { tipo: 'consulta', vehiculoId, tema, buscar: str(o.buscar, 80) ?? texto };
 			return { tipo: 'consulta', vehiculoId, tema };
 		}
 		case 'ayuda':
@@ -307,7 +311,7 @@ export const TEXTO_AYUDA = `<b>Escríbeme como hablarías:</b>
 • <i>Hay que pintar la pared del fondo</i>
 • <i>Comprar lija de 400, 6 €</i>
 • <i>¿Qué le toca a la Bandit?</i> · <i>¿Cuánto llevo gastado este mes?</i>
-• <i>¿Dónde está la dinamométrica?</i>
+• <i>¿Dónde está la dinamométrica?</i> · <i>¿Qué aceite lleva la Bandit?</i>
 
 También fotos de tickets (los leo y apunto el gasto) y notas de voz.
 
@@ -384,7 +388,7 @@ export function permisoIntencion(i: Intencion): 'vehiculos' | 'inventario' | 'lo
 		case 'compra':
 			return 'inventario';
 		case 'consulta':
-			return i.tema === 'gasto' ? 'dinero' : i.tema === 'compras' || i.tema === 'donde' ? 'inventario' : i.tema === 'vehiculo' || i.tema === 'agenda' ? 'vehiculos' : null;
+			return i.tema === 'gasto' ? 'dinero' : i.tema === 'compras' || i.tema === 'donde' ? 'inventario' : i.tema === 'vehiculo' || i.tema === 'agenda' || i.tema === 'ficha' ? 'vehiculos' : null;
 		default:
 			return null;
 	}

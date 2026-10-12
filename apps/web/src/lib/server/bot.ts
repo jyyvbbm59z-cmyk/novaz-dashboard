@@ -1,6 +1,7 @@
 // Bot de Telegram en las dos direcciones: lo que entiende se confirma con un botón, se apunta en la app y se puede deshacer.
 import {
 	buscarArticulos,
+	buscarEnFicha,
 	cargarAlertas,
 	datosInforme,
 	describirUbicacion,
@@ -280,6 +281,25 @@ export async function responderConsulta(locals: Locals, i: Extract<Intencion, { 
 		if (proximas.length) lineas.push('', '<b>Lo siguiente</b>', ...proximas.map((a) => `- ${esc(a.titulo)}${a.detalle ? ` — ${esc(a.detalle)}` : ''}`));
 		lineas.push('', `<a href="${app}/flota/${i.vehiculoId}">Abrir en la app</a>`);
 		return lineas.join('\n');
+	}
+	if (i.tema === 'ficha') {
+		const mios = await vehiculosBot(locals);
+		const vid = i.vehiculoId ?? (mios.length === 1 ? mios[0].id : null);
+		if (!vid) return '¿De qué vehículo? Por ejemplo: <i>«¿Qué aceite lleva la Bandit?»</i>';
+		const alias = mios.find((v) => v.id === vid)?.alias ?? 'el vehículo';
+		const datos = await db.select().from(s.datosTecnicos).where(eq(s.datosTecnicos.vehiculoId, vid));
+		const hallados = buscarEnFicha(i.buscar ?? '', datos);
+		const enlace = `<a href="${app}/flota/${vid}?pestana=ficha">Ficha técnica</a>`;
+		if (!hallados.length) return `No lo tengo en la ficha de ${esc(alias)}. Apúntalo en la ${enlace} y la próxima vez te lo digo.`;
+		return [
+			`<b>${esc(alias)}</b>`,
+			...hallados.map((d) => {
+				const estado = d.verificado ? '✓' : d.seccion === 'pares' ? '⚠️ <i>pista sin verificar: compruébalo antes de apretar</i>' : '<i>(sin verificar)</i>';
+				return `${esc(d.nombre)}: <b>${esc(d.valor)}${d.unidad ? ` ${esc(d.unidad)}` : ''}</b>${d.detalle ? ` · ${esc(d.detalle)}` : ''} ${estado}`;
+			}),
+			'',
+			enlace
+		].join('\n');
 	}
 	if (i.tema === 'donde') {
 		if (!i.buscar) return '¿Qué buscas? Por ejemplo: <i>¿Dónde está la dinamométrica?</i>';

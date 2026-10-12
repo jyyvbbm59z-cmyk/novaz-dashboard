@@ -87,3 +87,11 @@ describe('frases normales', () => {
 		expect(normalizarIntencion({ accion: 'Tarea local', descripcion: 'Pintar la pared' }, V, 'x')).toMatchObject({ tipo: 'tarea_local', titulo: 'Pintar la pared' });
 	});
 });
+
+describe('preguntas a la ficha', () => {
+	it('entiende preguntas de datos técnicos', () => {
+		expect(interpretarReglas('¿Qué aceite lleva la Bandit?', V)).toMatchObject({ tipo: 'consulta', tema: 'ficha', vehiculoId: 1 });
+		expect(interpretarReglas('¿A cuánto inflo las ruedas del Ibiza?', V)).toMatchObject({ tema: 'ficha', vehiculoId: 5 });
+		expect(interpretarReglas('par de apriete de las ruedas del ibiza', V)).toMatchObject({ tema: 'ficha' });
+	});
+});

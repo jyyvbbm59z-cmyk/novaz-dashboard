@@ -267,6 +267,13 @@
       "when": 1791789184272,
       "tag": "0037_usuarios",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1791795280620,
+      "tag": "0038_ficha_tecnica",
+      "breakpoints": true
     }
   ]
 }
