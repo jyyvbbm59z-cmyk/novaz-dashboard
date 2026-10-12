@@ -13,5 +13,10 @@ export function filtroMovimientos(url: URL, hoy: string) {
 	if (vehiculo === 'general') conds.push(isNull(s.movimientos.vehiculoId));
 	else if (vehiculo) conds.push(eq(s.movimientos.vehiculoId, Number(vehiculo)));
 	if (TIPOS_MOVIMIENTO.includes(tipo as TipoMovimiento)) conds.push(eq(s.movimientos.tipo, tipo as TipoMovimiento));
-	return { where: and(...conds), filtros: { anio, mes, categoria, vehiculo, tipo } };
+	// Para el gráfico del año: los mismos filtros salvo el mes (el mes se elige en el propio gráfico) y el tipo (son gastos)
+	const condsAnio: SQL[] = [like(s.movimientos.fecha, `${anio}%`), eq(s.movimientos.tipo, 'gasto')];
+	if (categoria) condsAnio.push(eq(s.movimientos.categoriaId, categoria));
+	if (vehiculo === 'general') condsAnio.push(isNull(s.movimientos.vehiculoId));
+	else if (vehiculo) condsAnio.push(eq(s.movimientos.vehiculoId, Number(vehiculo)));
+	return { where: and(...conds), whereGrafico: and(...condsAnio), filtros: { anio, mes, categoria, vehiculo, tipo } };
 }

@@ -4,10 +4,11 @@ import { borrarMovimiento, guardarMovimiento } from '$lib/server/acciones';
 import { adjuntosDe, borrarAdjuntos } from '$lib/server/adjuntos';
 import { accion, leer } from '$lib/server/form';
 import { filtroMovimientos } from './filtro';
+import { seriesGasto } from '@novaz/core';
 
 export const load = async ({ locals, url }) => {
 	const { db, hoy } = locals;
-	const { where, filtros } = filtroMovimientos(url, hoy);
+	const { where, whereGrafico, filtros } = filtroMovimientos(url, hoy);
 	const [movs, porMes] = await Promise.all([
 		db
 			.select({ m: s.movimientos, categoria: s.categorias, vehiculo: s.vehiculos.alias })
@@ -27,6 +28,18 @@ export const load = async ({ locals, url }) => {
 			.where(sql`substr(${s.movimientos.fecha}, 1, 4) = ${filtros.anio}`)
 			.groupBy(sql`1`, s.movimientos.tipo)
 	]);
+	// Gasto por mes y categoría (con los filtros, salvo el mes) y, para los colores, lo que gasta cada categoría en el año
+	const mesCat = sql<string>`substr(${s.movimientos.fecha}, 6, 2)`;
+	const [porMesCat, delAnio, cats] = await Promise.all([
+		db.select({ mes: mesCat, cat: s.movimientos.categoriaId, total: sql<number>`sum(${s.movimientos.importeCent})` }).from(s.movimientos).where(whereGrafico).groupBy(sql`1`, s.movimientos.categoriaId),
+		db
+			.select({ cat: s.movimientos.categoriaId, total: sql<number>`sum(${s.movimientos.importeCent})` })
+			.from(s.movimientos)
+			.where(sql`substr(${s.movimientos.fecha}, 1, 4) = ${filtros.anio} and ${s.movimientos.tipo} = 'gasto'`)
+			.groupBy(s.movimientos.categoriaId),
+		db.select({ id: s.categorias.id, nombre: s.categorias.nombre }).from(s.categorias)
+	]);
+	const grafico = seriesGasto(porMesCat, delAnio, cats);
 
 	const meses = Array.from({ length: 12 }, (_, i) => {
 		const m = String(i + 1).padStart(2, '0');
@@ -44,6 +57,7 @@ export const load = async ({ locals, url }) => {
 		adjuntos: await adjuntosDe(db, 'movimiento', lista.map((m) => m.id)),
 		bienes: await db.select().from(s.inmovilizado),
 		meses,
+		grafico,
 		totales: {
 			gasto: lista.filter((m) => m.tipo === 'gasto').reduce((a, m) => a + m.importeCent, 0),
 			ingreso: lista.filter((m) => m.tipo === 'ingreso').reduce((a, m) => a + m.importeCent, 0)
