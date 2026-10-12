@@ -40,3 +40,18 @@ describe('ficha técnica', () => {
 		expect(buscarEnFicha('a cuánto inflo las ruedas', datos)[0].clave).toBe('presion_del');
 	});
 });
+
+import { readFileSync } from 'node:fs';
+
+describe('manual de la Bandit', () => {
+	it('el JSON del manual se importa entero', () => {
+		const raw = JSON.parse(readFileSync(new URL('../../../docs/manuales/suzuki-gsf600-bandit.novaz-ficha.json', import.meta.url), 'utf8'));
+		const r = leerFichaJSON(raw);
+		expect(r.avisos).toEqual([]);
+		expect(r.datos.length).toBe(93);
+		expect(r.procedimientos.length).toBe(8);
+		expect(new Set(r.datos.map((d) => d.clave)).size).toBe(93);
+		expect(r.datos.find((d) => d.clave === 'par_eje_tras')?.valor).toBe('100');
+		expect(r.datos.every((d) => d.verificado)).toBe(true);
+	});
+});

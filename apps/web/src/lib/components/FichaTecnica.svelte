@@ -125,10 +125,10 @@
 							<button class="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-superficie-2" onclick={() => editar(f)}>
 								<span class="min-w-0 flex-1">
 									<span class="block text-sm {d ? 'font-medium' : 'text-texto-3'}">{f.nombre}</span>
-									{#if d?.detalle || d?.fuente}<span class="block truncate text-xs text-texto-3">{[d.detalle, d.fuente].filter(Boolean).join(' · ')}</span>{:else if !d && f.ayuda}<span class="block truncate text-xs text-texto-3/70">{f.ayuda}</span>{/if}
+									{#if d?.detalle || d?.fuente}<span class="line-clamp-2 block text-xs text-texto-3">{[d.detalle, d.fuente].filter(Boolean).join(' · ')}</span>{:else if !d && f.ayuda}<span class="block truncate text-xs text-texto-3/70">{f.ayuda}</span>{/if}
 								</span>
 								{#if d}
-									<span class="shrink-0 text-right">
+									<span class="max-w-[55%] min-w-0 shrink-0 text-right break-words">
 										<span class="cifra block text-base {pista ? 'text-texto-3 line-through decoration-dotted' : ''}">{d.valor}{d.unidad ? ` ${d.unidad}` : ''}</span>
 										{#if d.verificado}<span class="flex items-center justify-end gap-1 text-[0.68rem] nivel-ok"><BadgeCheck size={11} /> verificado</span>{:else}<span class="text-[0.68rem] nivel-urgente">{pista ? 'pista: compruébalo' : 'sin verificar'}</span>{/if}
 									</span>

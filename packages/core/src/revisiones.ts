@@ -47,7 +47,7 @@ export const PLANTILLAS_REVISION: PlantillaRevisiones[] = [
 		nombre: 'Suzuki GSF600 Bandit (2000–2004)',
 		descripcion:
 			'Tabla de mantenimiento periódico del manual de servicio, agrupada en tus niveles I1–I5. Ningún intervalo es más largo que el del manual; donde se adelanta, se indica.',
-		fuente: 'Manual de servicio Suzuki GSF600 (2000), «Periodic maintenance schedule» y procedimientos de cada elemento.',
+		fuente: 'Manual de servicio Suzuki GSF600/GSF600S 99500-36102-01E (3.ª ed., 2001): tabla de mantenimiento periódico (p. 2-2) y procedimientos de cada elemento (p. 2-4 a 2-25).',
 		sugerirSi: /gsf\s*-?\s*600|bandit\s*600/i,
 		tipo: 'moto',
 		niveles: [
