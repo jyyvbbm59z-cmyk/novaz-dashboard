@@ -1,9 +1,10 @@
 <script lang="ts">
 	import ArticuloDetalle from '$comp/ArticuloDetalle.svelte';
+	import LocalizarHoja from '$comp/LocalizarHoja.svelte';
 	import ArticuloForm from '$comp/ArticuloForm.svelte';
 	import Hoja from '$comp/Hoja.svelte';
 	import { bajoMinimo, euros } from '@novaz/core';
-	import { Droplets, Package, Plus, Search } from '@lucide/svelte';
+	import { Droplets, Package, Pencil, Plus, Search } from '@lucide/svelte';
 
 	let { data } = $props();
 	const reserva = $derived(data.articulos.filter((a) => a.tipo !== 'herramienta'));
@@ -23,6 +24,27 @@
 	let verId = $state<number | null>(null);
 	let hVer = $state(false);
 	const viendo = $derived(data.articulos.find((a) => a.id === verId) ?? null);
+	// Tocar algo de la lista lo localiza en el plano; si aún no tiene sitio, se abre su ficha para ponérselo
+	let locId = $state<number | null>(null);
+	let hLoc = $state(false);
+	let editarAlAbrir = $state(false);
+	const localizado = $derived(data.articulos.find((a) => a.id === locId) ?? null);
+	function localizar(id: number) {
+		hVer = false;
+		locId = id;
+		hLoc = true;
+	}
+	function abrirFicha(id: number, editar = false) {
+		hLoc = false;
+		editarAlAbrir = editar;
+		verId = id;
+		hVer = true;
+	}
+	const tocar = (a: (typeof data.articulos)[number]) => (a.sitio.codigo ? localizar(a.id) : abrirFicha(a.id));
+	/** Intro con un solo resultado: localizarlo directamente (al soltar la tecla, para que no cierre la hoja que abre). */
+	function intro(e: KeyboardEvent) {
+		if (e.key === 'Enter' && visibles.length === 1) tocar(visibles[0]);
+	}
 	const vehiculosDe = (ids: number[]) => data.vehiculosMenu.filter((v) => ids.includes(v.id)).map((v) => v.alias).join(', ');
 </script>
 
@@ -31,7 +53,7 @@
 <div class="mb-4 flex flex-wrap items-center gap-2">
 	<label class="relative min-w-48 flex-1">
 		<Search size={15} class="absolute top-1/2 left-3 -translate-y-1/2 text-texto-3" />
-		<input bind:value={busqueda} class="input h-9 pl-9 text-sm" placeholder="Buscar recambio o consumible…" />
+		<input bind:value={busqueda} onkeyup={intro} class="input h-9 pl-9 text-sm" placeholder="Buscar recambio o consumible…" />
 	</label>
 	{#if bajos}<button class="chip h-9 px-3 {soloBajos ? 'border-acento text-texto' : 'nivel-urgente'}" onclick={() => (soloBajos = !soloBajos)}>{bajos} por reponer</button>{/if}
 	<button class="btn h-9" onclick={() => ((tipoNuevo = 'recambio'), (hNueva = true))}><Plus size={16} /> Recambio</button>
@@ -45,8 +67,8 @@
 	<ul class="tarjeta lista-filas">
 		{#each visibles as a (a.id)}
 			{@const bajo = bajoMinimo(a, a.cantidad)}
-			<li>
-				<button class="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-superficie-2" onclick={() => ((verId = a.id), (hVer = true))}>
+			<li class="flex items-center">
+				<button class="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left transition hover:bg-superficie-2" onclick={() => tocar(a)}>
 					<span class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-superficie-3">
 						{#if a.portada}<img src="/archivos/{a.portada}?mini" alt="" class="h-full w-full object-cover" />{:else if a.tipo === 'consumible'}<Droplets size={18} class="text-texto-3" />{:else}<Package size={18} class="text-texto-3" />{/if}
 					</span>
@@ -62,6 +84,7 @@
 						<span class="text-xs text-texto-3">{a.unidad}</span>
 					</span>
 				</button>
+				<button class="btn btn-fantasma btn-icono mr-1.5 h-9 w-9 shrink-0 text-texto-3" onclick={() => abrirFicha(a.id, true)} aria-label="Editar {a.nombre}"><Pencil size={15} /></button>
 			</li>
 		{/each}
 	</ul>
@@ -72,6 +95,7 @@
 </Hoja>
 <Hoja bind:abierta={hVer} titulo={viendo?.nombre ?? ''}>
 	{#if viendo}
-		<ArticuloDetalle articulo={viendo} fotos={data.fotosInv[viendo.id] ?? []} historial={data.historial[viendo.id] ?? []} categorias={data.categoriasInv} ubicaciones={data.ubicaciones} vehiculos={data.vehiculosMenu} hoy={data.hoy} alCerrar={() => (hVer = false)} />
+		{#key `${viendo.id}-${editarAlAbrir}`}<ArticuloDetalle articulo={viendo} fotos={data.fotosInv[viendo.id] ?? []} historial={data.historial[viendo.id] ?? []} categorias={data.categoriasInv} ubicaciones={data.ubicaciones} vehiculos={data.vehiculosMenu} hoy={data.hoy} editar={editarAlAbrir} alLocalizar={() => localizar(viendo.id)} alCerrar={() => (hVer = false)} />{/key}
 	{/if}
 </Hoja>
+<LocalizarHoja bind:abierta={hLoc} articulo={localizado} articulos={data.articulos} plano={data.plano} alVerFicha={(id) => abrirFicha(id)} />

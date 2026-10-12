@@ -7,7 +7,7 @@
 	import { accion, enviar } from '$lib/enviar';
 	import { euros, fechaLarga, type UbicacionDescrita } from '@novaz/core';
 	import type { Adjunto } from '@novaz/core/schema';
-	import { Minus, Pencil, Plus, Scale, Trash2 } from '@lucide/svelte';
+	import { MapPin, Minus, Pencil, Plus, Scale, Trash2 } from '@lucide/svelte';
 	import type { ArticuloInventario } from '$lib/server/inventario';
 
 	let {
@@ -18,6 +18,8 @@
 		ubicaciones = [],
 		vehiculos = [],
 		hoy,
+		editar = false,
+		alLocalizar,
 		alCerrar
 	}: {
 		articulo: ArticuloInventario & { sitio?: UbicacionDescrita };
@@ -27,10 +29,14 @@
 		ubicaciones?: string[];
 		vehiculos?: { id: number; alias: string }[];
 		hoy: string;
+		/** Abrir directamente en edición (el lápiz de la lista). */
+		editar?: boolean;
+		/** Verlo en el plano (si está colocado). */
+		alLocalizar?: () => void;
 		alCerrar?: () => void;
 	} = $props();
 
-	let editando = $state(false);
+	let editando = $state((() => editar)());
 	let modo = $state<'compra' | 'uso' | 'ajuste' | null>(null);
 	const ESTADO: Record<string, string> = { ok: 'Bien', reparar: 'A reparar', prestada: 'Prestada', perdida: 'No la encuentro', baja: 'De baja' };
 	const MOTIVO: Record<string, string> = { alta: 'Alta', compra: 'Compra', uso: 'Uso', ajuste: 'Ajuste' };
@@ -51,6 +57,12 @@
 		<div class="flex items-start gap-3">
 			<div class="min-w-0 flex-1">
 				<p class="text-xs text-texto-3">{[articulo.marca, articulo.referencia].filter(Boolean).join(' · ') || (herramienta ? 'Herramienta' : articulo.tipo === 'recambio' ? 'Recambio' : 'Consumible')}</p>
+				{#if !articulo.sitio?.codigo}
+					<!-- Sin sitio en el plano: lo primero, ponérselo -->
+					<button class="btn btn-acento mt-2 h-11 w-full" onclick={() => (editando = true)}><MapPin size={16} /> {herramienta ? "Ponerla" : "Ponerlo"} en el plano</button>
+				{:else if alLocalizar}
+					<button class="btn mt-2 h-10 w-full" onclick={alLocalizar}><MapPin size={16} /> Ver dónde está</button>
+				{/if}
 				<p class="mt-1 flex flex-wrap gap-1.5">
 					{#if articulo.sitio?.muebleId}
 						<a href="/inventario/mueble/{articulo.sitio.muebleId}" class="chip max-w-full whitespace-normal hover:border-acento"><span class="font-mono font-bold">{articulo.sitio.codigo}</span> {articulo.sitio.texto}</a>
