@@ -1,8 +1,29 @@
 <script lang="ts">
+	import { pdfEtiquetas, type EtiquetaPdf } from '$lib/etiquetasPdf';
 	import { Printer } from '@lucide/svelte';
 
 	let { data } = $props();
 	let conNiveles = $state(true);
+	// El PDF se prepara al entrar (y al cambiar la casilla): el botón es un enlace normal, que en el móvil abre a la primera
+	let url = $state<string | null>(null);
+	$effect(() => {
+		const lista: EtiquetaPdf[] = data.etiquetas.flatMap((e) => [
+			{ codigo: e.codigo, nombre: e.nombre, zona: e.zona, color: e.color, qr: e.qr, grande: true },
+			...(conNiveles ? [...e.niveles.map((n) => ({ codigo: n.codigo, zona: n.nombre, color: e.color, qr: n.qr, grande: false })), ...e.contenedores.map((c) => ({ codigo: c.codigo, zona: c.nombre, color: e.color, qr: c.qr, grande: false }))] : [])
+		]);
+		let vivo = true;
+		let hecho: string | null = null;
+		url = null;
+		if (lista.length)
+			pdfEtiquetas(lista).then((b) => {
+				hecho = URL.createObjectURL(b);
+				if (vivo) url = hecho;
+			});
+		return () => {
+			vivo = false;
+			if (hecho) URL.revokeObjectURL(hecho);
+		};
+	});
 </script>
 
 <svelte:head><title>Etiquetas · {data.ajustes.nombreTaller}</title></svelte:head>
@@ -17,7 +38,11 @@
 		{#if data.solo}<a href="/inventario/etiquetas" class="text-acento">Ver todas</a>{/if}
 	</p>
 	<label class="flex items-center gap-2 text-sm"><input type="checkbox" bind:checked={conNiveles} class="h-4 w-4 accent-[var(--acento)]" /> Baldas, cajones y contenedores</label>
-	<button class="btn btn-acento h-10" onclick={() => print()} disabled={!data.etiquetas.length}><Printer size={16} /> Imprimir</button>
+	{#if url}
+		<a href={url} target="_blank" download="etiquetas{data.solo ? `-${data.etiquetas[0]?.codigo ?? ''}` : ''}.pdf" class="btn btn-acento h-10"><Printer size={16} /> Imprimir (PDF)</a>
+	{:else}
+		<button class="btn btn-acento h-10" disabled><Printer size={16} /> {data.etiquetas.length ? 'Preparando el PDF…' : 'Imprimir'}</button>
+	{/if}
 </div>
 
 {#if !data.etiquetas.length}
