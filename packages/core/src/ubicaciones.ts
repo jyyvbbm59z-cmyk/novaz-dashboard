@@ -99,6 +99,86 @@ export const MUEBLES: Record<TipoMueble, { nombre: string; prefijo: string; nive
 	otro: { nombre: 'Otro', prefijo: 'O', nivel: 'nivel', ancho: 0.6, fondo: 0.6, niveles: 1, ayudaNivel: '' }
 };
 
+// ─── Muebles a medida: filas de distinto alto, partidas en cajones, huecos ───
+
+/** Una fila del mueble, de arriba a abajo: su alto (en «alturas de cajón») y en cuántos cajones se parte; o un hueco abierto. */
+export interface FilaMueble {
+	alto: number;
+	cajones: number;
+	hueco?: boolean;
+	/** Empieza otra pieza (el carro bajo el cofre): se dibuja separada de la de encima. */
+	aparte?: boolean;
+}
+export interface DisposicionMueble {
+	filas: FilaMueble[];
+	/** Cómo se llama cada nivel si no es lo del tipo de mueble («cesta» en un Råskog). */
+	nivel?: string;
+}
+export interface NivelMueble {
+	/** Su número en el código de ubicación: de arriba a abajo y, en una fila partida, de izquierda a derecha. */
+	numero: number;
+	fila: number;
+	col: number;
+	cols: number;
+	/** Alto y posición desde arriba, en «alturas de cajón». */
+	alto: number;
+	desde: number;
+	hueco: boolean;
+	aparte: boolean;
+	nombre: string;
+}
+
+type MuebleNiveles = { tipo: TipoMueble; niveles?: number; disposicion?: DisposicionMueble | null };
+
+/** Cómo se llama un nivel de este mueble: balda, cajón, cesta… */
+export const nombreDeNivel = (m: MuebleNiveles) => m.disposicion?.nivel?.trim() || MUEBLES[m.tipo].nivel;
+
+/** «cajón» → «cajones», «balda» → «baldas». */
+export const pluralNivel = (n: string) => (/[nlr]$/.test(n) ? `${n.replace('ó', 'o')}es` : `${n}s`);
+
+/** Los niveles de un mueble: los de su disposición a medida o, si no tiene, todos iguales de arriba a abajo. */
+export function nivelesMueble(m: MuebleNiveles): NivelMueble[] {
+	const base = nombreDeNivel(m);
+	const femenino = /a$/.test(base);
+	const lado = (col: number, cols: number) =>
+		cols === 2 ? (femenino ? ['izquierda', 'derecha'] : ['izquierdo', 'derecho'])[col] : cols === 3 ? (femenino ? ['izquierda', 'central', 'derecha'] : ['izquierdo', 'central', 'derecho'])[col] : `${col + 1}.º por la izquierda`;
+	const filas: FilaMueble[] = m.disposicion?.filas?.length ? m.disposicion.filas : Array.from({ length: Math.max(m.niveles ?? 0, 0) }, () => ({ alto: 1, cajones: 1 }));
+	const out: NivelMueble[] = [];
+	let desde = 0;
+	filas.forEach((f, fila) => {
+		const cols = f.hueco ? 1 : Math.max(1, Math.round(f.cajones));
+		for (let col = 0; col < cols; col++) {
+			const numero = out.length + 1;
+			const nombre = f.hueco ? `hueco ${numero}` : `${base} ${numero}${cols > 1 ? ` (${lado(col, cols)})` : ''}`;
+			out.push({ numero, fila, col, cols, alto: f.alto, desde, hueco: !!f.hueco, aparte: !!f.aparte && fila > 0, nombre });
+		}
+		desde += f.alto;
+	});
+	return out;
+}
+
+/** El nombre de un nivel concreto («cajón 2 (central)», «balda 3», «hueco 9»). */
+export function nombreNivel(m: MuebleNiveles, numero: number): string {
+	return nivelesMueble(m).find((n) => n.numero === numero)?.nombre ?? `${nombreDeNivel(m)} ${numero}`;
+}
+
+/** Valida y limpia una disposición que llega de un formulario (null si no vale o está vacía). */
+export function limpiarDisposicion(x: unknown): DisposicionMueble | null {
+	const d = x as Partial<DisposicionMueble> | null;
+	if (!d || !Array.isArray(d.filas)) return null;
+	const filas = d.filas
+		.slice(0, 30)
+		.map((f) => ({
+			alto: Math.min(10, Math.max(0.5, Number(f?.alto) || 1)),
+			cajones: Math.min(8, Math.max(1, Math.round(Number(f?.cajones) || 1))),
+			...(f?.hueco ? { hueco: true } : {}),
+			...(f?.aparte ? { aparte: true } : {})
+		}));
+	if (!filas.length) return null;
+	const nivel = typeof d.nivel === 'string' && d.nivel.trim() ? d.nivel.trim().slice(0, 20).toLowerCase() : undefined;
+	return { filas, ...(nivel ? { nivel } : {}) };
+}
+
 /** El siguiente código libre para un tipo de mueble: E1, E2… (único en todo el local). */
 export function siguienteCodigoMueble(tipo: TipoMueble, existentes: { codigo: string }[]): string {
 	const p = MUEBLES[tipo].prefijo;
@@ -196,7 +276,7 @@ export function siguienteLetra(usadas: string[]): string {
 export const ordenLetra = (a: string, b: string) => a.length - b.length || a.localeCompare(b);
 
 type ZonaMin = { id: number; codigo: string; nombre: string };
-type MuebleMin = { id: number; codigo: string; nombre: string; tipo: TipoMueble; zonaId: number | null };
+type MuebleMin = { id: number; codigo: string; nombre: string; tipo: TipoMueble; zonaId: number | null; niveles?: number; disposicion?: DisposicionMueble | null };
 type ContenedorMin = { id: number; letra: string; nombre: string; tipo: TipoContenedor };
 
 export interface UbicacionDescrita {
@@ -222,7 +302,7 @@ export function describirUbicacion(
 	const partes = [
 		zona?.nombre,
 		mueble ? `${mueble.nombre} ${mueble.codigo}` : null,
-		mueble && a.nivel ? `${MUEBLES[mueble.tipo].nivel} ${a.nivel}` : null,
+		mueble && a.nivel ? nombreNivel(mueble, a.nivel) : null,
 		cont ? `${CONTENEDORES[cont.tipo]} ${cont.letra}${cont.nombre && cont.nombre !== CONTENEDORES[cont.tipo] ? ` (${cont.nombre})` : ''}` : null,
 		a.ubicacion
 	].filter(Boolean);

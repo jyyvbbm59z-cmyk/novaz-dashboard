@@ -9,7 +9,7 @@
 	import { tick } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import { accion, enviar } from '$lib/enviar';
-	import { buscarArticulos, MUEBLES } from '@novaz/core';
+	import { buscarArticulos, MUEBLES, nombreDeNivel, pluralNivel } from '@novaz/core';
 	import type { Mueble } from '@novaz/core/schema';
 	import { ArrowRight, Check, MapPin, Pencil, Printer, RotateCw, Search, Trash2 } from '@lucide/svelte';
 
@@ -162,7 +162,7 @@
 							<li>
 								<a href="/inventario/mueble/{m.id}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-superficie-2">
 									<span class="w-14 shrink-0 font-mono text-sm font-bold">{zona.codigo}·{m.codigo}</span>
-									<span class="min-w-0 flex-1 truncate text-sm">{m.nombre}<span class="text-texto-3">{m.niveles > 1 ? ` · ${m.niveles} ${MUEBLES[m.tipo].nivel === 'cajón' ? 'cajones' : MUEBLES[m.tipo].nivel + 's'}` : ''}</span></span>
+									<span class="min-w-0 flex-1 truncate text-sm">{m.nombre}<span class="text-texto-3">{m.niveles > 1 ? ` · ${m.niveles} ${pluralNivel(nombreDeNivel(m))}` : ''}</span></span>
 									<span class="text-xs text-texto-3">{cuentas[m.id] ?? 0}</span>
 								</a>
 							</li>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Un mueble visto de frente con sus baldas, cajones o filas, y lo que hay en cada una.
 	// Puede encender una balda (la de lo que buscas) y poner encima el nombre.
-	import { CONTENEDORES, MUEBLES, ordenLetra } from '@novaz/core';
+	import { CONTENEDORES, nivelesMueble, nombreDeNivel, nombreNivel as nombreDe, ordenLetra } from '@novaz/core';
 	import type { Mueble } from '@novaz/core/schema';
 
 	let {
@@ -38,7 +38,9 @@
 
 	const ALTO: Record<string, number> = { estanteria: 1.8, armario: 1.9, cajonera: 0.95, panel: 1.0, banco: 0.9, carro: 0.9, equipo: 1.0, otro: 1.0 };
 	const W = $derived(Math.max(mueble.ancho, 0.5));
-	const H = $derived(ALTO[mueble.tipo] ?? 1);
+	// Un carro o cajonera a medida crece con sus filas (un cofre sobre un carro es más alto)
+	const unidades = $derived(mueble.disposicion?.filas.reduce((s, f) => s + f.alto, 0) ?? 0);
+	const H = $derived(Math.max(ALTO[mueble.tipo] ?? 1, ['carro', 'cajonera'].includes(mueble.tipo) ? unidades * 0.085 + 0.16 : 0));
 	const n = $derived(Math.max(mueble.niveles, 0));
 	const fs = $derived(Math.max(W, H) / 20);
 	const g = 0.04; // grosor de tableros
@@ -49,19 +51,31 @@
 		y: number;
 		w: number;
 		h: number;
+		/** Hueco abierto (sin cajón). */
+		abierto?: boolean;
+		/** Empieza otra pieza: se dibuja la separación encima. */
+		aparte?: boolean;
 	}
+	const SEP = 0.05;
 	/** Dónde cae cada nivel en el frente, según el tipo de mueble y cómo se numera. */
 	const huecos = $derived.by((): Hueco[] => {
 		if (!n) return [];
 		const t = mueble.tipo;
-		if (t === 'banco') {
+		if (t === 'banco' && !mueble.disposicion) {
 			// Cajones bajo el tablero, de izquierda a derecha
 			const w = (W - g * 2) / n;
 			return Array.from({ length: n }, (_, i) => ({ nivel: i + 1, x: g + i * w, y: 0.08, w, h: 0.22 }));
 		}
-		// Todo lo demás, siempre de arriba a abajo (la 1 es la de arriba)
-		const alto = (H - g * 2 - (t === 'carro' ? 0.12 : 0)) / n;
-		return Array.from({ length: n }, (_, i) => ({ nivel: i + 1, x: g, y: g + i * alto, w: W - g * 2, h: alto }));
+		// Todo lo demás, de arriba a abajo (la 1 es la de arriba); a medida: filas de distinto alto, partidas, huecos
+		const niv = nivelesMueble(mueble);
+		const total = Math.max(...niv.map((x) => x.desde + x.alto), 1);
+		const filasAparte = [...new Set(niv.filter((x) => x.aparte).map((x) => x.fila))];
+		const u = (H - g * 2 - (t === 'carro' ? 0.12 : 0) - filasAparte.length * SEP) / total;
+		return niv.map((x) => {
+			const w = (W - g * 2) / x.cols;
+			const sep = filasAparte.filter((f) => f <= x.fila).length * SEP;
+			return { nivel: x.numero, x: g + x.col * w, y: g + x.desde * u + sep, w, h: x.alto * u, abierto: x.hueco, aparte: x.aparte && x.col === 0 };
+		});
 	});
 	// Rectángulo de la luz: interpolado entre el nivel de antes y el de después
 	const focoRect = $derived.by(() => {
@@ -73,12 +87,13 @@
 		const mezcla = (p: number, q: number) => p + (q - p) * k;
 		return { x: mezcla(a.x, b.x), y: mezcla(a.y, b.y), w: mezcla(a.w, b.w), h: mezcla(a.h, b.h) };
 	});
-	const cajon = $derived(['cajonera', 'carro', 'banco'].includes(mueble.tipo));
+	// Cestas y bandejas son abiertas: se dibujan como baldas
+	const cajon = $derived(['cajonera', 'carro', 'banco'].includes(mueble.tipo) && !['cesta', 'bandeja'].includes(nombreDeNivel(mueble)));
 	const recortar = (t: string, ancho: number, tam: number) => {
 		const max = Math.max(4, Math.floor(ancho / (tam * 0.56)));
 		return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 	};
-	const nombreNivel = (k: number) => `${MUEBLES[mueble.tipo].nivel} ${k}`;
+	const nombreNivel = (k: number) => nombreDe(mueble, k);
 </script>
 
 <svg viewBox="-0.12 -0.12 {W + 0.24} {H + 0.24}" class="frente block {clase || 'h-auto w-full'}" role="img" aria-label="{mueble.nombre} {mueble.codigo} visto de frente">
@@ -116,9 +131,10 @@
 		{@const yTexto = cs.length ? h.y + h.h * 0.2 : h.y + (cajon ? h.h * 0.66 : h.h / 2)}
 		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 		<g class="hueco {alTocarNivel ? 'cursor-pointer' : ''} {on ? 'encendido' : ''} {foco != null && Math.abs(foco - h.nivel) < 0.5 ? 'escaneando' : ''}" onclick={() => alTocarNivel?.(h.nivel)} style="--zona: {color}">
-			<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class={cajon ? 'cajon' : 'balda-fondo'} />
+			{#if h.aparte}<rect x={-0.01} y={h.y - SEP + 0.005} width={W + 0.02} height={SEP - 0.01} rx="0.01" class="tablero" />{/if}
+			<rect x={h.x + 0.01} y={h.y + 0.01} width={h.w - 0.02} height={h.h - 0.02} rx="0.015" class={h.abierto ? 'abierto' : cajon ? 'cajon' : 'balda-fondo'} />
 			{#if !cajon && mueble.tipo !== 'panel'}<rect x={h.x - g} y={h.y + h.h - 0.005} width={h.w + g * 2} height={g} class="tablero" />{/if}
-			{#if cajon && !cs.length}<rect x={h.x + h.w / 2 - Math.min(0.12, h.w / 4)} y={h.y + Math.min(0.05, h.h * 0.2)} width={Math.min(0.24, h.w / 2)} height="0.02" rx="0.01" class="tirador" />{/if}
+			{#if cajon && !h.abierto && !cs.length}<rect x={h.x + h.w / 2 - Math.min(0.12, h.w / 4)} y={h.y + Math.min(0.05, h.h * 0.2)} width={Math.min(0.24, h.w / 2)} height="0.02" rx="0.01" class="tirador" />{/if}
 			<text x={h.x + 0.04} y={h.y + tam * 1.15 + (cajon && !cs.length ? Math.min(0.05, h.h * 0.2) : 0.01)} class="num" font-size={tam * 0.85}>{h.nivel}</text>
 			{#if on && destacado}
 				{@const ancho = h.w - 0.3}
@@ -192,6 +208,12 @@
 	}
 	.balda-fondo {
 		fill: var(--superficie-2);
+	}
+	.abierto {
+		fill: var(--fondo);
+		stroke: var(--borde);
+		stroke-width: 0.01;
+		stroke-dasharray: 0.03 0.02;
 	}
 	.cajon {
 		fill: var(--superficie-2);

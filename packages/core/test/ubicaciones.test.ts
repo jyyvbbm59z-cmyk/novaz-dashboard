@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buscarArticulos, caminoEnLocal, codigoUbicacion, describirUbicacion, huella, PLANO_LOCAL, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES, type Pt } from '../src/ubicaciones';
+import { buscarArticulos, caminoEnLocal, codigoUbicacion, describirUbicacion, huella, limpiarDisposicion, nivelesMueble, nombreNivel, PLANO_LOCAL, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES, type Pt } from '../src/ubicaciones';
 
 const zonas = ZONAS_INICIALES.map((z, i) => ({ ...z, id: i + 1 }));
 
@@ -92,5 +92,37 @@ describe('camino desde la persiana', () => {
 		const ct = caminoEnLocal(zona('BA'), { mueble: false });
 		expect(ct.at(-1)!.x).toBeGreaterThan(P.puertaFondo.desde);
 		expect(ct.at(-1)!.x).toBeLessThan(P.puertaFondo.hasta);
+	});
+});
+
+describe('muebles a medida', () => {
+	const c2 = {
+		tipo: 'carro' as const,
+		niveles: 9,
+		disposicion: {
+			nivel: 'cajón',
+			filas: [{ alto: 1, cajones: 3 }, { alto: 1, cajones: 1 }, { alto: 1, cajones: 1 }, { alto: 2, cajones: 1 }, { alto: 2, cajones: 1, aparte: true }, { alto: 2, cajones: 1 }, { alto: 3, cajones: 1, hueco: true }]
+		}
+	};
+	it('numera de arriba a abajo y, en una fila partida, de izquierda a derecha', () => {
+		const n = nivelesMueble(c2);
+		expect(n.length).toBe(9);
+		expect(n.slice(0, 3).map((x) => x.nombre)).toEqual(['cajón 1 (izquierdo)', 'cajón 2 (central)', 'cajón 3 (derecho)']);
+		expect(n[3]).toMatchObject({ numero: 4, desde: 1, alto: 1 });
+		expect(n[5]).toMatchObject({ numero: 6, desde: 3, alto: 2 });
+		expect(n[6]).toMatchObject({ numero: 7, aparte: true });
+		expect(n[8]).toMatchObject({ numero: 9, hueco: true, alto: 3, nombre: 'hueco 9' });
+	});
+	it('nombres en femenino, por defecto y en la descripción', () => {
+		expect(nombreNivel({ tipo: 'carro', disposicion: { nivel: 'cesta', filas: [{ alto: 1, cajones: 2 }] } }, 2)).toBe('cesta 2 (derecha)');
+		expect(nombreNivel({ tipo: 'estanteria', niveles: 5 }, 3)).toBe('balda 3');
+		const d = describirUbicacion({ zonaId: 3, muebleId: 9, nivel: 2 }, zonas, [{ id: 9, codigo: 'C2', nombre: 'Carro', tipo: 'carro', zonaId: 3, ...c2 }]);
+		expect(d.texto).toBe('Z1 · Carro C2 · cajón 2 (central)');
+		expect(d.codigo).toBe('Z1·C2·2');
+	});
+	it('limpia lo que llega del formulario', () => {
+		expect(limpiarDisposicion({ filas: [{ alto: 99, cajones: 0 }, { alto: 2, cajones: 3, hueco: 1 }], nivel: ' Cesta ' })).toEqual({ filas: [{ alto: 10, cajones: 1 }, { alto: 2, cajones: 3, hueco: true }], nivel: 'cesta' });
+		expect(limpiarDisposicion({ filas: [] })).toBeNull();
+		expect(limpiarDisposicion('x')).toBeNull();
 	});
 });

@@ -1,4 +1,4 @@
-import { codigoUbicacion, CONTENEDORES, MUEBLES, ordenLetra } from '@novaz/core';
+import { codigoUbicacion, CONTENEDORES, nombreNivel, ordenLetra } from '@novaz/core';
 import { encode } from 'uqr';
 
 /** QR en un trazo SVG (un módulo = 1 unidad). */
@@ -30,7 +30,7 @@ export const load = async ({ parent, url }) => {
 					niveles: Array.from({ length: m.niveles > 1 ? m.niveles : 0 }, (_, i) => ({
 						n: i + 1,
 						codigo: codigoUbicacion(zona, m, i + 1)!,
-						nombre: `${MUEBLES[m.tipo].nivel} ${i + 1}`,
+						nombre: nombreNivel(m, i + 1),
 						qr: qr(`${href}?nivel=${i + 1}`)
 					})),
 					contenedores: plano.contenedores

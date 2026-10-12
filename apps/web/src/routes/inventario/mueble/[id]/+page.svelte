@@ -9,7 +9,7 @@
 	import MuebleForm from '$comp/MuebleForm.svelte';
 	import PlanoLocal from '$comp/PlanoLocal.svelte';
 	import { accion, enviar } from '$lib/enviar';
-	import { buscarArticulos, codigoUbicacion, CONTENEDORES, MUEBLES, siguienteLetra } from '@novaz/core';
+	import { buscarArticulos, codigoUbicacion, CONTENEDORES, MUEBLES, nombreDeNivel, nombreNivel as nombreDe, pluralNivel, siguienteLetra } from '@novaz/core';
 	import { TIPOS_CONTENEDOR, type Contenedor, type TipoContenedor } from '@novaz/core/schema';
 	import { ArrowLeft, Box, Camera, ChevronDown, Pencil, Plus, Printer, Search, Trash2, Wrench } from '@lucide/svelte';
 	import { tick } from 'svelte';
@@ -31,7 +31,7 @@
 	// Para el dibujo: solo lo suelto en cada balda (lo de los contenedores va dentro de su caja)
 	const contenido = $derived(aqui.filter((a) => !a.contenedorId).reduce<Record<number, string[]>>((c, a) => ((c[a.nivel ?? 0] ??= []).push(a.nombre), c), {}));
 	const irA = (id: string) => document.getElementById(id)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-	const nombreNivel = (n: number) => `${def.nivel.charAt(0).toUpperCase()}${def.nivel.slice(1)} ${n}`;
+	const nombreNivel = (n: number) => { const t = nombreDe(m, n); return t.charAt(0).toUpperCase() + t.slice(1); };
 	const codigo = (n: number | null, c?: Contenedor | null) => codigoUbicacion(zona, m, n, c) ?? m.codigo;
 	const nombreCont = (c: Contenedor) => `${CONTENEDORES[c.tipo]} ${c.letra}${c.nombre ? ` · ${c.nombre}` : ''}`;
 
@@ -138,7 +138,7 @@
 				<p class="etiqueta">{zona ? `Zona ${zona.codigo} · ${zona.nombre}` : 'Fuera de las zonas'}</p>
 				<h2 class="text-2xl font-semibold">{m.nombre}</h2>
 				<p class="text-xs text-texto-3">
-					{def.nombre} · {m.ancho.toLocaleString('es-ES')} × {m.fondo.toLocaleString('es-ES')} m{m.niveles > 1 ? ` · ${m.niveles} ${def.nivel === 'cajón' ? 'cajones' : `${def.nivel}s`}` : ''}{conts.length ? ` · ${conts.length} contenedores` : ''} · {aqui.length} cosas{m.notas ? ` · ${m.notas}` : ''}
+					{def.nombre} · {m.ancho.toLocaleString('es-ES')} × {m.fondo.toLocaleString('es-ES')} m{m.niveles > 1 ? ` · ${m.niveles} ${pluralNivel(nombreDeNivel(m))}` : ''}{conts.length ? ` · ${conts.length} contenedores` : ''} · {aqui.length} cosas{m.notas ? ` · ${m.notas}` : ''}
 				</p>
 			</div>
 		</header>

@@ -1,5 +1,5 @@
 // El local por zonas: muebles en el plano y dónde está cada artículo.
-import { huella, MUEBLES, ordenLetra, siguienteCodigoMueble, siguienteLetra, zonaEnPunto } from '@novaz/core';
+import { huella, limpiarDisposicion, MUEBLES, nivelesMueble, ordenLetra, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, type DisposicionMueble } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { TIPOS_ARTICULO, TIPOS_CONTENEDOR, TIPOS_MUEBLE, type TipoArticulo, type TipoContenedor, type TipoMueble } from '@novaz/core/schema';
 import { and, asc, eq, gt, inArray, ne } from 'drizzle-orm';
@@ -48,8 +48,20 @@ export async function guardarMueble(locals: Locals, fd: FormData) {
 		fondo: medida(f.decimal('fondo'), 0.05, 10, def.fondo),
 		girado: f.bool('girado'),
 		niveles: Math.round(medida(f.entero('niveles'), 0, 30, def.niveles)),
+		disposicion: null as DisposicionMueble | null,
 		notas: f.texto('notas')
 	};
+	// A medida: filas de distinto alto, partidas en cajones o huecos; el número de niveles sale de ahí
+	const crudo = f.texto('disposicion');
+	if (crudo) {
+		let d: DisposicionMueble | null = null;
+		try {
+			d = limpiarDisposicion(JSON.parse(crudo));
+		} catch {
+			throw new ErrorFormulario('La disposición de cajones no se entiende');
+		}
+		if (d) ((valores.disposicion = d), (valores.niveles = nivelesMueble({ tipo, disposicion: d }).length));
+	}
 	const zonaId = await zonaDelMueble(db, valores);
 	if (id) {
 		await db.update(s.muebles).set({ ...valores, zonaId }).where(eq(s.muebles.id, id));

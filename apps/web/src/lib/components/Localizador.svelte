@@ -3,7 +3,7 @@
 	// el plano entero con el mueble señalado → una luz sale de la persiana y recorre el camino mientras la cámara la sigue
 	// y se acerca → el mueble se despliega desde su sitio en el plano → una luz cae flotando hasta la balda y se posa
 	// (con física de muelle) → el nombre aparece letra a letra.
-	import { caminoEnLocal, cajaCamara, codigoUbicacion, CONTENEDORES, huella, MUEBLES, VISTA_PLANO, type Camara } from '@novaz/core';
+	import { caminoEnLocal, nombreNivel, cajaCamara, codigoUbicacion, CONTENEDORES, huella, MUEBLES, VISTA_PLANO, type Camara } from '@novaz/core';
 	import type { Contenedor, Mueble, Zona } from '@novaz/core/schema';
 	import { ArrowRight, RotateCcw, X } from '@lucide/svelte';
 	import { prefersReducedMotion, Spring } from 'svelte/motion';
@@ -206,7 +206,7 @@
 		[
 			zona && { k: 'mirar' as Fase, t: `Zona ${zona.codigo} · ${zona.nombre}` },
 			mueble && { k: 'llegada' as Fase, t: `${mueble.nombre} ${mueble.codigo}` },
-			mueble && nivel && { k: 'balda' as Fase, t: `${MUEBLES[mueble.tipo].nivel} ${nivel}` },
+			mueble && nivel && { k: 'balda' as Fase, t: nombreNivel(mueble, nivel) },
 			contenedor && { k: 'balda' as Fase, t: `${CONTENEDORES[contenedor.tipo]} ${contenedor.letra}${contenedor.nombre ? ` · ${contenedor.nombre}` : ''}` }
 		].filter(Boolean) as { k: Fase; t: string }[]
 	);

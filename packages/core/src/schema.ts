@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import type { CampoDef, FasePlantilla } from './campos';
 import type { LineaFactura } from './facturacion';
+import type { DisposicionMueble } from './ubicaciones';
 
 export interface TareaHecha {
 	plan: string;
@@ -491,6 +492,8 @@ export const muebles = sqliteTable('muebles', {
 	girado: bool('girado').notNull().default(false),
 	/** Baldas, cajones o filas (0 = sin niveles: un equipo, un hueco en el suelo). */
 	niveles: integer('niveles').notNull().default(1),
+	/** A medida: filas de distinto alto, partidas en cajones, huecos (null = todos los niveles iguales). `niveles` es su total. */
+	disposicion: text('disposicion', { mode: 'json' }).$type<DisposicionMueble>(),
 	notas: text('notas'),
 	creado: creado()
 });

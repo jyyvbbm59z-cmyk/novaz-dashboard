@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Dónde está un artículo: zona → mueble → balda/cajón, con su código («Z1·E2·3»). Envía muebleId, nivel y zonaId.
-	import { codigoUbicacion, CONTENEDORES, MUEBLES, ordenLetra } from '@novaz/core';
+	import { codigoUbicacion, CONTENEDORES, MUEBLES, nombreDeNivel, nombreNivel, ordenLetra } from '@novaz/core';
 	import type { Contenedor, Mueble, Zona } from '@novaz/core/schema';
 
 	let {
@@ -63,9 +63,9 @@
 	</div>
 	{#if mueble && mueble.niveles > 1}
 		<div class="flex flex-wrap items-center gap-1.5">
-			<span class="text-xs text-texto-3 first-letter:uppercase">{MUEBLES[mueble.tipo].nivel}:</span>
+			<span class="text-xs text-texto-3 first-letter:uppercase">{nombreDeNivel(mueble)}:</span>
 			{#each Array.from({ length: mueble.niveles }, (_, i) => i + 1) as n (n)}
-				<button type="button" class="chip h-8 min-w-8 justify-center px-2 font-mono {nivel === n ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" onclick={() => (nivel = nivel === n ? null : n)}>{n}</button>
+				<button type="button" class="chip h-8 min-w-8 justify-center px-2 font-mono {nivel === n ? 'border-acento bg-acento/10 text-texto' : 'text-texto-3'}" title={nombreNivel(mueble, n)} onclick={() => (nivel = nivel === n ? null : n)}>{n}</button>
 			{/each}
 			{#if MUEBLES[mueble.tipo].ayudaNivel}<span class="text-[0.68rem] text-texto-3">{MUEBLES[mueble.tipo].ayudaNivel}</span>{/if}
 		</div>
