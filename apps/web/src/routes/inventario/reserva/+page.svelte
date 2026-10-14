@@ -3,7 +3,7 @@
 	import LocalizarHoja from '$comp/LocalizarHoja.svelte';
 	import ArticuloForm from '$comp/ArticuloForm.svelte';
 	import Hoja from '$comp/Hoja.svelte';
-	import { bajoMinimo, euros } from '@novaz/core';
+	import { bajoMinimo, euros, encaja } from '@novaz/core';
 	import { Droplets, Package, Pencil, Plus, Search } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -12,7 +12,7 @@
 	let soloBajos = $state(false);
 	const visibles = $derived(
 		reserva
-			.filter((a) => (!soloBajos || bajoMinimo(a, a.cantidad)) && (!busqueda || `${a.nombre} ${a.marca ?? ''} ${a.referencia ?? ''} ${a.categoria ?? ''}`.toLowerCase().includes(busqueda.toLowerCase())))
+			.filter((a) => (!soloBajos || bajoMinimo(a, a.cantidad)) && encaja(busqueda, `${a.nombre} ${a.marca ?? ''} ${a.referencia ?? ''} ${a.categoria ?? ''} ${a.sitio.codigo ?? ''} ${a.notas ?? ''}`))
 			.sort((a, b) => Number(bajoMinimo(b, b.cantidad)) - Number(bajoMinimo(a, a.cantidad)) || a.nombre.localeCompare(b.nombre, 'es'))
 	);
 	const bajos = $derived(reserva.filter((a) => bajoMinimo(a, a.cantidad)).length);

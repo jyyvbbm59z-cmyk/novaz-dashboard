@@ -1,4 +1,4 @@
-import { existencias, separarPrecio } from '@novaz/core';
+import { enTandas, existencias, separarPrecio } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { ESTADOS_HERRAMIENTA, TIPOS_ARTICULO, type EstadoHerramienta, type TipoArticulo } from '@novaz/core/schema';
 import { and, asc, eq, inArray } from 'drizzle-orm';
@@ -113,14 +113,15 @@ export async function registrarStock(locals: Locals, fd: FormData, cantidadActua
 
 /** Recuento: lo que está se marca comprobado hoy; lo que falta pasa a «perdida». */
 export async function guardarRecuento(locals: Locals, presentes: number[], faltan: number[]) {
-	if (presentes.length) {
-		await locals.db.update(s.articulos).set({ ultimoRecuento: locals.hoy }).where(inArray(s.articulos.id, presentes));
+	// Por tandas: D1 no admite más de 100 parámetros por consulta
+	await enTandas(presentes, async (p) => {
+		await locals.db.update(s.articulos).set({ ultimoRecuento: locals.hoy }).where(inArray(s.articulos.id, p));
 		await locals.db
 			.update(s.articulos)
 			.set({ estado: 'ok' })
-			.where(and(inArray(s.articulos.id, presentes), eq(s.articulos.estado, 'perdida')));
-	}
-	if (faltan.length) await locals.db.update(s.articulos).set({ estado: 'perdida' }).where(inArray(s.articulos.id, faltan));
+			.where(and(inArray(s.articulos.id, p), eq(s.articulos.estado, 'perdida')));
+	});
+	await enTandas(faltan, async (p) => void (await locals.db.update(s.articulos).set({ estado: 'perdida' }).where(inArray(s.articulos.id, p))));
 }
 
 /** Líneas «para comprar» de una avería o una tarea del local: crea las nuevas, quita las borradas y respeta lo ya comprado. */

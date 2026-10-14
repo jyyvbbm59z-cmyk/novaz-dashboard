@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { interpretarReglas } from '../src/bot';
-import { buscarArticulos, caminoEnLocal, leerDestino, leerQueMover, nivelValido, numerosNivel, codigoUbicacion, describirUbicacion, encajar, huecoLibre, huella, rejillaBalda, sePisan, limpiarDisposicion, nivelesMueble, nombreNivel, PLANO_LOCAL, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES, type Pt } from '../src/ubicaciones';
+import { buscarArticulos, caminoEnLocal, encaja, leerDestino, leerQueMover, nivelValido, numerosNivel, codigoUbicacion, describirUbicacion, encajar, huecoLibre, huella, rejillaBalda, sePisan, limpiarDisposicion, nivelesMueble, nombreNivel, PLANO_LOCAL, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, ZONAS_INICIALES, type Pt } from '../src/ubicaciones';
 
 const zonas = ZONAS_INICIALES.map((z, i) => ({ ...z, id: i + 1 }));
 
@@ -210,5 +210,16 @@ describe('balda 0 (encima)', () => {
 		expect(describirUbicacion({ zonaId: 2, muebleId: 2, nivel: 0 }, zonas, [armario]).texto).toBe('Pintura y madera · Armario A1 · balda 0 (encima)');
 		expect(leerDestino('encima del A1', [armario])).toEqual({ muebleId: 2, nivel: 0, columna: null });
 		expect(leerDestino('A1 balda 0', [armario])?.nivel).toBe(0);
+	});
+});
+
+describe('filtro de listas por palabras', () => {
+	it('todas las palabras, sin tildes y con plurales', () => {
+		const t = 'Juego brocas Bosch HSS metal 1-10 mm · 1-1,5-2-…-6,5-7 mm';
+		expect(encaja('broca 6,5', t)).toBe(true);
+		expect(encaja('BROCAS bosch', t)).toBe(true);
+		expect(encaja('broca madera', t)).toBe(false);
+		expect(encaja('', t)).toBe(true);
+		expect(encaja('dinamometrica', 'Llave dinamométrica Facom')).toBe(true);
 	});
 });

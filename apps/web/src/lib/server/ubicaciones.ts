@@ -1,5 +1,5 @@
 // El local por zonas: muebles en el plano y dónde está cada artículo.
-import { ALTO_CONTENEDOR, codigoUbicacion, nivelValido, conRejilla, CONTENEDORES, encajar, huecoLibre, huella, limpiarDisposicion, MUEBLES, nivelesMueble, rejillaBalda, sePisan, type Celda, ordenLetra, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, type DisposicionMueble } from '@novaz/core';
+import { ALTO_CONTENEDOR, codigoUbicacion, enTandas, nivelValido, conRejilla, CONTENEDORES, encajar, huecoLibre, huella, limpiarDisposicion, MUEBLES, nivelesMueble, rejillaBalda, sePisan, type Celda, ordenLetra, siguienteCodigoMueble, siguienteLetra, zonaEnPunto, type DisposicionMueble } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { TIPOS_ARTICULO, TIPOS_CONTENEDOR, TIPOS_MUEBLE, type TipoArticulo, type TipoContenedor, type TipoMueble } from '@novaz/core/schema';
 import { and, asc, eq, gt, inArray, ne } from 'drizzle-orm';
@@ -135,7 +135,8 @@ async function resolverSitio(db: Locals['db'], sitio: Sitio) {
 /** Coloca artículos en un sitio: contenedor, mueble y balda, o solo la zona. */
 export async function ubicarArticulos(locals: Locals, ids: number[], sitio: Sitio) {
 	if (!ids.length) return;
-	await locals.db.update(s.articulos).set(await resolverSitio(locals.db, sitio)).where(inArray(s.articulos.id, ids));
+	const valores = await resolverSitio(locals.db, sitio);
+	await enTandas(ids, async (p) => void (await locals.db.update(s.articulos).set(valores).where(inArray(s.articulos.id, p))));
 }
 
 /** Sitio enviado por un formulario: contenedorId, o muebleId + nivel, o zonaId. */

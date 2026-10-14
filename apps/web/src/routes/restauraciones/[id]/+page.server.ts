@@ -1,4 +1,4 @@
-import { diasEntre } from '@novaz/core';
+import { diasEntre, enTandas } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { error, redirect } from '@sveltejs/kit';
 import { esAjeno } from '$lib/server/usuarios';
@@ -39,16 +39,11 @@ export const load = async ({ params, locals }) => {
 			.from(s.tareas)
 			.where(inArray(s.tareas.faseId, faseIds.length ? faseIds : [-1]))
 			.orderBy(asc(s.tareas.orden), asc(s.tareas.id)),
-		db
-			.select()
-			.from(s.adjuntos)
-			.where(
-				or(
-					and(eq(s.adjuntos.entidad, 'restauracion'), eq(s.adjuntos.entidadId, id)),
-					and(eq(s.adjuntos.entidad, 'entrada'), inArray(s.adjuntos.entidadId, entradaIds.length ? entradaIds : [-1]))
-				)
-			)
-			.orderBy(asc(s.adjuntos.creado), asc(s.adjuntos.id))
+		// Las de la obra y las de sus entradas (por tandas: un diario largo pasa de los 100 parámetros de D1)
+		Promise.all([
+			db.select().from(s.adjuntos).where(and(eq(s.adjuntos.entidad, 'restauracion'), eq(s.adjuntos.entidadId, id))),
+			enTandas(entradaIds, (p) => db.select().from(s.adjuntos).where(and(eq(s.adjuntos.entidad, 'entrada'), inArray(s.adjuntos.entidadId, p))))
+		]).then(([a, b]) => [...a, ...b].sort((x, y) => x.creado.localeCompare(y.creado) || x.id - y.id))
 	]);
 
 	// Compra del vehículo (cuenta 600), para saber cuánto llevas metido en total

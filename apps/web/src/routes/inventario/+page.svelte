@@ -3,7 +3,7 @@
 	import LocalizarHoja from '$comp/LocalizarHoja.svelte';
 	import ArticuloForm from '$comp/ArticuloForm.svelte';
 	import Hoja from '$comp/Hoja.svelte';
-	import { diasEntre, euros } from '@novaz/core';
+	import { diasEntre, encaja, euros } from '@novaz/core';
 	import { Pencil, Plus, Search, Wrench } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -15,7 +15,7 @@
 		herramientas.filter(
 			(a) =>
 				(!filtroEstado || a.estado === filtroEstado) &&
-				(!busqueda || `${a.nombre} ${a.marca ?? ''} ${a.referencia ?? ''} ${a.categoria ?? ''} ${a.ubicacion ?? ''} ${a.sitio.codigo ?? ''} ${a.sitio.texto ?? ''} ${a.numeroSerie ?? ''}`.toLowerCase().includes(busqueda.toLowerCase()))
+				encaja(busqueda, `${a.nombre} ${a.marca ?? ''} ${a.referencia ?? ''} ${a.categoria ?? ''} ${a.ubicacion ?? ''} ${a.sitio.codigo ?? ''} ${a.sitio.texto ?? ''} ${a.numeroSerie ?? ''} ${a.notas ?? ''}`)
 		)
 	);
 	const grupos = $derived.by(() => {

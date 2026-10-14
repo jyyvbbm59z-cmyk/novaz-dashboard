@@ -3,6 +3,7 @@ import {
 	cargarAlertas,
 	crearDb,
 	descargarPrecios,
+	enTandas,
 	datosInforme,
 	mensajeInforme,
 	normalizarPermisos,
@@ -121,7 +122,7 @@ async function umbralesNuevos(db: DB, alertas: Alerta[]) {
 		.filter((x): x is { a: Alerta; umbral: string } => x.umbral != null)
 		.map((x) => ({ ...x, clave: `${x.a.clave}|${x.a.ciclo}|${x.umbral}` }));
 	const ya = candidatas.length
-		? new Set((await db.select().from(s.avisosEnviados).where(inArray(s.avisosEnviados.clave, candidatas.map((c) => c.clave)))).map((f) => f.clave))
+		? new Set((await enTandas(candidatas.map((c) => c.clave), (p) => db.select().from(s.avisosEnviados).where(inArray(s.avisosEnviados.clave, p)))).map((f) => f.clave))
 		: new Set<string>();
 	return candidatas.filter((c) => !ya.has(c.clave));
 }

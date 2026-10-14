@@ -211,3 +211,13 @@ export async function cargarAlertas(
 		.filter((a) => opts.incluirOk || a.nivel !== 'ok')
 		.sort((a, b) => compararNivel(a.nivel, b.nivel) || (a.dias ?? 1e9) - (b.dias ?? 1e9));
 }
+
+/**
+ * D1 no admite más de 100 parámetros por consulta: un `inArray` con muchos ids (todo el inventario, todas las
+ * entradas de un vehículo…) se hace por tandas y se juntan los resultados.
+ */
+export async function enTandas<T, R>(xs: T[], f: (parte: T[]) => Promise<R[] | void>, tam = 90): Promise<R[]> {
+	const out: R[] = [];
+	for (let i = 0; i < xs.length; i += tam) out.push(...((await f(xs.slice(i, i + tam))) ?? []));
+	return out;
+}

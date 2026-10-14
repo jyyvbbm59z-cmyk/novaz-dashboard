@@ -485,3 +485,11 @@ export function buscarArticulos<A extends { nombre: string; marca: string | null
 		.slice(0, max)
 		.map((x) => x.a);
 }
+
+/** Filtro de listas: todas las palabras de la búsqueda (sin tildes ni mayúsculas, «brocas» vale por «broca») están en el texto. */
+export function encaja(busqueda: string, texto: string): boolean {
+	const p = sinTildes(busqueda).split(/\s+/).filter(Boolean);
+	if (!p.length) return true;
+	const t = sinTildes(texto);
+	return p.every((w) => t.includes(w.replace(/(es|s)$/, '')) || t.includes(w));
+}

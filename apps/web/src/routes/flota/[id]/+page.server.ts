@@ -19,8 +19,7 @@ import {
 	ritmoKmDia,
 	tipoVencimientoAplica,
 	ordenPendientes,
-	resumenLibreta
-} from '@novaz/core';
+	resumenLibreta, enTandas } from '@novaz/core';
 import * as s from '@novaz/core/schema';
 import { error, redirect } from '@sveltejs/kit';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
@@ -86,13 +85,15 @@ export const load = async ({ params, locals }) => {
 	porReparar.sort(ordenPendientes);
 
 	// Planes renovados por cada entrada
-	const enlaces = entradas.length
-		? await db
+	const enlaces = await enTandas(
+		entradas.map((x) => x.e.id),
+		(p) =>
+			db
 				.select({ entradaId: s.entradasPlanes.entradaId, planId: s.entradasPlanes.planId, nombre: s.planesMantenimiento.nombre })
 				.from(s.entradasPlanes)
 				.innerJoin(s.planesMantenimiento, eq(s.entradasPlanes.planId, s.planesMantenimiento.id))
-				.where(inArray(s.entradasPlanes.entradaId, entradas.map((x) => x.e.id)))
-		: [];
+				.where(inArray(s.entradasPlanes.entradaId, p))
+	);
 	const planesDe = (entradaId: number) => enlaces.filter((l) => l.entradaId === entradaId);
 
 	const malas = lecturasSospechosas(lecturas);
@@ -212,11 +213,15 @@ export const load = async ({ params, locals }) => {
 			.map((a) => ({ id: a.id, nombre: a.nombre, unidad: a.unidad, cantidad: a.cantidad })),
 		usos: entradas.length
 			? (
-					await db
-						.select({ entradaId: s.stock.entradaId, articuloId: s.stock.articuloId, cantidad: s.stock.cantidad, nombre: s.articulos.nombre, unidad: s.articulos.unidad, valorCent: s.articulos.valorCent })
-						.from(s.stock)
-						.innerJoin(s.articulos, eq(s.stock.articuloId, s.articulos.id))
-						.where(and(inArray(s.stock.entradaId, entradas.map((x) => x.e.id)), eq(s.stock.motivo, 'uso')))
+					await enTandas(
+						entradas.map((x) => x.e.id),
+						(p) =>
+							db
+								.select({ entradaId: s.stock.entradaId, articuloId: s.stock.articuloId, cantidad: s.stock.cantidad, nombre: s.articulos.nombre, unidad: s.articulos.unidad, valorCent: s.articulos.valorCent })
+								.from(s.stock)
+								.innerJoin(s.articulos, eq(s.stock.articuloId, s.articulos.id))
+								.where(and(inArray(s.stock.entradaId, p), eq(s.stock.motivo, 'uso')))
+					)
 				).map((u) => ({ ...u, cantidad: -u.cantidad }))
 			: [],
 		entradas: entradas.map((x) => ({
